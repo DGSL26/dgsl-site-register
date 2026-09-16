@@ -106,7 +106,10 @@
     <div class="actions">
 
       <div class="search-filter-wrap">
-        <input id="search" type="search" placeholder="Search zones, contractor..." aria-label="Search register">
+        <div class="search-clear-wrap">
+          <input id="search" type="search" placeholder="Search zones, contractor..." aria-label="Search register">
+          <button type="button" id="searchClear" class="search-clear-button" aria-label="Clear search" title="Clear search">×</button>
+        </div>
         <div class="permit-filter-wrap">
           <button type="button" id="permitFilterButton" class="permit-filter-button" aria-label="Filter work permits" aria-haspopup="true" aria-expanded="false" title="Filter work permits">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.5 8v5l-3 1v-6z"></path></svg>
@@ -168,20 +171,7 @@
     </div>
     <div class="changelog-list">
       <section class="changelog-entry current">
-        <div class="changelog-version">1.3.1 <span class="changelog-current">Current</span></div>
-        <ul>
-          <li>Added conditional First-Fix fields to the Take Back section when the Work Description contains a First-Fix reference, including common formatting variations and minor typing mistakes.</li>
-          <li>Added “To be completed” as the automatic starting option for the First-Fix records status field.</li>
-          <li>Added a custom text option when “Other” is selected for the First-Fix records status.</li>
-          <li>Added First-Fix Records: Location/Recipient information to the saved handover and generated PDF.</li>
-          <li>Removed the Generate PDF button from the New/Edit Handover window.</li>
-          <li>Added a dedicated Download icon to the View PDF window; downloading is now performed from that control while the X button only closes the window.</li>
-          <li>Refined the Bug Report dialog spacing and restored the divider in the Bug Reports window.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.3.0</div>
+        <div class="changelog-version">1.3.0 <span class="changelog-current">Current</span></div>
         <ul>
           <li>Added Settings &gt; Data Management as a dedicated management view containing Bug Reports, Export Data and Import Data.</li>
           <li>Added unread Bug Report indicators to Data Management and refined the unread badge so it only appears when unread reports exist.</li>
@@ -297,7 +287,6 @@
           <li>Improved status handling with Open, Closed and On Hold colours.</li>
           <li>Added dashboard totals and weekly changes.</li>
           <li>Improved mobile and tablet usability, including safer signature pads and clearer date fields.</li>
-          <li>Introduced secure login with password-protected access and restricted editing, creating and deleting to authorised users.</li>
         </ul>
       </section>
 
@@ -305,6 +294,7 @@
         <div class="changelog-version">Earlier development</div>
         <ul>
           <li>Built the DGSL Site Register around Supabase for storing handovers and site photos.</li>
+          <li>Added secure login and restricted editing, creating and deleting to authorised users.</li>
           <li>Added search, status filters, PDF generation, PDF download and data export/import.</li>
           <li>Added Handover and Take Back information, housekeeping, notes and signatures.</li>
           <li>Added site-photo upload, removal and PDF photo inclusion.</li>
@@ -328,30 +318,14 @@
         <h2>View PDF</h2>
       </div>
 
-      <div style="display:flex;align-items:center;gap:8px;">
-
-        <button
-          type="button"
-          id="downloadPdf"
-          class="icon"
-          aria-label="Download PDF"
-          title="Download PDF"
-        >
-          <svg viewBox="0 0 16 16" aria-hidden="true" focusable="false" style="width:20px;height:20px;display:block;fill:currentColor;">
-            <path d="M.5 9.9a.5.5 0 0 1 .5-.5h5.5V1.5a.5.5 0 0 1 1 0v7.9H14a.5.5 0 0 1 0 1H8v2.293l2.146-2.147a.5.5 0 0 1 .708.708l-3 3a.5.5 0 0 1-.708 0l-3-3a.5.5 0 1 1 .708-.708L6 12.793V10H1a.5.5 0 0 1-.5-.5Z"/>
-          </svg>
-        </button>
-
-        <button
-          type="button"
-          id="closePdf"
-          class="icon"
-          aria-label="Close"
-        >
-          ×
-        </button>
-
-      </div>
+      <button
+        type="button"
+        id="closePdf"
+        class="icon"
+        aria-label="Close"
+      >
+        ×
+      </button>
 
     </div>
 
@@ -980,7 +954,7 @@
     Video/photographic records of First-Fix complete and submitted
 
     <select name="firstFixRecordsStatus">
-      <option value="To be completed">
+      <option value="To be completed" selected>
         To be completed
       </option>
       <option value="Yes">
@@ -1000,6 +974,7 @@
     <input
       type="text"
       id="firstFixRecordsStatusOther"
+      name="firstFixRecordsStatusOther"
       placeholder="Enter your own answer"
       style="display:none;margin-top:6px;"
     >
@@ -1162,6 +1137,14 @@
       id="cancel2"
     >
       Cancel
+    </button>
+
+    <button
+      type="button"
+      id="generatePdf"
+      class="primary"
+    >
+      Generate PDF
     </button>
 
     <button

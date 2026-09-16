@@ -21,7 +21,7 @@ let records = [];
 let editing = null;
 let filter = 'All';
 
-const SITE_VERSION = '1.3.1';
+const SITE_VERSION = '1.3.0';
 const NOTIFICATIONS_TABLE = 'site_notifications';
 const NOTIFICATIONS_SEEN_KEY = 'dgsl_site_register_notifications_seen_v1';
 
@@ -44,7 +44,6 @@ const form = $('#handoverForm');
 let currentUser = null;
 let authDialog = null;
 let notificationPollTimer = null;
-let currentPdfRecord = null;
 
 const today = () => {
   const d = new Date();
@@ -1698,8 +1697,6 @@ document
 
             if (!record) return;
 
-            currentPdfRecord = record;
-
             try {
 
               open(record, false);
@@ -2135,42 +2132,9 @@ async function sharePdfToDevice(record) {
 
 function isFirstFixWorkDescription(value) {
 
-  const text = String(value || '').toLowerCase();
-
-  // Treat spaces, hyphens, slashes, punctuation and underscores as
-  // separators so forms such as "1st fix", "1st-fix", "1st/fix"
-  // and "1stfix" are all recognised.
-  const compact = text.replace(/[^a-z0-9]+/g, '');
-
-  // Common genuine spellings plus small, obvious typing mistakes.
-  const exactVariants = [
-    '1stfix',
-    'firstfix',
-    '1stfx',
-    'firstfx',
-    '1stfiix',
-    'firstfiix',
-    '1stfixx',
-    'firstfixx',
-    '1stfixt',
-    'firstfixt',
-    'fristfix',
-    'firtsfix',
-    'fistfix',
-    '1stfiz',
-    'firstfiz'
-  ];
-
-  if (exactVariants.some(variant => compact.includes(variant))) {
-    return true;
-  }
-
-  // Also recognise the standard forms when separated by any punctuation.
-  if (/(?:1st|first)[^a-z0-9]*fix/i.test(text)) {
-    return true;
-  }
-
-  return false;
+  return /(?:\b1\s*st\b|\bfirst\b)[\s\u00a0\-\u2010\u2011\u2012\u2013\u2014_\/\\.,:;()]*fix\b/i.test(
+    String(value || '')
+  );
 
 }
 
@@ -2224,7 +2188,9 @@ function getTakeBackChecklist() {
   if (isFirstFixWorkDescription(form.elements.description?.value || '')) {
 
     result.firstFixRecordsStatus =
-      form.elements.firstFixRecordsStatus?.value || '';
+      form.elements.firstFixRecordsStatus?.value === 'Other'
+        ? form.elements.firstFixRecordsStatusOther?.value || ''
+        : form.elements.firstFixRecordsStatus?.value || '';
 
     result.firstFixRecordsLocation =
       form.elements.firstFixRecordsLocation?.value || '';
@@ -2528,10 +2494,30 @@ setupOtherDropdown(
   'takeBackSnagCompletedOther'
 );
 
-setupOtherDropdown(
-  'firstFixRecordsStatus',
-  'firstFixRecordsStatusOther'
-);
+function setupFirstFixStatusOther() {
+  const select = form.elements.firstFixRecordsStatus;
+  const other = document.getElementById('firstFixRecordsStatusOther');
+  if (!select || !other) return;
+
+  const sync = () => {
+    if (select.value === 'Other') {
+      select.style.display = 'none';
+      other.style.display = '';
+      other.disabled = false;
+      other.focus();
+    } else {
+      select.style.display = '';
+      other.style.display = 'none';
+      other.disabled = true;
+      other.value = '';
+    }
+  };
+
+  select.addEventListener('change', sync);
+  sync();
+}
+
+setupFirstFixStatusOther();
 
 if (form.elements.description) {
   form.elements.description.addEventListener(
@@ -2765,8 +2751,17 @@ otherField.style.display =
       x.takeBackChecklist || {};
 
     if (form.elements.firstFixRecordsStatus) {
-      form.elements.firstFixRecordsStatus.value =
-        checklist.firstFixRecordsStatus || 'To be completed';
+      const savedFirstFixStatus = checklist.firstFixRecordsStatus || 'To be completed';
+      const standardFirstFixStatuses = ['To be completed', 'Yes', 'No', 'Outstanding', 'Other'];
+      if (standardFirstFixStatuses.includes(savedFirstFixStatus)) {
+        form.elements.firstFixRecordsStatus.value = savedFirstFixStatus;
+      } else {
+        form.elements.firstFixRecordsStatus.value = 'Other';
+        if (form.elements.firstFixRecordsStatusOther) {
+          form.elements.firstFixRecordsStatusOther.value = savedFirstFixStatus;
+        }
+      }
+      form.elements.firstFixRecordsStatus.dispatchEvent(new Event('change'));
     }
 
     if (form.elements.firstFixRecordsLocation) {
@@ -3962,6 +3957,18 @@ document
 $('#search').oninput =
   render;
 
+const searchClearButton = document.getElementById('searchClear');
+if (searchClearButton) {
+  searchClearButton.onclick = () => {
+    const search = document.getElementById('search');
+    if (search) {
+      search.value = '';
+      search.dispatchEvent(new Event('input', { bubbles: true }));
+      search.focus();
+    }
+  };
+}
+
 function setupRegisterFilter() {
   const button = document.getElementById('permitFilterButton');
   const menu = document.getElementById('permitFilterMenu');
@@ -4612,7 +4619,7 @@ healthSafetyScaffolding:
     : form.elements.takeBackSnagCompleted?.value || '',
   firstFixRecordsStatus:
     form.elements.firstFixRecordsStatus?.value === 'Other'
-      ? document.getElementById('firstFixRecordsStatusOther').value || 'Other'
+      ? form.elements.firstFixRecordsStatusOther?.value || ''
       : form.elements.firstFixRecordsStatus?.value || '',
   firstFixRecordsLocation:
     form.elements.firstFixRecordsLocation?.value || '',
@@ -5786,23 +5793,8 @@ document.addEventListener(
 
 
 // ============================================================
-// PDF VIEWER DOWNLOAD / CLOSE
+// PDF VIEWER CLOSE
 // ============================================================
-
-$('#downloadPdf').onclick =
-  async () => {
-
-    if (!currentPdfRecord) return;
-
-    try {
-      open(currentPdfRecord, false);
-      await generatePdf(false);
-    } catch (error) {
-      console.error('PDF download error:', error);
-      alert('Unable to download the PDF.');
-    }
-
-  };
 
 $('#closePdf').onclick =
   () => {
@@ -5815,6 +5807,5 @@ $('#closePdf').onclick =
     document.documentElement.classList.remove('pdf-dialog-open');
 
     $('#pdfViewer').innerHTML = '';
-    currentPdfRecord = null;
 
   };

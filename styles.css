@@ -1987,3 +1987,35 @@ body.change-log-open {
   }
 }
 
+
+
+.search-clear-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.search-clear-wrap #search {
+  width: 100%;
+  padding-right: 34px;
+}
+
+.search-clear-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 22px;
+  line-height: 22px;
+  cursor: pointer;
+  opacity: .65;
+}
+
+.search-clear-button:hover {
+  opacity: 1;
+}
