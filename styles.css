@@ -1946,3 +1946,26 @@ body.change-log-open {
     font-size: 12px !important;
   }
 }
+
+
+/* ============================================================
+   BUG REPORT DIALOG — HEADER SPACING
+   ============================================================ */
+
+/* Report a Bug:
+   Put the divider under the heading and give the first field
+   comfortable spacing below it. */
+#dgslBugReportDialog .header-dialog-head {
+  padding-bottom: 18px !important;
+  margin-bottom: 20px !important;
+  border-bottom: 1px solid #e0e5e9 !important;
+}
+
+/* Bug Reports:
+   Restore the divider and keep the content below it comfortably
+   separated from the line. */
+#dgslBugReportsDialog .header-dialog-head {
+  padding-bottom: 14px !important;
+  margin-bottom: 20px !important;
+  border-bottom: 1px solid #e0e5e9 !important;
+}
