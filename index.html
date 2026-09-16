@@ -173,12 +173,15 @@
       <section class="changelog-entry current">
         <div class="changelog-version">1.3.1 <span class="changelog-current">Current</span></div>
         <ul>
-          <li>Added the First-Fix completion records section to the Take Back area, shown only for First-Fix work descriptions.</li>
-          <li>Added First-Fix record status options including To be completed, Yes, No, Outstanding and Other, with a custom text entry for Other.</li>
-          <li>Expanded First-Fix keyword matching so common written variations and misspellings are recognised.</li>
-          <li>Added an X to the Work Permit search field for quickly clearing a search.</li>
-          <li>Added the Download icon to the View PDF window so the PDF can be downloaded directly while the X simply closes the window.</li>
-          <li>Refined the LIVE version notification flow and version handling for website releases.</li>
+          <li>Added the First-Fix completion records section to the Take Back area, shown only when the work description is recognised as First-Fix work.</li>
+          <li>Added a dedicated First-Fix records status with the options To be completed, Yes, No, Outstanding and Other.</li>
+          <li>Added a custom answer field for the First-Fix status when Other is selected, with the custom value saved and restored when a handover is edited.</li>
+          <li>Changed the First-Fix status handling so existing saved values are preserved, including older/custom values that do not match the standard status options.</li>
+          <li>Added an X control inside the Work Permit search field so the current search can be cleared quickly without manually deleting the text.</li>
+          <li>Added a Download icon to the View PDF window so the displayed PDF can be downloaded directly while the X control remains dedicated to closing the window.</li>
+          <li>Refined the LIVE website notification workflow so version changes are detected generally rather than being tied to a single release version.</li>
+          <li>Updated the LIVE notification workflow so a new website version replaces the previous LIVE website-update notification instead of leaving older notifications in place.</li>
+          <li>Improved the LIVE notification workflow with explicit secret validation, HTTP/1.1 handling and retry behaviour, and support for manual workflow runs using the current website version.</li>
         </ul>
       </section>
 
@@ -292,7 +295,6 @@
       <section class="changelog-entry">
         <div class="changelog-version">1.2.0</div>
         <ul>
-          <li>Added secure login and password-protected access, restricting editing, creating and deleting to authorised users.</li>
           <li>Improved handover copying, including clear red marking for copied handovers until they are edited and saved.</li>
           <li>Changed handover ordering to Handover Date, newest first.</li>
           <li>Added photo viewing with an in-page viewer and photo zoom without opening a new tab.</li>
