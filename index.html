@@ -315,14 +315,28 @@
         <h2>View PDF</h2>
       </div>
 
-      <button
-        type="button"
-        id="closePdf"
-        class="icon"
-        aria-label="Close"
-      >
-        ×
-      </button>
+      <div style="display:flex;align-items:center;gap:10px;">
+
+        <button
+          type="button"
+          id="downloadPdf"
+          class="icon"
+          aria-label="Download PDF"
+          title="Download PDF"
+        >
+          <span aria-hidden="true">⇩</span>
+        </button>
+
+        <button
+          type="button"
+          id="closePdf"
+          class="icon"
+          aria-label="Close"
+        >
+          ×
+        </button>
+
+      </div>
 
     </div>
 
@@ -951,6 +965,9 @@
     Video/photographic records of First-Fix complete and submitted
 
     <select name="firstFixRecordsStatus">
+      <option value="To be completed" selected>
+        To be completed
+      </option>
       <option value="Yes">
         Yes
       </option>
@@ -1123,14 +1140,6 @@
       id="cancel2"
     >
       Cancel
-    </button>
-
-    <button
-      type="button"
-      id="generatePdf"
-      class="primary"
-    >
-      Generate PDF
     </button>
 
     <button

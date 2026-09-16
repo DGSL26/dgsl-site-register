@@ -1800,6 +1800,7 @@ document
 
               lockPdfDialogBackground();
               document.documentElement.classList.add('pdf-dialog-open');
+              pdfDialog.dataset.recordId = String(record.id);
               pdfDialog.showModal();
 
             } catch (error) {
@@ -2132,9 +2133,57 @@ async function sharePdfToDevice(record) {
 
 function isFirstFixWorkDescription(value) {
 
-  return /(?:\b1\s*st\b|\bfirst\b)[\s\u00a0\-\u2010\u2011\u2012\u2013\u2014_\/\\.,:;()]*fix\b/i.test(
-    String(value || '')
-  );
+  const raw = String(value || '');
+
+  // Accept the normal spellings and separators, including compact forms
+  // such as "1stfix" / "firstfix".
+  const compact = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+
+  if (compact.includes('1stfix') || compact.includes('firstfix')) {
+    return true;
+  }
+
+  // Also tolerate common one-character typing mistakes in either part.
+  // This deliberately checks only for a close match to the First-Fix phrase.
+  const candidates = [];
+  const source = raw.toLowerCase();
+  const matches = source.match(/[a-z0-9]+/g) || [];
+
+  for (let i = 0; i < matches.length; i++) {
+    for (let count = 1; count <= 2 && i + count <= matches.length; count++) {
+      candidates.push(matches.slice(i, i + count).join(''));
+    }
+  }
+
+  const distance = (a, b) => {
+    const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+
+    for (let i = 1; i <= a.length; i++) {
+      const current = [i];
+
+      for (let j = 1; j <= b.length; j++) {
+        current[j] = Math.min(
+          current[j - 1] + 1,
+          prev[j] + 1,
+          prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+        );
+      }
+
+      for (let j = 0; j < current.length; j++) {
+        prev[j] = current[j];
+      }
+    }
+
+    return prev[b.length];
+  };
+
+  return candidates.some(candidate => {
+    if (candidate.length < 5 || candidate.length > 9) return false;
+    return distance(candidate, '1stfix') <= 1 ||
+           distance(candidate, 'firstfix') <= 1;
+  });
 
 }
 
@@ -2725,7 +2774,7 @@ otherField.style.display =
 
     if (form.elements.firstFixRecordsStatus) {
       form.elements.firstFixRecordsStatus.value =
-        checklist.firstFixRecordsStatus || 'Yes';
+        checklist.firstFixRecordsStatus || 'To be completed';
     }
 
     if (form.elements.firstFixRecordsLocation) {
@@ -5740,6 +5789,41 @@ document.addEventListener(
   },
   { passive: false }
 );
+
+
+// ============================================================
+// PDF VIEWER DOWNLOAD
+// ============================================================
+
+$('#downloadPdf').onclick =
+  async () => {
+
+    const recordId =
+      document
+        .getElementById('pdfDialog')
+        ?.dataset.recordId;
+
+    const record =
+      records.find(
+        x => String(x.id) === String(recordId)
+      );
+
+    try {
+
+      if (record) {
+        open(record, false);
+      }
+
+      await generatePdf(false);
+
+    } catch (error) {
+
+      console.error('PDF download error:', error);
+      alert('Unable to download the PDF.');
+
+    }
+
+  };
 
 
 // ============================================================
