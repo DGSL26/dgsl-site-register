@@ -2499,17 +2499,42 @@ function setupFirstFixStatusOther() {
   const other = document.getElementById('firstFixRecordsStatusOther');
   if (!select || !other) return;
 
+  const wrapper = document.createElement('div');
+  wrapper.style.position = 'relative';
+  wrapper.style.width = '100%';
+
+  select.parentNode.insertBefore(wrapper, select);
+  wrapper.appendChild(select);
+  wrapper.appendChild(other);
+
+  select.style.width = '100%';
+  select.style.boxSizing = 'border-box';
+
+  other.style.display = 'none';
+  other.disabled = true;
+
   const sync = () => {
     if (select.value === 'Other') {
-      select.style.display = 'none';
+      // Keep the dropdown and its arrow available so the user can change their mind.
       other.style.display = '';
       other.disabled = false;
+      other.style.position = 'absolute';
+      other.style.left = '0';
+      other.style.top = '6px';
+      other.style.width = 'calc(100% - 45px)';
+      other.style.height = 'calc(100% - 6px)';
+      other.style.boxSizing = 'border-box';
+      other.style.margin = '0';
+      other.style.zIndex = '2';
       other.focus();
     } else {
-      select.style.display = '';
       other.style.display = 'none';
       other.disabled = true;
       other.value = '';
+      other.style.position = '';
+      other.style.width = '';
+      other.style.height = '';
+      other.style.zIndex = '';
     }
   };
 
