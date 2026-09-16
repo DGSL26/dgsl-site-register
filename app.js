@@ -1537,15 +1537,19 @@ function render() {
 
   updateWeekChange(
     'closedWeek',
-    thisWeek.filter(
-      x => x.status === 'Work Permit Closed'
+    records.filter(
+      x =>
+        x.status === 'Work Permit Closed' &&
+        isThisWeek(x.takeBackDate)
     ).length
   );
 
   updateWeekChange(
     'holdWeek',
-    thisWeek.filter(
-      x => x.status === 'Work Permit on Hold'
+    records.filter(
+      x =>
+        x.status === 'Work Permit on Hold' &&
+        isThisWeek(x.takeBackDate || x.handoverDate)
     ).length
   );
 
