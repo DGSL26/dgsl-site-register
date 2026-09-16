@@ -1302,6 +1302,72 @@ tr.copied-handover-row td {
   box-sizing: border-box !important;
 }
 
+.pdf-header-actions {
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  flex: 0 0 auto;
+
+}
+
+
+.pdf-download-button {
+
+  width: 32px;
+
+  height: 32px;
+
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: #4b5563;
+
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  border-radius: 6px;
+
+}
+
+
+.pdf-download-button:hover {
+
+  background: #f1f3f5;
+
+}
+
+
+.pdf-download-button svg {
+
+  width: 20px;
+
+  height: 20px;
+
+  display: block;
+
+  fill: none;
+
+  stroke: currentColor;
+
+  stroke-width: 1.8;
+
+  stroke-linecap: round;
+
+  stroke-linejoin: round;
+
+}
+
+
 #pdfDialog > div {
   width: 100% !important;
   height: 100% !important;
