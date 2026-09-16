@@ -168,7 +168,23 @@
     </div>
     <div class="changelog-list">
       <section class="changelog-entry current">
-        <div class="changelog-version">1.2.8 <span class="changelog-current">Current</span></div>
+        <div class="changelog-version">1.3.0 <span class="changelog-current">Current</span></div>
+        <ul>
+          <li>Added Settings &gt; Data Management as a dedicated management view containing Bug Reports, Export Data and Import Data.</li>
+          <li>Added unread Bug Report indicators to Data Management and refined the unread badge so it only appears when unread reports exist.</li>
+          <li>Added the Work Permit filter control with Open/On Hold, Open Longer Than 1 Week and Clear Filter options.</li>
+          <li>Made the Work Permit summary cards act as the status filters, with a clear selected state.</li>
+          <li>Added Delete to the handover row More actions while keeping the row interaction workflow intact.</li>
+          <li>Added Share and More actions to the logged-out handover view, including Download PDF and Share.</li>
+          <li>Added individual rounded status bands to every handover row, matching the KPI card band thickness and colours: amber for Open, green for Closed and red for On Hold.</li>
+          <li>Refined the phone header presentation so the logo and site title use the available space more effectively without changing the tablet or computer layout.</li>
+          <li>Improved realtime connection handling so the register can recover cleanly from reused desktop/browser realtime channels.</li>
+          <li>Finalised the LIVE website update notification flow for version 1.3.0.</li>
+        </ul>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-version">1.2.8</div>
         <ul>
           <li>Added live Supabase updates so saved handover changes appear across connected devices without a manual refresh.</li>
           <li>Added live updates for Bug Reports and website notifications, plus a short fallback refresh while the site is open.</li>
