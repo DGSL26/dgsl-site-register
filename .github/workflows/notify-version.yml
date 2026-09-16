@@ -83,7 +83,6 @@ jobs:
             -X POST \
             "$SUPABASE_URL/rest/v1/site_notifications" \
             -H "apikey: $SUPABASE_SECRET_KEY" \
-            -H "Authorization: Bearer $SUPABASE_SECRET_KEY" \
             -H "Content-Type: application/json" \
             -H "Prefer: resolution=merge-duplicates,return=minimal" \
             --data "$(jq -n \
