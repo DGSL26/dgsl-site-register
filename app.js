@@ -21,6 +21,20 @@ let records = [];
 let editing = null;
 let filter = 'All';
 
+const SITE_VERSION = '1.2.8';
+const NOTIFICATIONS_TABLE = 'site_notifications';
+const NOTIFICATIONS_SEEN_KEY = 'dgsl_site_register_notifications_seen_v1';
+
+// Single source of truth for the website version.
+function applySiteVersion() {
+  document.querySelectorAll('[data-site-version]').forEach(element => {
+    element.textContent = SITE_VERSION;
+  });
+}
+
+applySiteVersion();
+document.addEventListener('DOMContentLoaded', applySiteVersion);
+
 const $ = s => document.querySelector(s);
 
 const rows = $('#rows');
@@ -29,6 +43,7 @@ const form = $('#handoverForm');
 
 let currentUser = null;
 let authDialog = null;
+let notificationPollTimer = null;
 
 const today = () => {
   const d = new Date();
@@ -90,6 +105,9 @@ function updateAuthUi() {
   if (newButton) newButton.style.display = currentUser ? '' : 'none';
   if (notificationsButton) notificationsButton.style.display = currentUser ? '' : 'none';
   if (settingsButton) settingsButton.style.display = currentUser ? '' : 'none';
+  showBugReportsButtonForAdmin();
+  const bugReportsButton = document.getElementById('settingsBugReports');
+  if (bugReportsButton) bugReportsButton.style.display = isBugReportAdmin() ? '' : 'none';
 
   const editHeader = document.getElementById('editHeader');
   if (editHeader) editHeader.style.display = currentUser ? '' : 'none';
@@ -101,17 +119,6 @@ function updateAuthUi() {
   const deleteButton = document.getElementById('delete');
   if (deleteButton) {
     deleteButton.style.display = currentUser ? '' : 'none';
-  }
-
-  const exportButton = document.getElementById('export');
-  if (exportButton) {
-    exportButton.style.display = currentUser ? '' : 'none';
-  }
-
-  const importButton = document.getElementById('import');
-  const importLabel = importButton?.closest('label.button');
-  if (importLabel) {
-    importLabel.style.display = currentUser ? '' : 'none';
   }
 
   document.querySelectorAll('.week-change').forEach(element => {
@@ -136,6 +143,8 @@ function openSettingsDialog() {
         </div>
         <div class="settings-options">
           <button type="button" id="settingsChangeLog" class="settings-option">Change Log</button>
+          <button type="button" id="settingsBugReport" class="settings-option">Report a Bug</button>
+          <button type="button" id="settingsDataManagement" class="settings-option" style="position:relative;">Data Management <span id="dataManagementBadge" class="notification-badge bug-reports-badge" aria-label="unread bug reports" style="display:none;"></span></button>
           <button type="button" id="settingsLogout" class="settings-option settings-logout">Log out</button>
         </div>
       </div>
@@ -147,20 +156,550 @@ function openSettingsDialog() {
       dialog.close();
       openChangeLogDialog();
     };
+    dialog.querySelector('#settingsBugReport').onclick = () => {
+      dialog.close();
+      openBugReportDialog();
+    };
+    dialog.querySelector('#settingsDataManagement').onclick = () => {
+      dialog.close();
+      openDataManagementDialog();
+    };
     dialog.querySelector('#settingsLogout').onclick = () => {
       dialog.close();
       showLogoutConfirmDialog();
     };
   }
   if (!dialog.open) dialog.showModal();
+  showBugReportsButtonForAdmin();
 }
 
-function openNotificationsDialog() {
+
+function openDataManagementDialog() {
+  let dialog = document.getElementById('dgslDataManagementDialog');
+
+  if (!dialog) {
+    dialog = document.createElement('dialog');
+    dialog.id = 'dgslDataManagementDialog';
+    dialog.className = 'header-settings-dialog';
+    dialog.innerHTML = `
+      <div class="header-dialog-inner">
+        <div class="header-dialog-head">
+          <div>
+            <p class="eyebrow">DGSL SITE REGISTER</p>
+            <h2>Data Management</h2>
+          </div>
+          <button type="button" class="icon" id="closeDataManagement" aria-label="Close">×</button>
+        </div>
+        <div class="settings-options">
+          <button type="button" id="dataManagementBugReports" class="settings-option" style="position:relative;">
+            Bug Reports
+            <span id="dataManagementBugReportsBadge" class="notification-badge bug-reports-badge" aria-label="unread bug reports" style="display:none;"></span>
+          </button>
+          <button type="button" id="dataManagementExport" class="settings-option">Export Data</button>
+          <label class="settings-option settings-import-option" for="dataManagementImport">
+            <span>Import Data</span>
+            <input id="dataManagementImport" type="file" accept="application/json" hidden>
+          </label>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(dialog);
+
+    dialog.querySelector('#closeDataManagement').onclick = () => dialog.close();
+
+    dialog.querySelector('#dataManagementBugReports').onclick = () => {
+      dialog.close();
+      openBugReportsDialog();
+    };
+
+    dialog.querySelector('#dataManagementExport').onclick = () => {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' }));
+      link.download = `DGSL-site-register-${today()}.json`;
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(link.href), 0);
+    };
+
+    dialog.querySelector('#dataManagementImport').onchange = async e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          if (!Array.isArray(imported)) throw new Error('Invalid backup');
+          for (const record of imported) {
+            const databaseRecord = toDatabase(record);
+            const { error } = await supabaseClient.from('handovers').upsert(databaseRecord);
+            if (error) throw error;
+          }
+          await loadRecords();
+          alert('Backup imported.');
+        } catch (error) {
+          console.error(error);
+          alert('That file is not a valid DGSL backup.');
+        } finally {
+          e.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    };
+  }
+
+  if (!dialog.open) dialog.showModal();
+  refreshBugReportsBadge();
+}
+
+const BUG_REPORTS_TABLE = 'bug_reports';
+
+function isBugReportAdmin() {
+  // Bug Reports are available to any logged-in user.
+  return !!currentUser;
+}
+
+function bugReportEscape(value) {
+  return String(value ?? '').replace(/[&<>"']/g, char => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[char]));
+}
+
+function updateBugReportsBadge(unreadCount) {
+  const count = Number(unreadCount) || 0;
+  const badges = [
+    document.getElementById('dataManagementBadge'),
+    document.getElementById('dataManagementBugReportsBadge')
+  ];
+
+  badges.forEach(badge => {
+    if (!badge) return;
+    badge.textContent = count > 99 ? '99+' : (count > 0 ? String(count) : '');
+    badge.className = 'notification-badge bug-reports-badge';
+    // Use an inline !important rule so the badge can never be forced visible
+    // by the notification CSS when there are zero unread reports.
+    badge.style.setProperty('display', count > 0 ? 'inline-flex' : 'none', 'important');
+  });
+}
+
+async function refreshBugReportsBadge() {
+  if (!isBugReportAdmin() || !supabaseClient) {
+    updateBugReportsBadge(0);
+    return;
+  }
+
+  try {
+    const { count, error } = await supabaseClient
+      .from(BUG_REPORTS_TABLE)
+      .select('id', { count: 'exact', head: true })
+      .eq('is_read', false);
+    if (error) throw error;
+    updateBugReportsBadge(count || 0);
+  } catch (error) {
+    console.error('Bug report unread count error:', error);
+    // If the unread-count request fails (for example because the table
+    // policy rejects the request), do not leave a stale badge showing.
+    updateBugReportsBadge(0);
+  }
+}
+
+function showBugReportsButtonForAdmin() {
+  const button = document.getElementById('settingsDataManagement');
+  if (button) button.style.display = isBugReportAdmin() ? '' : 'none';
+  if (isBugReportAdmin()) refreshBugReportsBadge();
+  else updateBugReportsBadge(0);
+}
+
+function openBugReportDialog() {
+  let dialog = document.getElementById('dgslBugReportDialog');
+  if (!dialog) {
+    dialog = document.createElement('dialog');
+    dialog.id = 'dgslBugReportDialog';
+    dialog.className = 'header-settings-dialog';
+    dialog.innerHTML = `
+      <div class="header-dialog-inner">
+        <div class="header-dialog-head">
+          <div>
+            <p class="eyebrow">DGSL SITE REGISTER</p>
+            <h2>Report a Bug</h2>
+          </div>
+          <button type="button" class="icon" id="closeBugReport" aria-label="Close">×</button>
+        </div>
+        <div class="settings-form">
+          <label for="bugReportName">Your name</label>
+          <input id="bugReportName" type="text" autocomplete="name" maxlength="120">
+          <label for="bugReportTask">What were you trying to do?</label>
+          <textarea id="bugReportTask" rows="3" maxlength="2000"></textarea>
+          <label for="bugReportDescription">What went wrong / what would you like to report?</label>
+          <textarea id="bugReportDescription" rows="5" maxlength="5000"></textarea>
+          <p id="bugReportStatus" class="form-status" aria-live="polite"></p>
+          <button type="button" id="submitBugReport" class="primary">Submit</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(dialog);
+    dialog.querySelector('#closeBugReport').onclick = () => dialog.close();
+    dialog.querySelector('#submitBugReport').onclick = submitBugReport;
+    dialog.addEventListener('close', () => {
+      document.body.classList.remove('form-dialog-open');
+    });
+  }
+  dialog.querySelector('#bugReportStatus').textContent = '';
+  document.body.classList.add('form-dialog-open');
+  if (!dialog.open) dialog.showModal();
+}
+
+async function submitBugReport() {
+  const dialog = document.getElementById('dgslBugReportDialog');
+  if (!dialog || !supabaseClient || !currentUser) return;
+
+  const name = dialog.querySelector('#bugReportName').value.trim();
+  const task = dialog.querySelector('#bugReportTask').value.trim();
+  const description = dialog.querySelector('#bugReportDescription').value.trim();
+  const status = dialog.querySelector('#bugReportStatus');
+  const button = dialog.querySelector('#submitBugReport');
+
+  if (!name || !task || !description) {
+    status.textContent = 'Please complete all three fields.';
+    return;
+  }
+
+  button.disabled = true;
+  status.textContent = 'Submitting...';
+
+  try {
+    const { error } = await supabaseClient.from(BUG_REPORTS_TABLE).insert({
+      name,
+      trying_to_do: task,
+      report: description,
+      website_version: SITE_VERSION,
+      page_url: window.location.href,
+      account_id: currentUser.id,
+      status: 'New',
+      is_read: false
+    });
+    if (error) throw error;
+
+    dialog.querySelector('#bugReportName').value = '';
+    dialog.querySelector('#bugReportTask').value = '';
+    dialog.querySelector('#bugReportDescription').value = '';
+    status.textContent = 'Bug report submitted. Thank you.';
+    if (isBugReportAdmin()) refreshBugReportsBadge();
+    setTimeout(() => { if (dialog.open) dialog.close(); }, 900);
+  } catch (error) {
+    console.error('Bug report error:', error);
+    status.textContent = 'Unable to submit the bug report. Please try again.';
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function formatBugReportDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? String(value || '') : date.toLocaleString();
+}
+
+async function openBugReportDetail(item, parentDialog) {
+  if (!item.is_read) {
+    const { error } = await supabaseClient
+      .from(BUG_REPORTS_TABLE)
+      .update({ is_read: true })
+      .eq('id', item.id);
+
+    if (error) {
+      console.error('Bug report read error:', error);
+      alert('Unable to mark this bug report as read. Please try again.');
+      return;
+    }
+
+    item.is_read = true;
+    refreshBugReportsBadge();
+  }
+
+  let detail = document.getElementById('dgslBugReportDetailDialog');
+
+  if (!detail) {
+    detail = document.createElement('dialog');
+    detail.id = 'dgslBugReportDetailDialog';
+    detail.className = 'header-settings-dialog';
+
+    detail.style.setProperty('width', 'min(950px, 94vw)', 'important');
+    detail.style.setProperty('max-width', '950px', 'important');
+    detail.style.setProperty('height', '82vh', 'important');
+    detail.style.setProperty('max-height', '82vh', 'important');
+    detail.style.setProperty('min-height', '0', 'important');
+    detail.style.setProperty('padding', '0', 'important');
+    detail.style.setProperty('overflow', 'hidden', 'important');
+    detail.style.setProperty('box-sizing', 'border-box', 'important');
+    detail.style.setProperty('margin', 'auto', 'important');
+
+    detail.innerHTML = `
+      <div class="header-dialog-inner" style="height:100%; max-height:none; overflow:hidden; box-sizing:border-box; display:flex; flex-direction:column;">
+        <div class="header-dialog-head">
+          <div>
+            <p class="eyebrow">DGSL SITE REGISTER</p>
+            <h2>Bug Report</h2>
+          </div>
+          <button type="button" class="icon" id="closeBugReportDetail" aria-label="Close">×</button>
+        </div>
+        <div id="bugReportDetailContent" class="settings-form" style="flex:1 1 auto; min-height:0; overflow:auto;"></div>
+        <div style="display:flex; justify-content:flex-end; align-items:center; padding:12px 22px 22px; margin-top:auto; flex:0 0 auto;">
+          <button type="button" id="deleteBugReport" class="danger" style="background:#c62828 !important; color:#fff !important; border-color:#c62828 !important; width:auto; min-width:150px; padding:9px 14px; font-size:.9em;">Delete Bug Report</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(detail);
+
+
+
+    detail.querySelector('#closeBugReportDetail').onclick = () => {
+      if (detail.open) detail.close();
+      if (parentDialog?.open) {
+        document.body.classList.add('form-dialog-open');
+      }
+    };
+
+    detail.addEventListener('close', () => {
+      if (parentDialog?.open) {
+        document.body.classList.add('form-dialog-open');
+      } else {
+        document.body.classList.remove('form-dialog-open');
+      }
+    });
+  }
+
+  const content = detail.querySelector('#bugReportDetailContent');
+
+  content.innerHTML = `
+    <div style="font-size:.95em; margin-bottom:14px;"><strong>${bugReportEscape(item.name)}</strong></div>
+    <div style="margin-bottom:14px;"><strong>What they were trying to do</strong><br>${bugReportEscape(item.trying_to_do).replace(/\n/g, '<br>')}</div>
+    <div style="margin-bottom:14px;"><strong>Report</strong><br>${bugReportEscape(item.report).replace(/\n/g, '<br>')}</div>
+    <div style="margin-bottom:14px;"><strong>Date / time</strong><br>${bugReportEscape(formatBugReportDate(item.created_at))}</div>
+    <div style="margin-bottom:14px;"><strong>Version</strong><br>${bugReportEscape(item.website_version || '')}</div>
+    ${item.page_url ? `<div style="margin-bottom:14px;"><strong>Page</strong><br><span style="overflow-wrap:anywhere">${bugReportEscape(item.page_url)}</span></div>` : ''}
+  `;
+
+  // Re-bind the delete button every time a report is opened so it always
+  // targets the currently selected report (not the first report ever opened).
+  const deleteButton = detail.querySelector('#deleteBugReport');
+  deleteButton.disabled = false;
+  deleteButton.textContent = 'Delete Bug Report';
+  deleteButton.onclick = async () => {
+    if (!item?.id || !supabaseClient) return;
+    if (!confirm('Delete this bug report? This cannot be undone.')) return;
+
+    deleteButton.disabled = true;
+    deleteButton.textContent = 'Deleting...';
+
+    try {
+      const { error } = await supabaseClient
+        .from(BUG_REPORTS_TABLE)
+        .delete()
+        .eq('id', item.id);
+      if (error) throw error;
+
+      // Remove the deleted report from the visible list immediately.
+      const list = parentDialog?.querySelector('#bugReportsList');
+      const listItem = list?.querySelector(`[data-bug-report-id="${CSS.escape(String(item.id))}"]`);
+      if (listItem) listItem.remove();
+
+      if (detail.open) detail.close();
+
+      // Reload the list from Supabase so all devices and the current window
+      // agree on the actual server state.
+      if (parentDialog?.open) {
+        await openBugReportsDialog();
+      }
+      await refreshBugReportsBadge();
+    } catch (error) {
+      console.error('Bug report delete error:', error);
+      alert('Unable to delete this bug report. Please check the Supabase DELETE policy.');
+      deleteButton.disabled = false;
+      deleteButton.textContent = 'Delete Bug Report';
+    }
+  };
+
+  if (!detail.open) detail.showModal();
+}
+
+async function openBugReportsDialog() {
+  if (!currentUser) return;
+
+  let dialog = document.getElementById('dgslBugReportsDialog');
+
+  if (!dialog) {
+    dialog = document.createElement('dialog');
+    dialog.id = 'dgslBugReportsDialog';
+    dialog.className = 'header-settings-dialog';
+
+    dialog.style.setProperty('width', 'min(950px, 94vw)', 'important');
+    dialog.style.setProperty('max-width', '950px', 'important');
+    dialog.style.setProperty('height', '82vh', 'important');
+    dialog.style.setProperty('max-height', '82vh', 'important');
+    dialog.style.setProperty('min-height', '0', 'important');
+    dialog.style.setProperty('padding', '0', 'important');
+    dialog.style.setProperty('overflow', 'hidden', 'important');
+    dialog.style.setProperty('box-sizing', 'border-box', 'important');
+    dialog.style.setProperty('margin', 'auto', 'important');
+
+    dialog.innerHTML = `
+      <div class="header-dialog-inner" style="height:100%; max-height:none; overflow:auto; box-sizing:border-box;">
+        <div class="header-dialog-head">
+          <div>
+            <p class="eyebrow">DGSL SITE REGISTER</p>
+            <h2>Bug Reports</h2>
+          </div>
+          <button type="button" class="icon" id="closeBugReports" aria-label="Close">×</button>
+        </div>
+        <div id="bugReportsList" class="settings-form"></div>
+      </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    dialog.querySelector('#closeBugReports').onclick = () => {
+      if (dialog.open) dialog.close();
+      document.body.classList.remove('form-dialog-open');
+    };
+
+    dialog.addEventListener('close', () => {
+      document.body.classList.remove('form-dialog-open');
+    });
+  }
+
+  const list = dialog.querySelector('#bugReportsList');
+  list.innerHTML = '<p>Loading reports...</p>';
+
+  document.body.classList.add('form-dialog-open');
+
+  if (!dialog.open) dialog.showModal();
+
+  try {
+    const { data, error } = await supabaseClient
+      .from(BUG_REPORTS_TABLE)
+      .select('id,name,trying_to_do,report,created_at,website_version,page_url,is_read')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    if (!data?.length) {
+      list.innerHTML = '<p>No bug reports have been submitted.</p>';
+      updateBugReportsBadge(0);
+      return;
+    }
+
+    const unreadCount = data.filter(item => !item.is_read).length;
+    updateBugReportsBadge(unreadCount);
+
+    list.innerHTML = data.map((item, index) => `
+      <button type="button" class="bug-report-list-item" data-bug-report-index="${index}" data-bug-report-id="${bugReportEscape(item.id)}"
+        style="display:block; width:100%; text-align:left; border:1px solid #d9e1ea; border-radius:12px; background:#fff; padding:14px 16px; margin:0 0 10px; cursor:pointer;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:6px;">
+          <strong>${bugReportEscape(item.name)}</strong>
+          ${!item.is_read ? '<span data-bug-report-new style="flex:none; background:#2f80ed; color:#fff; border-radius:999px; padding:3px 8px; font-size:.72em; font-weight:800;">NEW</span>' : ''}
+        </div>
+        <div style="font-size:.9em; opacity:.8; margin-bottom:7px;">
+          ${bugReportEscape(formatBugReportDate(item.created_at))} · Version ${bugReportEscape(item.website_version || '')}
+        </div>
+        <div style="margin-top:5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+          <strong>Report:</strong> ${bugReportEscape(item.report)}
+        </div>
+      </button>
+    `).join('');
+
+    list.querySelectorAll('[data-bug-report-index]').forEach(button => {
+      button.onclick = async () => {
+        const item = data[Number(button.dataset.bugReportIndex)];
+        await openBugReportDetail(item, dialog);
+
+        // Remove the NEW marker from this row immediately after it is opened.
+        const newLabel = button.querySelector('[data-bug-report-new]');
+        if (newLabel) newLabel.remove();
+        button.dataset.bugReportRead = 'true';
+
+        const remainingUnread = Array.from(list.querySelectorAll('[data-bug-report-index]'))
+          .filter(row => !row.dataset.bugReportRead && row.querySelector('[data-bug-report-new]')).length;
+        updateBugReportsBadge(remainingUnread);
+      };
+    });
+  } catch (error) {
+    console.error('Bug reports error:', error);
+    list.innerHTML = '<p>Unable to load bug reports. Please check the Supabase table and policies.</p>';
+  }
+}
+
+function getSeenNotificationIds() {
+  try {
+    const value = localStorage.getItem(NOTIFICATIONS_SEEN_KEY);
+    const parsed = value ? JSON.parse(value) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function setSeenNotificationIds(ids) {
+  try {
+    localStorage.setItem(
+      NOTIFICATIONS_SEEN_KEY,
+      JSON.stringify(Array.from(new Set(ids)).slice(-100))
+    );
+  } catch (_) {}
+}
+
+function markNotificationsSeen(notifications) {
+  const seen = getSeenNotificationIds();
+  const ids = notifications.map(n => String(n.id));
+  setSeenNotificationIds([...seen, ...ids]);
+  updateNotificationBadge(0);
+}
+
+function notificationMessageHtml(notification) {
+  const version = String(notification.version || '').replace(/[<>&"']/g, '');
+  const title = String(notification.title || 'Website updated').replace(/[<>&"']/g, '');
+  const message = String(notification.message || '').replace(/[<>&"']/g, '');
+  return `
+    <article class="site-notification-card">
+      <div class="site-notification-title">${title}</div>
+      ${version ? `<div class="site-notification-version">Version ${version}</div>` : ''}
+      <div class="site-notification-message">${message}</div>
+      <button type="button" class="primary site-notification-refresh">Refresh Website</button>
+    </article>
+  `;
+}
+
+async function loadSiteNotifications() {
+  if (!supabaseClient || !currentUser) {
+    updateNotificationBadge(0);
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabaseClient
+      .from(NOTIFICATIONS_TABLE)
+      .select('id,version,title,message,created_at')
+      .order('created_at', { ascending: false })
+      .limit(25);
+
+    if (error) throw error;
+
+    const notifications = Array.isArray(data) ? data : [];
+    const seen = new Set(getSeenNotificationIds());
+    const unseen = notifications.filter(n => !seen.has(String(n.id)));
+    updateNotificationBadge(unseen.length);
+    return unseen;
+  } catch (error) {
+    console.warn('Notifications could not be loaded:', error);
+    updateNotificationBadge(0);
+    return [];
+  }
+}
+
+async function openNotificationsDialog() {
   let dialog = document.getElementById('dgslNotificationsDialog');
   if (!dialog) {
     dialog = document.createElement('dialog');
     dialog.id = 'dgslNotificationsDialog';
-    dialog.className = 'header-settings-dialog';
+    dialog.className = 'header-settings-dialog notifications-dialog';
     dialog.innerHTML = `
       <div class="header-dialog-inner">
         <div class="header-dialog-head">
@@ -170,13 +709,37 @@ function openNotificationsDialog() {
           </div>
           <button type="button" class="icon" id="closeNotifications" aria-label="Close">×</button>
         </div>
-        <div class="notifications-empty">No new notifications.</div>
+        <div id="notificationsContent" class="notifications-content">
+          <div class="notifications-empty">Loading notifications...</div>
+        </div>
       </div>
     `;
     document.body.appendChild(dialog);
     dialog.querySelector('#closeNotifications').onclick = () => dialog.close();
   }
+
+  const content = dialog.querySelector('#notificationsContent');
+  content.innerHTML = '<div class="notifications-empty">Loading notifications...</div>';
   if (!dialog.open) dialog.showModal();
+
+  const notifications = await loadSiteNotifications();
+
+  if (!notifications.length) {
+    content.innerHTML = '<div class="notifications-empty">No new notifications.</div>';
+    return;
+  }
+
+  content.innerHTML = notifications.map(notificationMessageHtml).join('');
+  content.querySelectorAll('.site-notification-refresh').forEach(button => {
+    button.addEventListener('click', () => {
+      markNotificationsSeen(notifications);
+      dialog.close();
+      const url = new URL(window.location.href);
+      url.searchParams.set('refresh', String(Date.now()));
+      window.location.replace(url.toString());
+    });
+  });
+
 }
 
 function updateNotificationBadge(count = 0) {
@@ -185,6 +748,27 @@ function updateNotificationBadge(count = 0) {
   const safeCount = Math.max(0, Number(count) || 0);
   badge.textContent = safeCount > 99 ? '99+' : String(safeCount);
   badge.hidden = safeCount === 0;
+}
+
+async function refreshNotificationState() {
+  if (!currentUser) {
+    updateNotificationBadge(0);
+    if (notificationPollTimer) {
+      clearInterval(notificationPollTimer);
+      notificationPollTimer = null;
+    }
+    return;
+  }
+
+  await loadSiteNotifications();
+
+  if (!notificationPollTimer) {
+    notificationPollTimer = setInterval(() => {
+      if (currentUser && document.visibilityState === 'visible') {
+        refreshNotificationState();
+      }
+    }, 60000);
+  }
 }
 
 function openChangeLogDialog() {
@@ -231,7 +815,7 @@ function showLogoutConfirmDialog() {
           Are you sure you want to log out?
         </div>
         <div style="display:flex;gap:10px;justify-content:center;">
-          <button type="button" id="dgslLogoutCancel">Cancel</button>
+          <button type="button" id="dgslLogoutCancel" class="settings-cancel">Cancel</button>
           <button type="button" id="dgslLogoutConfirm" style="background:#008e39;color:#fff;border-color:#008e39;">Log out</button>
         </div>
       </div>
@@ -288,7 +872,7 @@ function showAuthDialog() {
           style="width:100%;box-sizing:border-box;margin-bottom:12px;">
         <div id="dgslAuthStatus" style="min-height:20px;margin-bottom:12px;font-size:14px;"></div>
         <div style="display:flex;gap:10px;justify-content:flex-end;">
-          <button type="button" id="dgslLoginCancel">Cancel</button>
+          <button type="button" id="dgslLoginCancel" class="settings-cancel">Cancel</button>
           <button type="button" id="dgslLoginSubmit" style="background:#008e39;color:#fff;border-color:#008e39;">Login</button>
         </div>
       </div>
@@ -682,9 +1266,36 @@ async function loadRecords() {
 // REAL-TIME UPDATES
 // ============================================================
 
-function setupRealtime() {
+let handoversRealtimeChannel = null;
 
-  supabaseClient
+async function setupRealtime() {
+
+  // A desktop browser can keep an existing Supabase channel alive when a
+  // page is refreshed/restored from cache. Remove that channel first so we
+  // never try to add postgres_changes handlers to an already-subscribed
+  // channel.
+  if (handoversRealtimeChannel) {
+    try {
+      await supabaseClient.removeChannel(handoversRealtimeChannel);
+    } catch (error) {
+      console.warn('Could not remove previous realtime channel:', error);
+    }
+    handoversRealtimeChannel = null;
+  }
+
+  const existing = supabaseClient
+    .getChannels()
+    .find(channel => channel.topic === 'realtime:handovers-live');
+
+  if (existing) {
+    try {
+      await supabaseClient.removeChannel(existing);
+    } catch (error) {
+      console.warn('Could not remove existing realtime channel:', error);
+    }
+  }
+
+  handoversRealtimeChannel = supabaseClient
     .channel('handovers-live')
     .on(
       'postgres_changes',
@@ -694,13 +1305,17 @@ function setupRealtime() {
         table: 'handovers'
       },
       async () => {
-
         await loadRecords();
-
       }
-    )
-    .subscribe();
+    );
 
+  handoversRealtimeChannel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      console.log('Supabase realtime connected: handovers');
+    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+      console.warn('Supabase realtime status:', status);
+    }
+  });
 }
 
 
@@ -806,7 +1421,30 @@ function esc(x = '') {
 // RENDER
 // ============================================================
 
+function updateSummaryCardSelection() {
+  document.querySelectorAll('[data-filter-card]').forEach(card => {
+    const selected = (card.dataset.filterCard || 'All') === filter;
+    card.classList.toggle('summary-card-selected', selected);
+    card.setAttribute('aria-pressed', selected ? 'true' : 'false');
+  });
+
+  const labelMap = {
+    'All': 'Showing: All Work Permits',
+    'Open/On Hold': 'Showing: Open/On Hold',
+    'Open Longer Than 1 Week': 'Showing: Open Longer Than 1 Week',
+    'Work Permit Open': 'Showing: Open Work Permits',
+    'Work Permit Closed': 'Showing: Closed Work Permits',
+    'Work Permit on Hold': 'Showing: Work Permits On Hold'
+  };
+  const label = labelMap[filter] || 'Showing: All Work Permits';
+
+  const indicator = document.getElementById('activeFilterLabel');
+  if (indicator) indicator.textContent = label;
+}
+
 function render() {
+
+  updateSummaryCardSelection();
 
   const q =
     $('#search')
@@ -817,21 +1455,33 @@ function render() {
 
   const filtered =
     records
-      .filter(x =>
+      .filter(x => {
+        let matchesFilter = true;
 
-        (
-          filter === 'All' ||
-          x.status === filter
-        )
+        if (filter === 'Open/On Hold') {
+          matchesFilter =
+            x.status === 'Work Permit Open' ||
+            x.status === 'Work Permit on Hold';
+        } else if (filter === 'Open Longer Than 1 Week') {
+          if (x.status !== 'Work Permit Open' || !x.handoverDate) {
+            matchesFilter = false;
+          } else {
+            const handover = new Date(`${x.handoverDate}T00:00:00`);
+            const cutoff = new Date();
+            cutoff.setHours(0, 0, 0, 0);
+            cutoff.setDate(cutoff.getDate() - 7);
+            matchesFilter = handover < cutoff;
+          }
+        } else if (filter !== 'All') {
+          matchesFilter = x.status === filter;
+        }
 
-        &&
-
-        Object.values(x)
-          .join(' ')
-          .toLowerCase()
-          .includes(q)
-
-      )
+        return matchesFilter &&
+          Object.values(x)
+            .join(' ')
+            .toLowerCase()
+            .includes(q);
+      })
       .sort((a, b) => {
         const aDate = String(a.handoverDate || '');
         const bDate = String(b.handoverDate || '');
@@ -899,7 +1549,7 @@ function render() {
       .map(
         x => `
 
-        <tr class="${x.handover === 'COPY' ? 'copied-handover-row' : ''}" data-row-id="${esc(x.id)}">
+        <tr class="${x.handover === 'COPY' ? 'copied-handover-row ' : ''}${x.status === 'Work Permit Open' ? 'row-status-open' : x.status === 'Work Permit Closed' ? 'row-status-closed' : x.status === 'Work Permit on Hold' ? 'row-status-hold' : ''}" data-row-id="${esc(x.id)}">
 
           <td>
             <b>
@@ -1253,28 +1903,18 @@ function unlockPdfDialogBackground() {
 
 function showRowActionDialog(id) {
 
-  const record =
-    records.find(
-      x => String(x.id) === String(id)
-    );
-
+  const record = records.find(x => String(x.id) === String(id));
   if (!record) return;
 
-  let dialog =
-    document.getElementById('rowActionDialog');
+  let dialog = document.getElementById('rowActionDialog');
 
   if (!dialog) {
-
-    dialog =
-      document.createElement('dialog');
-
-    dialog.id =
-      'rowActionDialog';
-
+    dialog = document.createElement('dialog');
+    dialog.id = 'rowActionDialog';
     dialog.style.padding = '0';
     dialog.style.border = '0';
     dialog.style.borderRadius = '12px';
-    dialog.style.maxWidth = '340px';
+    dialog.style.maxWidth = '360px';
     dialog.style.width = 'calc(100% - 32px)';
     dialog.style.height = 'auto';
     dialog.style.minHeight = '0';
@@ -1282,121 +1922,203 @@ function showRowActionDialog(id) {
     dialog.style.margin = 'auto';
     dialog.style.boxSizing = 'border-box';
     dialog.style.overflow = 'hidden';
-
     dialog.style.setProperty('position', 'fixed', 'important');
     dialog.style.setProperty('top', '50%', 'important');
     dialog.style.setProperty('left', '50%', 'important');
     dialog.style.setProperty('right', 'auto', 'important');
     dialog.style.setProperty('bottom', 'auto', 'important');
     dialog.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
-    dialog.style.setProperty('width', 'min(340px, calc(100vw - 32px))', 'important');
-    dialog.style.setProperty('height', '190px', 'important');
-    dialog.style.setProperty('min-height', '190px', 'important');
-    dialog.style.setProperty('max-height', '190px', 'important');
-
     document.body.appendChild(dialog);
   }
 
-  // Rebuild the popup every time it is opened so the available
-  // actions always match the current login state.
   dialog.innerHTML = `
-    <div style="padding:22px; text-align:center; height:auto; min-height:0; max-height:none; box-sizing:border-box;">
-      <div style="font-size:18px; font-weight:700; margin-bottom:18px;">
-        What would you like to do?
-      </div>
-      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+    <div style="padding:22px;text-align:center;box-sizing:border-box;">
+      <div style="font-size:18px;font-weight:700;padding:6px 0 18px;">What would you like to do?</div>
+      <div style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;">
         ${currentUser ? '<button type="button" id="rowActionEdit">Edit</button>' : ''}
-        ${currentUser ? '<button type="button" id="rowActionCopy">Copy</button>' : ''}
         <button type="button" id="rowActionView">View PDF</button>
-        <button type="button" id="rowActionDownload">Download PDF</button>
+        <button type="button" id="rowActionMore">More</button>
+      </div>
+      <div style="margin-top:18px;">
         <button type="button" id="rowActionCancel">Cancel</button>
       </div>
     </div>
   `;
 
-  document.getElementById('rowActionCancel').onclick =
-    () => dialog.close();
+  const close = () => dialog.close();
+  document.getElementById('rowActionCancel').onclick = close;
 
-  const rowEditButton =
-    document.getElementById('rowActionEdit');
-
-  if (rowEditButton) {
-    rowEditButton.onclick =
-      () => {
-        if (!currentUser) {
-          dialog.close();
-          return;
-        }
-
-        dialog.close();
-        setTimeout(() => open(record), 0);
-      };
-  }
-
-  document.getElementById('rowActionView').onclick =
-    () => {
-      dialog.close();
-      setTimeout(() => {
-
-        // Call the existing View button without relying on CSS.escape.
-        const viewButtons =
-          document.querySelectorAll('[data-view]');
-
-        for (const button of viewButtons) {
-
-          if (
-            String(button.getAttribute('data-view')) ===
-            String(id)
-          ) {
-            button.click();
-            break;
-          }
-
-        }
-
-      }, 0);
+  const editButton = document.getElementById('rowActionEdit');
+  if (editButton) {
+    editButton.onclick = () => {
+      if (!currentUser) return close();
+      close();
+      setTimeout(() => open(record), 0);
     };
+  }
 
-  const rowDownloadButton =
-    document.getElementById('rowActionDownload');
-
-  if (rowDownloadButton) {
-    rowDownloadButton.onclick =
-      async () => {
-        dialog.close();
-
-        try {
-          open(record, false);
-          await generatePdf(false);
-        } catch (error) {
-          console.error('PDF download error:', error);
-          alert('Unable to download the PDF.');
+  document.getElementById('rowActionView').onclick = () => {
+    close();
+    setTimeout(() => {
+      const viewButtons = document.querySelectorAll('[data-view]');
+      for (const button of viewButtons) {
+        if (String(button.getAttribute('data-view')) === String(id)) {
+          button.click();
+          break;
         }
-      };
+      }
+    }, 0);
+  };
+
+  const moreButton = document.getElementById('rowActionMore');
+  if (moreButton) {
+    moreButton.onclick = () => {
+      close();
+      setTimeout(() => showRowMoreDialog(record), 0);
+    };
   }
 
-  const rowCopyButton =
-    document.getElementById('rowActionCopy');
-
-  if (rowCopyButton) {
-    rowCopyButton.onclick =
-      () => {
-        if (!currentUser) {
-          dialog.close();
-          return;
-        }
-
-        dialog.close();
-        setTimeout(() => showCopyConfirmDialog(record), 0);
-      };
-  }
-
-  if (!dialog.open) {
-    dialog.showModal();
-  }
-
+  if (!dialog.open) dialog.showModal();
 }
 
+function showRowMoreDialog(record) {
+
+  let dialog = document.getElementById('rowMoreDialog');
+
+  if (!dialog) {
+    dialog = document.createElement('dialog');
+    dialog.id = 'rowMoreDialog';
+    dialog.style.padding = '0';
+    dialog.style.border = '0';
+    dialog.style.borderRadius = '12px';
+    dialog.style.width = 'min(360px, calc(100vw - 32px))';
+    dialog.style.maxWidth = '360px';
+    dialog.style.boxSizing = 'border-box';
+    dialog.style.margin = 'auto';
+    dialog.style.overflow = 'hidden';
+    document.body.appendChild(dialog);
+  }
+
+  dialog.innerHTML = `
+    <div style="padding:22px;text-align:center;box-sizing:border-box;">
+      <div style="position:relative;min-height:38px;margin-bottom:12px;">
+        <div style="font-size:18px;font-weight:700;padding:6px 58px 6px 58px;">More options</div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        ${currentUser ? '<button type="button" id="rowMoreCopy">Copy</button>' : '<button type="button" id="rowMoreDownload">Download PDF</button>'}
+        <button type="button" id="rowMoreShare">Share</button>
+        ${currentUser ? '<button type="button" id="rowMoreDelete">Delete</button>' : ''}
+      </div>
+      <div style="margin-top:18px;">
+        <button type="button" id="rowMoreCancel">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  dialog.querySelector('#rowMoreCancel').onclick = () => dialog.close();
+
+  const moreDownloadButton = dialog.querySelector('#rowMoreDownload');
+  if (moreDownloadButton) {
+    moreDownloadButton.onclick = async () => {
+      dialog.close();
+      try {
+        open(record, false);
+        await generatePdf(false);
+      } catch (error) {
+        console.error('PDF download error:', error);
+        alert('Unable to download the PDF.');
+      }
+    };
+  }
+
+  const moreCopyButton = dialog.querySelector('#rowMoreCopy');
+  if (moreCopyButton) {
+    moreCopyButton.onclick = () => {
+      dialog.close();
+      setTimeout(() => showCopyConfirmDialog(record), 0);
+    };
+  }
+
+  dialog.querySelector('#rowMoreShare').onclick = () => {
+    dialog.close();
+    setTimeout(() => sharePdfToDevice(record), 0);
+  };
+
+  const moreDeleteButton = dialog.querySelector('#rowMoreDelete');
+  if (moreDeleteButton) {
+    moreDeleteButton.onclick = async () => {
+      if (!confirm('Delete this handover record?')) return;
+      dialog.close();
+      try {
+        if (Array.isArray(record.photos)) {
+          for (const url of record.photos) {
+            await deletePhoto(url);
+          }
+        }
+        const { error } = await supabaseClient
+          .from('handovers')
+          .delete()
+          .eq('id', record.id);
+        if (error) throw error;
+        if (editing?.id === record.id) editing = null;
+        await loadRecords();
+      } catch (error) {
+        console.error('Delete handover error:', error);
+        alert('Unable to delete the handover.');
+      }
+    };
+  }
+
+  if (!dialog.open) dialog.showModal();
+}
+
+async function buildSharePdf(record) {
+  open(record, false);
+  const blob = await generatePdf(true);
+  if (!(blob instanceof Blob)) throw new Error('The PDF could not be created.');
+  return blob;
+}
+
+function shareFileName(record) {
+  const safeZone = String(record.zone || 'Handover').replace(/[^a-z0-9-_ ]/gi, '').replace(/\s+/g, '-');
+  return `DGSL-${safeZone || 'Handover'}-Handover-${today()}.pdf`;
+}
+
+async function sharePdfToDevice(record) {
+  try {
+    const blob = await buildSharePdf(record);
+    const buffer = await blob.arrayBuffer();
+    const file = new File([buffer], shareFileName(record), {
+      type: 'application/pdf',
+      lastModified: Date.now()
+    });
+
+    // iPhone/iPad Web Share is more reliable when the PDF is rebuilt as a
+    // File from an ArrayBuffer and the share payload contains files only.
+    const canShareFile =
+      navigator.share &&
+      (!navigator.canShare || navigator.canShare({ files: [file] }));
+
+    if (canShareFile) {
+      await navigator.share({ files: [file] });
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    alert('The PDF has been downloaded. You can now share it using your preferred app.');
+  } catch (error) {
+    if (error?.name === 'AbortError') return;
+    console.error('Share PDF error:', error);
+    alert('Unable to share the PDF.');
+  }
+}
 
 // ============================================================
 // CHECKLIST
@@ -2066,6 +2788,9 @@ function renderPendingPhotoPreviews() {
     img.style.objectFit = 'cover';
     img.style.borderRadius = '6px';
     img.style.border = '2px solid #1976d2';
+    img.style.cursor = 'pointer';
+    img.title = 'Click to view photo';
+    img.onclick = () => openPhotoViewer(img.src);
 
     const remove = document.createElement('button');
     remove.type = 'button';
@@ -2740,48 +3465,132 @@ function openPhotoViewer(url) {
       if (e.target === dialog) dialog.close();
     });
 
-    // Zoom the photo itself rather than allowing the browser to zoom the page.
     const image = dialog.querySelector('.photo-viewer-image');
-    const state = { scale: 1, pointers: new Map(), pinchDistance: 0, pinchScale: 1 };
+    const inner = dialog.querySelector('.photo-viewer-inner');
+    const state = {
+      scale: 1,
+      x: 0,
+      y: 0,
+      pointers: new Map(),
+      pinchDistance: 0,
+      pinchScale: 1,
+      pinchStartX: 0,
+      pinchStartY: 0,
+      pinchStartMidX: 0,
+      pinchStartMidY: 0,
+      pinchStartInnerLeft: 0,
+      pinchStartInnerTop: 0,
+      dragging: false,
+      dragPointerId: null,
+      dragLastX: 0,
+      dragLastY: 0,
+      baseWidth: 0,
+      baseHeight: 0
+    };
 
-    const applyZoom = () => {
-      const scale = Math.max(1, Math.min(5, state.scale));
-      state.scale = scale;
-      image.style.transform = `translate3d(0, 0, 0) scale(${scale})`;
+    const getBounds = () => {
+      const innerRect = inner.getBoundingClientRect();
+      const maxX = Math.max(0, (state.baseWidth * state.scale - innerRect.width) / 2);
+      const maxY = Math.max(0, (state.baseHeight * state.scale - innerRect.height) / 2);
+      return { maxX, maxY };
+    };
+
+    const clampPosition = () => {
+      const { maxX, maxY } = getBounds();
+      state.x = Math.max(-maxX, Math.min(maxX, state.x));
+      state.y = Math.max(-maxY, Math.min(maxY, state.y));
+    };
+
+    const applyTransform = () => {
+      state.scale = Math.max(1, Math.min(5, state.scale));
+      clampPosition();
+      image.style.transform = `translate3d(${state.x}px, ${state.y}px, 0) scale(${state.scale})`;
+      image.style.cursor = state.scale > 1 ? 'grab' : 'default';
+    };
+
+    const measureBaseImage = () => {
+      const rect = image.getBoundingClientRect();
+      state.baseWidth = rect.width / Math.max(1, state.scale);
+      state.baseHeight = rect.height / Math.max(1, state.scale);
+      applyTransform();
     };
 
     const distance = (a, b) =>
       Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
 
+    const midpoint = (a, b) => ({
+      x: (a.clientX + b.clientX) / 2,
+      y: (a.clientY + b.clientY) / 2
+    });
+
     image.addEventListener('pointerdown', e => {
       e.preventDefault();
       image.setPointerCapture?.(e.pointerId);
-      state.pointers.set(e.pointerId, e);
+      state.pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+
       if (state.pointers.size === 2) {
         const pts = [...state.pointers.values()];
+        const mid = midpoint(pts[0], pts[1]);
         state.pinchDistance = distance(pts[0], pts[1]);
         state.pinchScale = state.scale;
+        state.pinchStartX = state.x;
+        state.pinchStartY = state.y;
+        state.pinchStartMidX = mid.x;
+        state.pinchStartMidY = mid.y;
+        const innerRect = inner.getBoundingClientRect();
+        state.pinchStartInnerLeft = innerRect.left;
+        state.pinchStartInnerTop = innerRect.top;
+        state.dragging = false;
+      } else if (state.scale > 1) {
+        state.dragging = true;
+        state.dragPointerId = e.pointerId;
+        state.dragLastX = e.clientX;
+        state.dragLastY = e.clientY;
+        image.style.cursor = 'grabbing';
       }
     });
 
     image.addEventListener('pointermove', e => {
       if (!state.pointers.has(e.pointerId)) return;
       e.preventDefault();
-      state.pointers.set(e.pointerId, e);
+      state.pointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+
       if (state.pointers.size === 2 && state.pinchDistance > 0) {
         const pts = [...state.pointers.values()];
         const ratio = distance(pts[0], pts[1]) / state.pinchDistance;
-        state.scale = state.pinchScale * ratio;
-        applyZoom();
+        const oldScale = state.scale;
+        const nextScale = Math.max(1, Math.min(5, state.pinchScale * ratio));
+        const mid = midpoint(pts[0], pts[1]);
+        const innerRect = inner.getBoundingClientRect();
+        const focalX = mid.x - (innerRect.left + innerRect.width / 2);
+        const focalY = mid.y - (innerRect.top + innerRect.height / 2);
+        const actualRatio = nextScale / Math.max(0.0001, oldScale);
+        state.x = focalX - (focalX - state.pinchStartX) * actualRatio;
+        state.y = focalY - (focalY - state.pinchStartY) * actualRatio;
+        state.scale = nextScale;
+        applyTransform();
+        return;
+      }
+
+      if (state.dragging && state.dragPointerId === e.pointerId && state.scale > 1) {
+        state.x += e.clientX - state.dragLastX;
+        state.y += e.clientY - state.dragLastY;
+        state.dragLastX = e.clientX;
+        state.dragLastY = e.clientY;
+        applyTransform();
       }
     });
 
     const releasePointer = e => {
       state.pointers.delete(e.pointerId);
-      if (state.pointers.size < 2) {
-        state.pinchDistance = 0;
+      if (state.pointers.size < 2) state.pinchDistance = 0;
+      if (state.dragPointerId === e.pointerId) {
+        state.dragging = false;
+        state.dragPointerId = null;
+        image.style.cursor = state.scale > 1 ? 'grab' : 'default';
       }
     };
+
     image.addEventListener('pointerup', releasePointer);
     image.addEventListener('pointercancel', releasePointer);
     image.addEventListener('pointerleave', e => {
@@ -2790,14 +3599,57 @@ function openPhotoViewer(url) {
 
     image.addEventListener('wheel', e => {
       e.preventDefault();
-      state.scale += e.deltaY < 0 ? 0.25 : -0.25;
-      applyZoom();
+      const oldScale = state.scale;
+      const nextScale = Math.max(1, Math.min(5, oldScale + (e.deltaY < 0 ? 0.25 : -0.25)));
+      if (nextScale === oldScale) return;
+      const innerRect = inner.getBoundingClientRect();
+      const focalX = e.clientX - (innerRect.left + innerRect.width / 2);
+      const focalY = e.clientY - (innerRect.top + innerRect.height / 2);
+      const ratio = nextScale / oldScale;
+      state.x = focalX - (focalX - state.x) * ratio;
+      state.y = focalY - (focalY - state.y) * ratio;
+      state.scale = nextScale;
+      if (state.scale === 1) {
+        state.x = 0;
+        state.y = 0;
+      }
+      applyTransform();
     }, { passive: false });
+
+    image.addEventListener('dblclick', e => {
+      e.preventDefault();
+      const oldScale = state.scale;
+      const nextScale = oldScale >= 5 ? 1 : Math.min(5, oldScale * 2);
+      const innerRect = inner.getBoundingClientRect();
+      const focalX = e.clientX - (innerRect.left + innerRect.width / 2);
+      const focalY = e.clientY - (innerRect.top + innerRect.height / 2);
+      if (nextScale === 1) {
+        state.scale = 1;
+        state.x = 0;
+        state.y = 0;
+      } else {
+        const ratio = nextScale / oldScale;
+        state.x = focalX - (focalX - state.x) * ratio;
+        state.y = focalY - (focalY - state.y) * ratio;
+        state.scale = nextScale;
+      }
+      applyTransform();
+    });
+
+    image.addEventListener('load', () => {
+      state.scale = 1;
+      state.x = 0;
+      state.y = 0;
+      requestAnimationFrame(measureBaseImage);
+    });
 
     dialog.addEventListener('close', () => {
       state.scale = 1;
+      state.x = 0;
+      state.y = 0;
       state.pointers.clear();
       state.pinchDistance = 0;
+      state.dragging = false;
       image.style.transform = 'translate3d(0, 0, 0) scale(1)';
     });
   }
@@ -2816,10 +3668,9 @@ function openPhotoViewer(url) {
     dialog.dataset.lockWired = '1';
   }
 
-  if (!dialog.open) {
-    dialog.showModal();
-  }
+  if (!dialog.open) dialog.showModal();
 }
+
 
 
 // ============================================================
@@ -2969,53 +3820,114 @@ async function deletePhoto(
 
 
 // ============================================================
-// FILTERS
+// SUMMARY CARD FILTERS
 // ============================================================
 
 document
   .querySelectorAll(
-    '[data-filter]'
+    '[data-filter-card]'
   )
   .forEach(
-    button => {
+    card => {
 
-      button.onclick =
-        () => {
+      const applyCardFilter = () => {
+        filter = card.dataset.filterCard || 'All';
+        render();
+      };
 
-          filter =
-            button.dataset.filter;
+      card.onclick = applyCardFilter;
 
-
-          document
-            .querySelectorAll(
-              '[data-filter]'
-            )
-            .forEach(
-              x => {
-
-                x.classList.toggle(
-                  'active',
-                  x === button
-                );
-
-              }
-            );
-
-
-          render();
-
-        };
+      card.onkeydown = event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          applyCardFilter();
+        }
+      };
 
     }
   );
 
 
 // ============================================================
-// SEARCH
+// SEARCH + REGISTER FILTER
 // ============================================================
 
 $('#search').oninput =
   render;
+
+function setupRegisterFilter() {
+  const button = document.getElementById('permitFilterButton');
+  const menu = document.getElementById('permitFilterMenu');
+  if (!button || !menu) return;
+
+  // The clear control is a single full-width button across the bottom,
+  // not another filter/checkbox option.
+  menu.querySelectorAll('[data-permit-clear]').forEach(option => option.remove());
+
+  let clearButton = menu.querySelector('.permit-filter-clear-button');
+  if (!clearButton) {
+    clearButton = document.createElement('button');
+    clearButton.type = 'button';
+    clearButton.className = 'permit-filter-clear-button';
+    clearButton.textContent = 'Clear Filter';
+    clearButton.setAttribute('aria-label', 'Clear filter');
+    menu.appendChild(clearButton);
+  }
+
+  const updateMenuState = () => {
+    menu.querySelectorAll('[data-permit-filter]').forEach(option => {
+      const active = option.dataset.permitFilter === filter;
+      option.classList.toggle('active', active);
+      option.setAttribute('aria-checked', active ? 'true' : 'false');
+    });
+    const active = filter === 'Open/On Hold' || filter === 'Open Longer Than 1 Week';
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+  };
+
+  const closeMenu = () => {
+    menu.hidden = true;
+    button.setAttribute('aria-expanded', 'false');
+  };
+
+  button.onclick = event => {
+    event.stopPropagation();
+    menu.hidden = !menu.hidden;
+    updateMenuState();
+  };
+
+  menu.querySelectorAll('[data-permit-filter]').forEach(option => {
+    option.onclick = event => {
+      event.stopPropagation();
+      filter = option.dataset.permitFilter || 'All';
+      closeMenu();
+      render();
+      updateMenuState();
+    };
+  });
+
+  clearButton.onclick = event => {
+    event.stopPropagation();
+    filter = 'All';
+    closeMenu();
+    render();
+    updateMenuState();
+  };
+
+  document.addEventListener('click', event => {
+    if (!menu.hidden && !menu.contains(event.target) && event.target !== button && !button.contains(event.target)) {
+      closeMenu();
+    }
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !menu.hidden) closeMenu();
+  });
+
+  updateMenuState();
+}
+
+setupRegisterFilter();
 
 
 // ============================================================
@@ -3367,169 +4279,69 @@ $('#clearDgslSignature')
 
 
 // ============================================================
-// EXPORT BACKUP
+// START APPLICATION
 // ============================================================
 
-$('#export').onclick =
-  () => {
+async function startApp() {
 
-    const link =
-      document.createElement(
-        'a'
-      );
+  try {
 
+    addLogoToForm();
 
-    link.href =
-      URL.createObjectURL(
+    await loadSupabase();
 
-        new Blob(
+    const { data: sessionData } =
+      await supabaseClient.auth.getSession();
 
-          [
-            JSON.stringify(
-              records,
-              null,
-              2
-            )
-          ],
+    currentUser =
+      sessionData?.session?.user || null;
 
-          {
-            type:
-              'application/json'
-          }
+    ensureAuthUi();
+    updateAuthUi();
 
-        )
+    supabaseClient.auth.onAuthStateChange(
+      (_event, session) => {
+        currentUser =
+          session?.user || null;
 
-      );
-
-
-    link.download =
-      `DGSL-site-register-${today()}` +
-      `.json`;
-
-
-    link.click();
-
-
-    URL.revokeObjectURL(
-      link.href
+        updateAuthUi();
+        render();
+        refreshNotificationState();
+      }
     );
 
-  };
+    await loadRecords();
 
-
-// ============================================================
-// IMPORT BACKUP
-// ============================================================
-
-$('#import').onchange =
-  async e => {
-
-    const file =
-      e.target.files[0];
-
-
-    if (!file) {
-      return;
+    try {
+      await setupRealtime();
+    } catch (realtimeError) {
+      // Realtime is an enhancement; a realtime failure must not stop the
+      // register itself from loading from Supabase REST.
+      console.warn('Realtime setup failed:', realtimeError);
     }
+    await refreshNotificationState();
 
+  } catch (error) {
 
-    const reader =
-      new FileReader();
-
-
-    reader.onload =
-      async () => {
-
-        try {
-
-          const imported =
-            JSON.parse(
-              reader.result
-            );
-
-
-          if (
-            !Array.isArray(
-              imported
-            )
-          ) {
-
-            throw new Error(
-              'Invalid backup'
-            );
-
-          }
-
-
-          for (
-            const record
-            of imported
-          ) {
-
-            const databaseRecord =
-              toDatabase(
-                record
-              );
-
-
-            const {
-              error
-            } =
-              await supabaseClient
-                .from('handovers')
-                .upsert(
-                  databaseRecord
-                );
-
-
-            if (error) {
-              throw error;
-            }
-
-          }
-
-
-          await loadRecords();
-
-
-          alert(
-            'Backup imported.'
-          );
-
-
-        } catch (error) {
-
-          console.error(
-            error
-          );
-
-
-          alert(
-            'That file is not a valid DGSL backup.'
-          );
-
-        }
-
-      };
-
-
-    reader.readAsText(
-      file
+    console.error(
+      'Startup error:',
+      error
     );
 
-  };
+
+    alert(
+      'The DGSL Site Register could not connect to Supabase.'
+    );
+
+  }
+
+}
 
 
-// ============================================================
-// GENERATE PDF
-// ============================================================
+startApp();
 
-$('#generatePdf').onclick =
-  async () => {
 
-    await generatePdf();
 
-  };
 
 
 async function generatePdf(viewOnly = false) {
@@ -4831,64 +5643,6 @@ function getImageDimensions(
   );
 
 }
-
-
-// ============================================================
-// START APPLICATION
-// ============================================================
-
-async function startApp() {
-
-  try {
-
-    addLogoToForm();
-
-    await loadSupabase();
-
-    const { data: sessionData } =
-      await supabaseClient.auth.getSession();
-
-    currentUser =
-      sessionData?.session?.user || null;
-
-    ensureAuthUi();
-    updateAuthUi();
-
-    supabaseClient.auth.onAuthStateChange(
-      (_event, session) => {
-        currentUser =
-          session?.user || null;
-
-        updateAuthUi();
-        render();
-      }
-    );
-
-    await loadRecords();
-
-    setupRealtime();
-
-  } catch (error) {
-
-    console.error(
-      'Startup error:',
-      error
-    );
-
-
-    alert(
-      'The DGSL Site Register could not connect to Supabase.'
-    );
-
-  }
-
-}
-
-
-startApp();
-
-
-
 
 
 // Prevent iOS touch scrolling from leaking out of the PDF viewer.

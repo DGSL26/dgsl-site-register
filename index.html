@@ -9,7 +9,6 @@
 </head>
 
 <body>
-
 <header>
 
   <div style="display:flex;align-items:center;gap:15px;min-width:0;">
@@ -56,25 +55,37 @@
 
 <section class="cards" aria-label="Site summary">
 
-  <article class="blue">
+  <article class="blue summary-card-clickable" data-filter-card="All" tabindex="0" role="button" aria-label="Show all work permits">
+    <span class="summary-card-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 3.5h6v3H9z"></path><path d="M8.5 11h7M8.5 15h4"></path><path d="M17 15.5l1.4 1.4 2.6-3"></path></svg>
+    </span>
     <span>Total Work Permits</span>
     <strong id="total">0</strong>
     <small id="totalWeek" class="week-change">No change</small>
   </article>
 
-  <article class="amber">
+  <article class="amber summary-card-clickable" data-filter-card="Work Permit Open" tabindex="0" role="button" aria-label="Show open work permits">
+    <span class="summary-card-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7v5l3.5 2"></path></svg>
+    </span>
     <span>Work Permits Open</span>
     <strong id="progress">0</strong>
     <small id="progressWeek" class="week-change">No change</small>
   </article>
 
-  <article class="green">
+  <article class="green summary-card-clickable" data-filter-card="Work Permit Closed" tabindex="0" role="button" aria-label="Show closed work permits">
+    <span class="summary-card-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle><path d="m8.5 12.2 2.2 2.2 4.8-5"></path></svg>
+    </span>
     <span>Work Permits Closed</span>
     <strong id="closed">0</strong>
     <small id="closedWeek" class="week-change">No change</small>
   </article>
 
-  <article class="red">
+  <article class="red summary-card-clickable" data-filter-card="Work Permit on Hold" tabindex="0" role="button" aria-label="Show work permits on hold">
+    <span class="summary-card-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle><path d="M9.5 9v6M14.5 9v6"></path></svg>
+    </span>
     <span>Work Permits On hold</span>
     <strong id="hold">0</strong>
     <small id="holdWeek" class="week-change">No change</small>
@@ -89,56 +100,29 @@
 
     <div>
       <h2>Work Permits</h2>
-      <p></p>
+      <p id="activeFilterLabel" class="active-filter-label">Showing: All Work Permits</p>
     </div>
 
     <div class="actions">
 
-      <input
-        id="search"
-        type="search"
-        placeholder="Search zones, contractor..."
-        aria-label="Search register"
-      >
-
-      <button id="export">
-        Export
-      </button>
-
-      <label class="button">
-        Import
-        <input
-          id="import"
-          type="file"
-          accept="application/json"
-          hidden
-        >
-      </label>
+      <div class="search-filter-wrap">
+        <input id="search" type="search" placeholder="Search zones, contractor..." aria-label="Search register">
+        <div class="permit-filter-wrap">
+          <button type="button" id="permitFilterButton" class="permit-filter-button" aria-label="Filter work permits" aria-haspopup="true" aria-expanded="false" title="Filter work permits">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.5 8v5l-3 1v-6z"></path></svg>
+          </button>
+          <div id="permitFilterMenu" class="permit-filter-menu" hidden>
+            <div class="permit-filter-menu-title">Filter Work Permits</div>
+            <button type="button" class="permit-filter-option" data-permit-filter="Open/On Hold" role="menuitemcheckbox" aria-checked="false"><span class="permit-filter-check"></span><span><strong>Open/On Hold</strong><small>Show all open and on hold permits</small></span></button>
+            <button type="button" class="permit-filter-option" data-permit-filter="Open Longer Than 1 Week" role="menuitemcheckbox" aria-checked="false"><span class="permit-filter-check"></span><span><strong>Open Longer Than 1 Week</strong><small>Show open permits older than 7 days</small></span></button>
+          </div>
+        </div>
+      </div>
 
     </div>
 
   </div>
 
-
-  <div class="filters">
-
-    <button data-filter="All" class="active">
-      All
-    </button>
-
-    <button data-filter="Work Permit Open">
-      Work Permit Open
-    </button>
-
-    <button data-filter="Work Permit Closed">
-      Work Permit Closed
-    </button>
-
-    <button data-filter="Work Permit on Hold">
-      Work Permit on Hold
-    </button>
-
-  </div>
 
 
   <div class="table-wrap">
@@ -184,17 +168,109 @@
     </div>
     <div class="changelog-list">
       <section class="changelog-entry current">
-        <div class="changelog-version">1.2.1 <span>Current</span></div>
+        <div class="changelog-version">1.2.8 <span class="changelog-current">Current</span></div>
         <ul>
-          <li>Improved handover copying, including a clear red marking for copied handovers until they are edited and saved.</li>
-          <li>Handovers are listed by Handover Date, newest first.</li>
+          <li>Added live Supabase updates so saved handover changes appear across connected devices without a manual refresh.</li>
+          <li>Added live updates for Bug Reports and website notifications, plus a short fallback refresh while the site is open.</li>
+          <li>Improved Bug Reports with unread NEW labels, a live unread counter and read-on-open behaviour.</li>
+          <li>Added Bug Report deletion with confirmation and immediate list refresh.</li>
+          <li>Improved logged-out row actions with View PDF and More, including Download PDF and Share.</li>
+          <li>Improved logged-in row actions with Edit, View PDF, More, Copy and Share.</li>
+          <li>Improved photo zoom/panning, handover copying, status handling and responsive form behaviour.</li>
+          <li>Added dashboard summary icons and continued desktop, tablet and phone layout refinements.</li>
+        </ul>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-version">1.2.7</div>
+        <ul>
+          <li>Introduced the Bug Reports feature and Bug Reports list/detail views.</li>
+          <li>Added the Bug Report form with reporter name, task, report details, website version and page information.</li>
+          <li>Added unread tracking so new reports can be identified and opening a report marks it as read.</li>
+          <li>Added Bug Reports to Settings with an unread counter.</li>
+          <li>Added the Change Log presentation and current-version overview.</li>
+          <li>Continued improvements to handover rows, PDF viewing, copying, sharing and mobile/tablet usability.</li>
+        </ul>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-version">1.2.6</div>
+        <ul>
+          <li>Added the Settings and Notifications area to the signed-in site header.</li>
+          <li>Added site-update notifications and the notification badge behaviour.</li>
+          <li>Added the Change Log window and version bar.</li>
+          <li>Added and refined header icons and their responsive positioning.</li>
+          <li>Continued mobile and tablet layout refinements.</li>
+        </ul>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-version">1.2.5</div>
+        <ul>
+          <li>Refined the signed-in experience and editing controls for the site.</li>
+          <li>Improved login, logout and edit visibility behaviour across the register.</li>
+          <li>Continued improvements to the handover form and responsive layout.</li>
+          <li>Refined PDF generation and viewing, including records containing multiple photos.</li>
+          <li>Improved photo removal and saved-photo handling while editing.</li>
+        </ul>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-version">1.2.4</div>
+        <ul>
+          <li>Improved the in-page PDF viewer and View action for handovers.</li>
+          <li>Improved whole-row interaction and the row action popup.</li>
+          <li>Improved PDF layout and the handling of handover photos.</li>
+          <li>Improved multiple-photo support in generated PDFs.</li>
+          <li>Continued responsive improvements for phones, tablets and computers.</li>
+        </ul>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-version">1.2.3</div>
+        <ul>
+          <li>Added and refined the dedicated handover View/PDF experience.</li>
+          <li>Improved row clicking so a handover can be selected reliably on touch devices.</li>
+          <li>Improved photo viewing and the handover photo presentation.</li>
+          <li>Continued refinements to copying, sorting and the register actions.</li>
+        </ul>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-version">1.2.2</div>
+        <ul>
+          <li>Continued development of the shared Site Register and its Supabase-backed handover data.</li>
+          <li>Refined mobile layout and restored the intended register behaviour on smaller screens.</li>
+          <li>Improved handover photo viewing, sorting and copying workflows.</li>
+          <li>Continued improvements to signatures, PDFs and the Take Back information.</li>
+        </ul>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-version">1.2.1</div>
+        <ul>
+          <li>Refined the handover register following the 1.2.0 feature work.</li>
+          <li>Continued the improvements to handover copying and the red copied-handover indicator.</li>
+          <li>Continued newest-first Handover Date sorting.</li>
+          <li>Continued photo viewing, photo zoom, PDF, signatures and Take Back improvements.</li>
+          <li>Continued status colours, dashboard totals and weekly-change information.</li>
+          <li>Improved mobile and tablet usability, including signature pads and date fields.</li>
+        </ul>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-version">1.2.0</div>
+        <ul>
+          <li>Improved handover copying, including clear red marking for copied handovers until they are edited and saved.</li>
+          <li>Changed handover ordering to Handover Date, newest first.</li>
           <li>Added photo viewing with an in-page viewer and photo zoom without opening a new tab.</li>
           <li>Improved the PDF viewer, signatures, site photos and Take Back details.</li>
-          <li>Improved status handling, including Open, Closed and On Hold with matching colours.</li>
+          <li>Improved status handling with Open, Closed and On Hold colours.</li>
           <li>Added dashboard totals and weekly changes.</li>
           <li>Improved mobile and tablet usability, including safer signature pads and clearer date fields.</li>
         </ul>
       </section>
+
       <section class="changelog-entry">
         <div class="changelog-version">Earlier development</div>
         <ul>
@@ -208,7 +284,7 @@
         </ul>
       </section>
     </div>
-    <div class="changelog-footer">Version 1.2.1</div>
+    <div class="changelog-footer">Version&nbsp;<span data-site-version></span></div>
   </div>
 </dialog>
 
@@ -1026,7 +1102,7 @@
 
 
 <div class="version-bar" aria-label="Website version">
-  DGSL Site Register · Version 1.2.1
+  DGSL Site Register · Version&nbsp;<span data-site-version></span>
 </div>
 
 </body>
