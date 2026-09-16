@@ -241,7 +241,39 @@ main {
 
   padding: 18px;
 
+  position: relative;
+
 }
+
+.summary-card-icon {
+  position: absolute;
+  top: 26px;
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.summary-card-icon svg {
+  width: 25px;
+  height: 25px;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.cards article.blue .summary-card-icon { background: #eaf2ff; }
+.cards article.blue .summary-card-icon svg { stroke: #2f80ed; }
+.cards article.amber .summary-card-icon { background: #fff5dc; }
+.cards article.amber .summary-card-icon svg { stroke: #d99b24; }
+.cards article.green .summary-card-icon { background: #e7f6ed; }
+.cards article.green .summary-card-icon svg { stroke: #3b8f5a; }
+.cards article.red .summary-card-icon { background: #fdeaea; }
+.cards article.red .summary-card-icon svg { stroke: #c84b4b; }
 
 
 .cards article span {
@@ -254,6 +286,10 @@ main {
 
   margin-bottom: 8px;
 
+}
+
+.cards article > span:not(.summary-card-icon) {
+  padding-right: 52px;
 }
 
 
@@ -334,6 +370,50 @@ main {
 
 }
 
+
+
+/* Summary cards: clearly show which dashboard filter is selected. */
+.cards article.summary-card-clickable {
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.cards article.summary-card-clickable:focus-visible {
+  outline: 2px solid #2f80ed;
+  outline-offset: 2px;
+}
+
+.cards article.summary-card-selected {
+  border-width: 2px !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.10);
+}
+
+.cards article.blue.summary-card-selected {
+  border-color: #2f80ed !important;
+  background: #f5f9ff !important;
+}
+
+.cards article.amber.summary-card-selected {
+  border-color: #d99b24 !important;
+  background: #fffaf0 !important;
+}
+
+.cards article.green.summary-card-selected {
+  border-color: #3b8f5a !important;
+  background: #f4fbf7 !important;
+}
+
+.cards article.red.summary-card-selected {
+  border-color: #c84b4b !important;
+  background: #fff6f6 !important;
+}
+
+.active-filter-label {
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5b6670;
+}
 
 /* ============================================================
    PANEL
@@ -1101,9 +1181,9 @@ body {
   width: min(340px, calc(100vw - 32px)) !important;
   min-width: 0 !important;
   max-width: min(340px, calc(100vw - 32px)) !important;
-  height: 190px !important;
-  min-height: 190px !important;
-  max-height: 190px !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
   padding: 0 !important;
   margin: 0 !important;
   box-sizing: border-box !important;
@@ -1114,9 +1194,9 @@ body {
   width: 100% !important;
   height: auto !important;
   min-height: 0 !important;
-  max-height: 240px !important;
+  max-height: none !important;
   box-sizing: border-box !important;
-  overflow: hidden !important;
+  overflow: visible !important;
 }
 
 /* ============================================================
@@ -1495,12 +1575,12 @@ body.change-log-open {
 .changelog-kicker { font-size:11px; font-weight:700; letter-spacing:1.2px; color:#1f4e78; margin-bottom:5px; }
 .changelog-header h2 { margin:0 0 6px; font-size:28px; color:#162b3d; }
 .changelog-header p { margin:0; font-size:14px; color:#607080; }
-.changelog-close { position:absolute; top:16px; right:18px; z-index:3; width:38px; height:38px; padding:0 !important; border:0 !important; border-radius:50%; background:#e9eef3; color:#34495a; font-size:25px; line-height:36px; cursor:pointer; }
+.changelog-close { position:absolute; top:16px; right:18px; z-index:3; width:38px; height:38px; padding:0 !important; border:1px solid #cbd5df !important; border-radius:6px !important; background:#fff !important; color:#34495a; font-size:25px; line-height:36px; cursor:pointer; }
 .changelog-list { padding:22px 30px 8px; }
 .changelog-entry { padding:0 0 20px; margin:0 0 20px; border-bottom:1px solid #e1e7ec; }
 .changelog-entry:last-child { border-bottom:0; margin-bottom:0; }
 .changelog-version { font-size:18px; font-weight:700; color:#1f4e78; margin-bottom:10px; }
-.changelog-version span { display:inline-block; margin-left:7px; padding:3px 8px; border-radius:999px; background:#7acb8a; color:#173a23; font-size:11px; font-weight:700; vertical-align:2px; }
+.changelog-version .changelog-current { display:inline-block; margin-left:7px; padding:3px 8px; border-radius:999px; background:#7acb8a; color:#173a23; font-size:11px; font-weight:700; vertical-align:2px; }
 .changelog-entry ul { margin:0; padding-left:22px; }
 .changelog-entry li { margin:0 0 8px; line-height:1.45; font-size:14px; }
 .changelog-footer { padding:13px 30px 17px; border-top:1px solid #e1e7ec; text-align:center; font-size:12px; color:#71808d; }
@@ -1521,6 +1601,9 @@ body.change-log-open {
 .header-dialog-head h2 { color:#1f4e78; }
 .settings-options { display:grid; gap:10px; padding-top:18px; }
 .settings-option { width:100%; text-align:left; padding:12px 14px; background:#fff; }
+.settings-section { display:grid; gap:10px; margin-top:4px; padding-top:15px; border-top:1px solid #e0e5e9; }
+.settings-section-title { font-size:12px; font-weight:700; letter-spacing:.7px; text-transform:uppercase; color:#607080; margin-bottom:1px; }
+.settings-import-option { display:block; cursor:pointer; box-sizing:border-box; border:1px solid #cbd5df; border-radius:6px; }
 .settings-logout { color:#b42318; }
 .notifications-empty { padding:22px 4px 5px; color:#68737d; }
 .version-bar { cursor:default !important; }
@@ -1536,4 +1619,299 @@ body.change-log-open {
 @media (max-width:700px) {
   html { -webkit-text-size-adjust:100%; }
   .changelog-header,.changelog-list { padding-left:20px; padding-right:20px; }
+}
+
+/* ============================================================
+   SITE NOTIFICATIONS
+   ============================================================ */
+.notifications-dialog {
+  width: min(520px, calc(100vw - 32px)) !important;
+  max-width: 520px !important;
+}
+.notifications-content {
+  padding-top: 18px;
+}
+.notifications-empty {
+  padding: 8px 4px 5px;
+  color: #68737d;
+}
+.site-notification-card {
+  border: 1px solid #dbe3ea;
+  border-radius: 10px;
+  padding: 16px;
+  background: #f8fafc;
+}
+.site-notification-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f4e78;
+  margin-bottom: 5px;
+}
+.site-notification-version {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #e8f1f8;
+  color: #1f4e78;
+  font-size: 12px;
+  font-weight: 700;
+}
+.site-notification-message {
+  color: #34495a;
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+.site-notification-refresh {
+  width: 100%;
+}
+
+
+/* ============================================================
+   ROW ACTION / SHARE DIALOGS
+   ============================================================ */
+#rowMoreDialog,
+#rowShareDialog {
+  max-height: none !important;
+  overflow: hidden !important;
+}
+
+/* The photo viewer uses the image itself for zoom and drag/pan. */
+#photoViewerDialog .photo-viewer-image {
+  transform-origin: center center !important;
+  will-change: transform;
+  touch-action: none !important;
+}
+
+.settings-cancel,
+#rowActionCancel,
+#rowMoreCancel,
+#copyConfirmCancel { color:#b42318 !important; border-color:#b42318 !important; background:#fff !important; }
+
+.settings-cancel:hover,
+#rowActionCancel:hover,
+#rowMoreCancel:hover,
+#copyConfirmCancel:hover { background:#fff1f1 !important; color:#b42318 !important; border-color:#b42318 !important; }
+
+/* ============================================================
+   SUMMARY CARD ICONS — desktop alignment/background fix
+   ============================================================ */
+.summary-card-icon {
+  display: grid !important;
+  place-items: center !important;
+  align-items: center !important;
+  justify-items: center !important;
+  line-height: 0 !important;
+  margin: 0 !important;
+}
+.summary-card-icon svg {
+  display: block !important;
+  width: 25px !important;
+  height: 25px !important;
+  margin: 0 !important;
+  flex: 0 0 auto !important;
+}
+.cards article.blue .summary-card-icon { background-color: #eaf2ff !important; }
+.cards article.amber .summary-card-icon { background-color: #fff5dc !important; }
+.cards article.green .summary-card-icon { background-color: #e7f6ed !important; }
+.cards article.red .summary-card-icon { background-color: #fdeaea !important; }
+
+/* Keep the Bug Reports unread count beside the button text. */
+#settingsBugReports .bug-reports-badge {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  margin-left: 8px !important;
+  vertical-align: middle !important;
+}
+
+/* Desktop summary bubbles: keep all four backgrounds equally visible. */
+@media (min-width: 801px) {
+  .cards article.blue .summary-card-icon { background-color: #e4efff !important; }
+  .cards article.amber .summary-card-icon { background-color: #fff2cf !important; }
+  .cards article.green .summary-card-icon { background-color: #e1f3e8 !important; }
+  .cards article.red .summary-card-icon { background-color: #f9e1e1 !important; }
+}
+
+/* FINAL PIXEL-CENTRED SUMMARY ICONS */
+.cards .summary-card-icon {
+  display: block !important;
+  position: absolute !important;
+  top: 26px !important;
+  right: 18px !important;
+  width: 42px !important;
+  height: 42px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  border-radius: 50% !important;
+}
+.cards .summary-card-icon svg {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 25px !important;
+  height: 25px !important;
+  margin: 0 !important;
+  display: block !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* Bug Reports: same blue badge treatment as Notifications.
+   It is only shown by app.js when unread/new reports exist. */
+#settingsBugReports .bug-reports-badge {
+  position: static !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+  min-width: 17px !important;
+  height: 17px !important;
+  padding: 0 4px !important;
+  margin: 0 0 0 8px !important;
+  border-radius: 999px !important;
+  background: #2f80ed !important;
+  color: #fff !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  line-height: 17px !important;
+  text-align: center !important;
+  border: 1px solid #fff !important;
+  font-variant-numeric: tabular-nums !important;
+}
+#settingsBugReports .bug-reports-badge[style*="display: none"] {
+  display: none !important;
+}
+#settingsBugReports .bug-reports-badge[style*="display: inline-flex"] {
+  display: inline-flex !important;
+}
+.changelog-list { display: grid; gap: 14px; }
+.changelog-entry { margin: 0 !important; }
+.changelog-version { display: flex; align-items: center; gap: 8px; }
+
+
+/* Data Management submenu */
+.settings-management-option { display:flex !important; align-items:center; justify-content:space-between; gap:8px; }
+.settings-management-item { width:100%; }
+
+
+/* Compact permit filter beside search */
+.search-filter-wrap { display:flex; align-items:center; gap:8px; position:relative; }
+.search-filter-wrap #search { min-width:0; }
+.permit-filter-wrap { position:relative; flex:0 0 auto; }
+.permit-filter-button { width:42px; height:38px; padding:8px !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; box-sizing:border-box !important; border:1px solid #cbd5df !important; border-radius:6px !important; background:#fff !important; }
+.permit-filter-button svg { width:20px; height:20px; fill:none; stroke:#2f80ed; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; display:block; }
+.permit-filter-button.active { background:#eaf2ff !important; border-color:#2f80ed !important; }
+.permit-filter-button.active svg { stroke:#2f80ed; }
+.permit-filter-menu { position:absolute; top:calc(100% + 8px); right:0; z-index:50; width:min(330px, calc(100vw - 32px)); padding:12px; background:#fff; border:1px solid #d9e2ea; border-radius:10px; box-shadow:0 12px 30px rgba(31,78,120,.16); box-sizing:border-box; }
+.permit-filter-menu[hidden] { display:none !important; }
+.permit-filter-menu-title { font-size:13px; font-weight:700; color:#1f2933; padding:4px 8px 8px; }
+.permit-filter-option { width:100%; display:flex; align-items:flex-start; gap:10px; padding:10px 8px !important; border:0 !important; border-radius:7px !important; background:#fff !important; text-align:left; }
+.permit-filter-option + .permit-filter-option { border-top:1px solid #edf1f4 !important; border-radius:0 !important; }
+.permit-filter-option:hover, .permit-filter-option.active { background:#f5f9ff !important; }
+.permit-filter-check { flex:0 0 16px; width:16px; height:16px; margin-top:2px; border:1.5px solid #9aa8b5; border-radius:3px; box-sizing:border-box; }
+.permit-filter-option.active .permit-filter-check { border-color:#2f80ed; background:#2f80ed; box-shadow:inset 0 0 0 3px #fff; }
+.permit-filter-option strong { display:block; color:#1f4e78; font-size:13px; line-height:1.3; }
+.permit-filter-option small { display:block; color:#68737d; font-size:11px; line-height:1.35; margin-top:2px; }
+@media (max-width:800px) { .search-filter-wrap { width:100%; } .search-filter-wrap #search { flex:1 1 auto; width:auto; } .permit-filter-button { width:42px; height:38px; flex:0 0 42px; } }
+
+/* Keep the Data Management unread badge blue and centered like Notifications. */
+#settingsDataManagement .bug-reports-badge {
+  position:static !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  vertical-align:middle !important;
+  box-sizing:border-box !important;
+  min-width:17px !important;
+  height:17px !important;
+  padding:0 4px !important;
+  margin:0 0 0 8px !important;
+  border-radius:999px !important;
+  background:#2f80ed !important;
+  color:#fff !important;
+  font-size:10px !important;
+  font-weight:700 !important;
+  line-height:17px !important;
+  text-align:center !important;
+  border:1px solid #fff !important;
+  font-variant-numeric:tabular-nums !important;
+}
+#settingsDataManagement .bug-reports-badge[style*="display: none"] { display:none !important; }
+#settingsDataManagement .bug-reports-badge[style*="display: inline-flex"] { display:inline-flex !important; }
+
+
+/* Clear Filter is a full-width action at the bottom of the filter menu. */
+.permit-filter-clear-button {
+  width: 100% !important;
+  display: block !important;
+  margin-top: 8px !important;
+  padding: 10px 12px !important;
+  border: 0 !important;
+  border-top: 1px solid #edf1f4 !important;
+  border-radius: 0 0 7px 7px !important;
+  background: #fff !important;
+  color: #1f4e78 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  text-align: center !important;
+}
+
+.permit-filter-clear-button:hover {
+  background: #f5f9ff !important;
+}
+
+/* Data Management keeps its unread badge beside the button text. */
+#settingsDataManagement {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+
+#dataManagementBadge,
+#dataManagementBugReportsBadge {
+  position: static !important;
+  flex: 0 0 auto !important;
+  align-items: center !important;
+  justify-content: center !important;
+  vertical-align: middle !important;
+}
+
+/* Remove the divider line directly beneath the Bug Reports title. */
+#dgslBugReportsDialog .header-dialog-head { border-bottom: 0 !important; }
+
+/* Phone only: balance the header so the logo and site title each use half the row. */
+@media (max-width: 600px) {
+  header > div:first-child {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+    overflow: visible !important;
+  }
+
+  header > div:first-child > img {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    object-fit: contain !important;
+  }
+
+  header > div:first-child > div {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  header > div:first-child h1 {
+    font-size: 26px !important;
+    line-height: 1.08 !important;
+  }
+
+  header > div:first-child .eyebrow {
+    font-size: 12px !important;
+  }
 }
