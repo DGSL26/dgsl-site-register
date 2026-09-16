@@ -32,23 +32,11 @@ jobs:
           echo "Current version: $VERSION"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Only continue for the final 1.3.0 release
-        id: release_check
-        env:
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          if [ "$VERSION" = "1.3.0" ]; then
-            echo "release_ready=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "LIVE notification is intentionally disabled until SITE_VERSION is 1.3.0."
-            echo "release_ready=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Check whether website version changed
         id: version_check
-        if: steps.release_check.outputs.release_ready == 'true'
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual workflow run — creating notification for the current website version."
             echo "version_changed=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -60,22 +48,35 @@ jobs:
           echo "Previous version: $PREVIOUS_VERSION"
 
           if [ -n "$CURRENT_VERSION" ] && [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
-            echo "Version changed."
+            echo "Version changed from $PREVIOUS_VERSION to $CURRENT_VERSION."
             echo "version_changed=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Version did not change."
+            echo "Version did not change. No notification will be created."
             echo "version_changed=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Create LIVE notification for 1.3.0
-        if: steps.release_check.outputs.release_ready == 'true' && steps.version_check.outputs.version_changed == 'true'
+      - name: Replace existing LIVE notification with latest version
+        if: steps.version_check.outputs.version_changed == 'true'
         env:
           SUPABASE_URL: https://mgxbsxqgjxpdvdjsixqi.supabase.co
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          echo "Creating LIVE website-update notification for version $VERSION..."
+          if [ -z "$SUPABASE_SECRET_KEY" ]; then
+            echo "SUPABASE_SECRET_KEY GitHub secret is not set."
+            exit 1
+          fi
 
+          echo "Removing previous LIVE website-update notifications..."
+          curl --fail-with-body \
+            --http1.1 \
+            --retry 3 \
+            --retry-all-errors \
+            -X DELETE \
+            "$SUPABASE_URL/rest/v1/site_notifications?id=not.is.null" \
+            -H "apikey: $SUPABASE_SECRET_KEY"
+
+          echo "Creating LIVE website-update notification for version $VERSION..."
           curl --fail-with-body \
             --http1.1 \
             --retry 3 \
@@ -84,11 +85,11 @@ jobs:
             "$SUPABASE_URL/rest/v1/site_notifications" \
             -H "apikey: $SUPABASE_SECRET_KEY" \
             -H "Content-Type: application/json" \
-            -H "Prefer: resolution=merge-duplicates,return=minimal" \
+            -H "Prefer: return=minimal" \
             --data "$(jq -n \
               --arg version "$VERSION" \
               --arg title "Website updated" \
               --arg message "A new version of the DGSL Site Register is available. Please refresh the website to load the latest version." \
               '{version:$version,title:$title,message:$message}')"
 
-          echo "LIVE 1.3.0 notification created successfully."
+          echo "LIVE $VERSION notification created successfully."
