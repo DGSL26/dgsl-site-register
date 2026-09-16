@@ -1123,6 +1123,12 @@ let photosToRemove = [];
     takeBackSnagCompleted:
       x.take_back_snag_completed || '',
 
+    firstFixRecordsStatus:
+      takeBackChecklist.firstFixRecordsStatus || '',
+
+    firstFixRecordsLocation:
+      takeBackChecklist.firstFixRecordsLocation || '',
+
     takeBackChecklist:
       takeBackChecklist
 
@@ -2124,6 +2130,33 @@ async function sharePdfToDevice(record) {
 // CHECKLIST
 // ============================================================
 
+function isFirstFixWorkDescription(value) {
+
+  return /(?:\b1\s*st\b|\bfirst\b)[\s\u00a0\-\u2010\u2011\u2012\u2013\u2014_\/\\.,:;()]*fix\b/i.test(
+    String(value || '')
+  );
+
+}
+
+function updateFirstFixFieldsVisibility() {
+
+  const fields =
+    document.getElementById('firstFixFields');
+
+  const description =
+    form.elements.description?.value || '';
+
+  if (!fields) {
+    return;
+  }
+
+  fields.classList.toggle(
+    'hidden',
+    !isFirstFixWorkDescription(description)
+  );
+
+}
+
 function getTakeBackChecklist() {
 
   const result = {};
@@ -2151,6 +2184,16 @@ function getTakeBackChecklist() {
 
       }
     );
+
+  if (isFirstFixWorkDescription(form.elements.description?.value || '')) {
+
+    result.firstFixRecordsStatus =
+      form.elements.firstFixRecordsStatus?.value || '';
+
+    result.firstFixRecordsLocation =
+      form.elements.firstFixRecordsLocation?.value || '';
+
+  }
 
   return result;
 
@@ -2449,6 +2492,13 @@ setupOtherDropdown(
   'takeBackSnagCompletedOther'
 );
 
+if (form.elements.description) {
+  form.elements.description.addEventListener(
+    'input',
+    updateFirstFixFieldsVisibility
+  );
+}
+
 // Automatically close the work permit when the DGSL representative
 // field is filled in. The status dropdown remains editable afterwards.
 const dgslRepresentativeField = form.elements.dgslSigner;
@@ -2665,7 +2715,23 @@ otherField.style.display =
   }
 
 
+  updateFirstFixFieldsVisibility();
+
+
   if (x) {
+
+    const checklist =
+      x.takeBackChecklist || {};
+
+    if (form.elements.firstFixRecordsStatus) {
+      form.elements.firstFixRecordsStatus.value =
+        checklist.firstFixRecordsStatus || 'Yes';
+    }
+
+    if (form.elements.firstFixRecordsLocation) {
+      form.elements.firstFixRecordsLocation.value =
+        checklist.firstFixRecordsLocation || '';
+    }
 
     drawSavedSignature(
       $('#contractorSignature'),
@@ -4503,6 +4569,10 @@ healthSafetyScaffolding:
   form.elements.takeBackSnagCompleted?.value === 'Other'
     ? document.getElementById('takeBackSnagCompletedOther').value || 'Other'
     : form.elements.takeBackSnagCompleted?.value || '',
+  firstFixRecordsStatus:
+    form.elements.firstFixRecordsStatus?.value || '',
+  firstFixRecordsLocation:
+    form.elements.firstFixRecordsLocation?.value || '',
   notes: form.elements.notes?.value || '',
   contractorSigner:
     form.elements.contractorSigner?.value || '',
@@ -5017,6 +5087,18 @@ healthSafetyScaffolding:
       'DG to Snag completed works',
       data.takeBackSnagCompleted
     );
+
+    if (isFirstFixWorkDescription(data.description)) {
+      addField(
+        'Video/photographic records of First-Fix complete and submitted',
+        data.firstFixRecordsStatus
+      );
+
+      addField(
+        'First-Fix Records: Location/Recipient',
+        data.firstFixRecordsLocation
+      );
+    }
 
     // --------------------------------------------------------
     // NOTES
