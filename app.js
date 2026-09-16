@@ -21,7 +21,7 @@ let records = [];
 let editing = null;
 let filter = 'All';
 
-const SITE_VERSION = '1.2.8';
+const SITE_VERSION = '1.3.0';
 const NOTIFICATIONS_TABLE = 'site_notifications';
 const NOTIFICATIONS_SEEN_KEY = 'dgsl_site_register_notifications_seen_v1';
 
