@@ -21,7 +21,7 @@ let records = [];
 let editing = null;
 let filter = 'All';
 
-const SITE_VERSION = '1.3.0';
+const SITE_VERSION = '1.3.1';
 const NOTIFICATIONS_TABLE = 'site_notifications';
 const NOTIFICATIONS_SEEN_KEY = 'dgsl_site_register_notifications_seen_v1';
 
@@ -44,6 +44,7 @@ const form = $('#handoverForm');
 let currentUser = null;
 let authDialog = null;
 let notificationPollTimer = null;
+let currentPdfRecord = null;
 
 const today = () => {
   const d = new Date();
@@ -1697,6 +1698,8 @@ document
 
             if (!record) return;
 
+            currentPdfRecord = record;
+
             try {
 
               open(record, false);
@@ -1800,7 +1803,6 @@ document
 
               lockPdfDialogBackground();
               document.documentElement.classList.add('pdf-dialog-open');
-              pdfDialog.dataset.recordId = String(record.id);
               pdfDialog.showModal();
 
             } catch (error) {
@@ -2133,57 +2135,42 @@ async function sharePdfToDevice(record) {
 
 function isFirstFixWorkDescription(value) {
 
-  const raw = String(value || '');
+  const text = String(value || '').toLowerCase();
 
-  // Accept the normal spellings and separators, including compact forms
-  // such as "1stfix" / "firstfix".
-  const compact = raw
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '');
+  // Treat spaces, hyphens, slashes, punctuation and underscores as
+  // separators so forms such as "1st fix", "1st-fix", "1st/fix"
+  // and "1stfix" are all recognised.
+  const compact = text.replace(/[^a-z0-9]+/g, '');
 
-  if (compact.includes('1stfix') || compact.includes('firstfix')) {
+  // Common genuine spellings plus small, obvious typing mistakes.
+  const exactVariants = [
+    '1stfix',
+    'firstfix',
+    '1stfx',
+    'firstfx',
+    '1stfiix',
+    'firstfiix',
+    '1stfixx',
+    'firstfixx',
+    '1stfixt',
+    'firstfixt',
+    'fristfix',
+    'firtsfix',
+    'fistfix',
+    '1stfiz',
+    'firstfiz'
+  ];
+
+  if (exactVariants.some(variant => compact.includes(variant))) {
     return true;
   }
 
-  // Also tolerate common one-character typing mistakes in either part.
-  // This deliberately checks only for a close match to the First-Fix phrase.
-  const candidates = [];
-  const source = raw.toLowerCase();
-  const matches = source.match(/[a-z0-9]+/g) || [];
-
-  for (let i = 0; i < matches.length; i++) {
-    for (let count = 1; count <= 2 && i + count <= matches.length; count++) {
-      candidates.push(matches.slice(i, i + count).join(''));
-    }
+  // Also recognise the standard forms when separated by any punctuation.
+  if (/(?:1st|first)[^a-z0-9]*fix/i.test(text)) {
+    return true;
   }
 
-  const distance = (a, b) => {
-    const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
-
-    for (let i = 1; i <= a.length; i++) {
-      const current = [i];
-
-      for (let j = 1; j <= b.length; j++) {
-        current[j] = Math.min(
-          current[j - 1] + 1,
-          prev[j] + 1,
-          prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
-        );
-      }
-
-      for (let j = 0; j < current.length; j++) {
-        prev[j] = current[j];
-      }
-    }
-
-    return prev[b.length];
-  };
-
-  return candidates.some(candidate => {
-    if (candidate.length < 5 || candidate.length > 9) return false;
-    return distance(candidate, '1stfix') <= 1 ||
-           distance(candidate, 'firstfix') <= 1;
-  });
+  return false;
 
 }
 
@@ -2539,6 +2526,11 @@ setupOtherDropdown(
 setupOtherDropdown(
   'takeBackSnagCompleted',
   'takeBackSnagCompletedOther'
+);
+
+setupOtherDropdown(
+  'firstFixRecordsStatus',
+  'firstFixRecordsStatusOther'
 );
 
 if (form.elements.description) {
@@ -4619,7 +4611,9 @@ healthSafetyScaffolding:
     ? document.getElementById('takeBackSnagCompletedOther').value || 'Other'
     : form.elements.takeBackSnagCompleted?.value || '',
   firstFixRecordsStatus:
-    form.elements.firstFixRecordsStatus?.value || '',
+    form.elements.firstFixRecordsStatus?.value === 'Other'
+      ? document.getElementById('firstFixRecordsStatusOther').value || 'Other'
+      : form.elements.firstFixRecordsStatus?.value || '',
   firstFixRecordsLocation:
     form.elements.firstFixRecordsLocation?.value || '',
   notes: form.elements.notes?.value || '',
@@ -5792,43 +5786,23 @@ document.addEventListener(
 
 
 // ============================================================
-// PDF VIEWER DOWNLOAD
+// PDF VIEWER DOWNLOAD / CLOSE
 // ============================================================
 
 $('#downloadPdf').onclick =
   async () => {
 
-    const recordId =
-      document
-        .getElementById('pdfDialog')
-        ?.dataset.recordId;
-
-    const record =
-      records.find(
-        x => String(x.id) === String(recordId)
-      );
+    if (!currentPdfRecord) return;
 
     try {
-
-      if (record) {
-        open(record, false);
-      }
-
+      open(currentPdfRecord, false);
       await generatePdf(false);
-
     } catch (error) {
-
       console.error('PDF download error:', error);
       alert('Unable to download the PDF.');
-
     }
 
   };
-
-
-// ============================================================
-// PDF VIEWER CLOSE
-// ============================================================
 
 $('#closePdf').onclick =
   () => {
@@ -5841,5 +5815,6 @@ $('#closePdf').onclick =
     document.documentElement.classList.remove('pdf-dialog-open');
 
     $('#pdfViewer').innerHTML = '';
+    currentPdfRecord = null;
 
   };
