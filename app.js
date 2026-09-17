@@ -941,14 +941,7 @@ async function loadSupabase() {
   supabaseClient =
     window.supabase.createClient(
       SUPABASE_URL,
-      SUPABASE_KEY,
-      {
-        auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: false
-        }
-      }
+      SUPABASE_KEY
     );
 
 }
@@ -1093,6 +1086,9 @@ let photosToRemove = [];
 
     handoverDate:
       x.handover_date || '',
+
+    createdAt:
+      x.created_at || '',
 
     takeBackDate:
       x.take_back_date || '',
@@ -1498,7 +1494,16 @@ function render() {
       .sort((a, b) => {
         const aDate = String(a.handoverDate || '');
         const bDate = String(b.handoverDate || '');
-        return bDate.localeCompare(aDate);
+
+        if (aDate !== bDate) {
+          return bDate.localeCompare(aDate);
+        }
+
+        // For handovers on the same date, use the record creation
+        // timestamp so the newest handover appears first.
+        const aTime = Date.parse(a.createdAt || '') || 0;
+        const bTime = Date.parse(b.createdAt || '') || 0;
+        return bTime - aTime;
       });
 
 
