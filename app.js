@@ -1264,14 +1264,10 @@ function toDatabase(x) {
     take_back_checklist:
       JSON.stringify(
         x.takeBackChecklist || {}
-      ),
-
-    // Persist the actual creation time so handovers entered on the
-    // same Handover Date can be ordered newest-first by time as well.
-    created_at:
-      x.createdAt || new Date().toISOString()
+      )
 
   };
+
 }
 
 
@@ -3473,7 +3469,6 @@ async function copyHandover(record) {
       ...record,
       id: newId,
       handoverDate: today(),
-      createdAt: new Date().toISOString(),
       photos: copiedPhotos,
       handover: 'COPY'
     };
