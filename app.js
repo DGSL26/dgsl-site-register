@@ -1534,21 +1534,22 @@ function render() {
             .includes(q);
       })
       .sort((a, b) => {
-        const aSortDate =
-          a.status === 'Work Permit Closed'
-            ? a.takeBackDate
-            : a.status === 'Work Permit on Hold'
-              ? (a.takeBackDate || a.handoverDate)
-              : a.handoverDate;
-        const bSortDate =
-          b.status === 'Work Permit Closed'
-            ? b.takeBackDate
-            : b.status === 'Work Permit on Hold'
-              ? (b.takeBackDate || b.handoverDate)
-              : b.handoverDate;
+        // The main register is always ordered by Handover Date.
+        // The Closed KPI/filter uses Take Back Date, while the On Hold
+        // KPI/filter uses Take Back Date when available and Handover Date
+        // when there is no Take Back Date.
+        const getSortDate = record => {
+          if (filter === 'Work Permit Closed') {
+            return record.takeBackDate;
+          }
+          if (filter === 'Work Permit on Hold') {
+            return record.takeBackDate || record.handoverDate;
+          }
+          return record.handoverDate;
+        };
 
-        const aDate = String(aSortDate || '');
-        const bDate = String(bSortDate || '');
+        const aDate = String(getSortDate(a) || '');
+        const bDate = String(getSortDate(b) || '');
 
         if (aDate !== bDate) {
           if (!aDate) return 1;
@@ -1556,9 +1557,8 @@ function render() {
           return bDate.localeCompare(aDate);
         }
 
-        // The register stores dates only for handover/take-back, so use
-        // the Supabase creation timestamp to order records on the same
-        // date by the latest recorded time.
+        // There is no separate handover-time field, so for handovers on the
+        // same date use the database creation timestamp as the time order.
         const aTime = Date.parse(a.createdAt || '') || 0;
         const bTime = Date.parse(b.createdAt || '') || 0;
         return bTime - aTime;
