@@ -23,7 +23,6 @@ let filter = 'All';
 
 const SITE_VERSION = '1.3.3';
 const NOTIFICATIONS_TABLE = 'site_notifications';
-const NOTIFICATIONS_SEEN_KEY = 'dgsl_site_register_notifications_seen_v1';
 
 // Single source of truth for the website version.
 function applySiteVersion() {
@@ -627,30 +626,73 @@ async function openBugReportsDialog() {
   }
 }
 
-function getSeenNotificationIds() {
+const NOTIFICATION_DEVICE_READS_TABLE = 'site_notification_device_reads';
+
+function getNotificationDeviceKey() {
+  const values = [
+    navigator.userAgent || '',
+    navigator.platform || '',
+    navigator.language || '',
+    navigator.languages ? navigator.languages.join(',') : '',
+    Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    String(screen.width || ''),
+    String(screen.height || ''),
+    String(screen.colorDepth || ''),
+    String(window.devicePixelRatio || ''),
+    String(navigator.hardwareConcurrency || ''),
+    String(navigator.maxTouchPoints || ''),
+    String(navigator.deviceMemory || '')
+  ];
+
+  return values.join('|');
+}
+
+async function getSeenNotificationIds() {
+  if (!supabaseClient || !currentUser) return [];
+
   try {
-    const value = localStorage.getItem(NOTIFICATIONS_SEEN_KEY);
-    const parsed = value ? JSON.parse(value) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (_) {
+    const deviceKey = getNotificationDeviceKey();
+    const { data, error } = await supabaseClient
+      .from(NOTIFICATION_DEVICE_READS_TABLE)
+      .select('notification_id')
+      .eq('user_id', currentUser.id)
+      .eq('device_key', deviceKey);
+
+    if (error) throw error;
+
+    return Array.isArray(data)
+      ? data.map(row => String(row.notification_id))
+      : [];
+  } catch (error) {
+    console.warn('Notification read state could not be loaded:', error);
     return [];
   }
 }
 
-function setSeenNotificationIds(ids) {
-  try {
-    localStorage.setItem(
-      NOTIFICATIONS_SEEN_KEY,
-      JSON.stringify(Array.from(new Set(ids)).slice(-100))
-    );
-  } catch (_) {}
-}
+async function markNotificationsSeen(notifications) {
+  if (!supabaseClient || !currentUser || !notifications.length) return;
 
-function markNotificationsSeen(notifications) {
-  const seen = getSeenNotificationIds();
-  const ids = notifications.map(n => String(n.id));
-  setSeenNotificationIds([...seen, ...ids]);
-  updateNotificationBadge(0);
+  try {
+    const deviceKey = getNotificationDeviceKey();
+    const rows = notifications.map(notification => ({
+      user_id: currentUser.id,
+      device_key: deviceKey,
+      notification_id: String(notification.id)
+    }));
+
+    const { error } = await supabaseClient
+      .from(NOTIFICATION_DEVICE_READS_TABLE)
+      .upsert(rows, {
+        onConflict: 'user_id,device_key,notification_id',
+        ignoreDuplicates: true
+      });
+
+    if (error) throw error;
+
+    updateNotificationBadge(0);
+  } catch (error) {
+    console.warn('Notification read state could not be saved:', error);
+  }
 }
 
 function notificationMessageHtml(notification) {
@@ -683,7 +725,7 @@ async function loadSiteNotifications() {
     if (error) throw error;
 
     const notifications = Array.isArray(data) ? data : [];
-    const seen = new Set(getSeenNotificationIds());
+    const seen = new Set(await getSeenNotificationIds());
     const unseen = notifications.filter(n => !seen.has(String(n.id)));
     updateNotificationBadge(unseen.length);
     return unseen;
@@ -730,9 +772,9 @@ async function openNotificationsDialog() {
   }
 
   content.innerHTML = notifications.map(notificationMessageHtml).join('');
-  content.querySelectorAll('.site-notification-refresh').forEach(button => {
-    button.addEventListener('click', () => {
-      markNotificationsSeen(notifications);
+  content.querySelectorAll('.site-notification-refresh').forEach((button, index) => {
+    button.addEventListener('click', async () => {
+      await markNotificationsSeen([notifications[index]]);
       dialog.close();
       const url = new URL(window.location.href);
       url.searchParams.set('refresh', String(Date.now()));
@@ -1492,15 +1534,31 @@ function render() {
             .includes(q);
       })
       .sort((a, b) => {
-        const aDate = String(a.handoverDate || '');
-        const bDate = String(b.handoverDate || '');
+        const aSortDate =
+          a.status === 'Work Permit Closed'
+            ? a.takeBackDate
+            : a.status === 'Work Permit on Hold'
+              ? (a.takeBackDate || a.handoverDate)
+              : a.handoverDate;
+        const bSortDate =
+          b.status === 'Work Permit Closed'
+            ? b.takeBackDate
+            : b.status === 'Work Permit on Hold'
+              ? (b.takeBackDate || b.handoverDate)
+              : b.handoverDate;
+
+        const aDate = String(aSortDate || '');
+        const bDate = String(bSortDate || '');
 
         if (aDate !== bDate) {
+          if (!aDate) return 1;
+          if (!bDate) return -1;
           return bDate.localeCompare(aDate);
         }
 
-        // For handovers on the same date, use the record creation
-        // timestamp so the newest handover appears first.
+        // The register stores dates only for handover/take-back, so use
+        // the Supabase creation timestamp to order records on the same
+        // date by the latest recorded time.
         const aTime = Date.parse(a.createdAt || '') || 0;
         const bTime = Date.parse(b.createdAt || '') || 0;
         return bTime - aTime;
