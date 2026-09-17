@@ -2099,3 +2099,9 @@ body.change-log-open {
   color: #243447 !important;
   background: transparent !important;
 }
+
+
+/* Bug Report detail: add comfortable spacing below the divider line. */
+#dgslBugReportDetailDialog #bugReportDetailContent {
+  padding-top: 18px !important;
+}
