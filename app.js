@@ -941,7 +941,14 @@ async function loadSupabase() {
   supabaseClient =
     window.supabase.createClient(
       SUPABASE_URL,
-      SUPABASE_KEY
+      SUPABASE_KEY,
+      {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: false
+        }
+      }
     );
 
 }
