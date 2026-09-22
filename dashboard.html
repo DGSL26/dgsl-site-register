@@ -190,7 +190,7 @@
 <script>
 const SUPABASE_URL='https://mgxbsxqgjxpdvdjsixqi.supabase.co';
 const SUPABASE_KEY='sb_publishable_XWLtSyttiEMQA86unKN37A_ZC9OY19j';
-const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{storageKey:'dgsl-dashboard-auth',persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const ADMIN_EMAIL='elvira@dgsl.ie';
 let currentSession=null, editingSiteId=null;
 const $=id=>document.getElementById(id);

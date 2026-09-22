@@ -998,7 +998,7 @@ async function loadSupabase() {
   // The Site Register uses its own persisted Supabase Auth storage.
   // This keeps the site's login completely separate from the dashboard
   // administrator session, even though both use the same Supabase project.
-  const siteStorageKey = `dgsl-site-auth-${requestedSite.toLowerCase()}`;
+  const siteStorageKey = `dgsl-site-register-auth-${requestedSite.toLowerCase()}`;
 
   supabaseClient =
     window.supabase.createClient(
