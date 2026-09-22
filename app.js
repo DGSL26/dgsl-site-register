@@ -104,6 +104,11 @@ function sitePasswordStorageKey() {
   return `dgsl-site-password:${SITE.id}`;
 }
 
+function siteAuthEmail(siteId = SITE.id) {
+  const safe = String(siteId || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  return `site-${safe}-login@dgsl.ie`;
+}
+
 function showSitePasswordDialog() {
   return new Promise(resolve => {
     let dialog = document.getElementById('dgslSitePasswordDialog');
@@ -901,10 +906,11 @@ function showAuthDialog() {
 
     authDialog.innerHTML = `
       <div style="padding:22px;">
-        <div style="font-size:20px;font-weight:700;margin-bottom:16px;">
-          DGSL Site Register Login
+        <div style="font-size:20px;font-weight:700;margin-bottom:6px;">
+          ${SITE.name.replace(/</g,'&lt;').replace(/>/g,'&gt;')} Login
         </div>
-        <label style="display:block;margin-bottom:6px;font-weight:600;">Password</label>
+        <div style="font-size:14px;color:#555;margin-bottom:16px;">Enter the password for this site.</div>
+        <label style="display:block;margin-bottom:6px;font-weight:600;">Site password</label>
         <input id="dgslLoginPassword" type="password" autocomplete="current-password"
           style="width:100%;box-sizing:border-box;margin-bottom:12px;">
         <div id="dgslAuthStatus" style="min-height:20px;margin-bottom:12px;font-size:14px;"></div>
@@ -919,42 +925,48 @@ function showAuthDialog() {
 
     authDialog.querySelector('#dgslLoginCancel').onclick = () => authDialog.close();
 
-    authDialog.querySelector('#dgslLoginSubmit').onclick = async () => {
-      const email = 'elvira@dgsl.ie';
+    const submitLogin = async () => {
       const password = authDialog.querySelector('#dgslLoginPassword').value;
       const status = authDialog.querySelector('#dgslAuthStatus');
+      const submit = authDialog.querySelector('#dgslLoginSubmit');
 
-      if (!email || !password) {
-        status.textContent = 'Please enter your password.';
+      if (!password) {
+        status.textContent = 'Please enter the site password.';
         return;
       }
 
-      status.textContent = 'Checking site password...';
-
-      const sitePasswordOk = await requireSitePassword();
-      if (!sitePasswordOk) {
-        status.textContent = 'Site login cancelled.';
-        return;
-      }
-
-      status.textContent = 'Logging in...';
+      submit.disabled = true;
+      status.textContent = 'Logging in…';
 
       const { error } = await supabaseClient.auth.signInWithPassword({
-        email,
+        email: siteAuthEmail(),
         password
       });
 
+      submit.disabled = false;
+
       if (error) {
-        status.textContent = error.message;
+        status.textContent = 'Incorrect site password.';
         return;
       }
 
-      status.textContent = '';
+      localStorage.setItem(sitePasswordStorageKey(), '1');
+      sitePasswordVerified = true;
       authDialog.close();
+      authDialog.querySelector('#dgslLoginPassword').value = '';
+      status.textContent = '';
+    };
+
+    authDialog.querySelector('#dgslLoginSubmit').onclick = submitLogin;
+    authDialog.querySelector('#dgslLoginPassword').onkeydown = e => {
+      if (e.key === 'Enter') submitLogin();
     };
   }
 
+  authDialog.querySelector('#dgslLoginPassword').value = '';
+  authDialog.querySelector('#dgslAuthStatus').textContent = '';
   authDialog.showModal();
+  setTimeout(() => authDialog.querySelector('#dgslLoginPassword').focus(), 50);
 }
 
 

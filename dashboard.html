@@ -176,13 +176,13 @@
   <label>Site name</label><input id="siteName" placeholder="Example Development">
   <label>Address</label><input id="siteAddress" placeholder="Swords, Co. Dublin">
   <div id="sitePasswordFields">
-    <label id="sitePasswordLabel">Site password</label><input id="sitePassword" type="password" autocomplete="new-password" placeholder="Create a password for this site">
-    <label id="sitePasswordConfirmLabel">Confirm site password</label><input id="sitePasswordConfirm" type="password" autocomplete="new-password" placeholder="Re-enter the site password">
+    <label>Site password</label><input id="sitePassword" type="password" autocomplete="new-password" placeholder="Create a password for this site">
+    <label>Confirm site password</label><input id="sitePasswordConfirm" type="password" autocomplete="new-password" placeholder="Re-enter the site password">
   </div>
   <div class="generated" id="generatedSiteId"><strong>Site ID</strong><span>—</span></div>
   <div class="generated" id="generatedSiteUrl"><strong>Site URL</strong><span>—</span></div>
   <div class="generated" id="generatedPhotoBucket"><strong>Photo storage</strong><span>—</span></div>
-  <div class="helper">The Site ID, GitHub Pages URL and Supabase photo bucket are generated automatically. Each new site must also have its own password. The password is stored securely and is required to enter that site.</div>
+  <div class="helper">The Site ID, GitHub Pages URL and Supabase photo bucket are generated automatically. Each site has its own password. When editing a site, leave the password fields blank to keep the existing password.</div>
   <div class="actions"><button class="btn secondary" id="siteCancel">Cancel</button><button class="btn primary" id="siteSave">Create Site</button></div>
 </div></div>
 
@@ -531,10 +531,6 @@ function openAdd(){
   $('sitePassword').value='';
   $('sitePasswordConfirm').value='';
   $('sitePasswordFields').style.display='';
-  $('sitePasswordLabel').textContent='Site password';
-  $('sitePasswordConfirmLabel').textContent='Confirm site password';
-  $('sitePassword').placeholder='Create a password for this site';
-  $('sitePasswordConfirm').placeholder='Re-enter the site password';
   $('siteError').textContent='';
   $('siteSave').textContent='Create Site';
   updateGeneratedFields(siteId);
@@ -550,10 +546,6 @@ function openEdit(site){
   $('sitePassword').value='';
   $('sitePasswordConfirm').value='';
   $('sitePasswordFields').style.display='';
-  $('sitePasswordLabel').textContent='New site password (optional)';
-  $('sitePasswordConfirmLabel').textContent='Confirm new site password';
-  $('sitePassword').placeholder='Leave blank to keep the current password';
-  $('sitePasswordConfirm').placeholder='Re-enter the new password';
   $('siteError').textContent='';
   $('siteSave').textContent='Save Changes';
   updateGeneratedFields(site.site_id);
@@ -567,6 +559,33 @@ $('copySiteUrl').onclick=copySiteUrl;
 $('urlModal').addEventListener('click',e=>{if(e.target===$('urlModal'))$('urlModal').classList.remove('show');});
 $('settingsModal').addEventListener('click',e=>{if(e.target===$('settingsModal'))$('settingsModal').classList.remove('show');});
 $('siteModal').addEventListener('click',e=>{if(e.target===$('siteModal'))$('siteModal').classList.remove('show');});
+
+async function saveSiteAuth(siteId, password){
+  const session = currentSession || (await supabaseClient.auth.getSession()).data.session;
+  if(!session?.access_token) throw new Error('Your dashboard session has expired. Please log in again.');
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/site-auth`, {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':`Bearer ${session.access_token}`,
+      'apikey':SUPABASE_KEY
+    },
+    body:JSON.stringify({action:'upsert',site_id:siteId,password})
+  });
+  const body = await response.json().catch(()=>({}));
+  if(!response.ok || !body.ok) throw new Error(body.error || 'Could not save the site password.');
+  return body;
+}
+
+async function deleteSiteAuth(siteId){
+  const session = currentSession || (await supabaseClient.auth.getSession()).data.session;
+  if(!session?.access_token) return;
+  await fetch(`${SUPABASE_URL}/functions/v1/site-auth`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`,'apikey':SUPABASE_KEY},
+    body:JSON.stringify({action:'delete',site_id:siteId})
+  });
+}
 
 async function createPhotoBucket(bucket){
   const {data:existing,error:listError}=await supabaseClient.storage.listBuckets();
@@ -593,9 +612,9 @@ $('siteSave').onclick=async()=>{
     if(!sitePassword){$('siteError').textContent='A site password is required.';return;}
     if(sitePassword.length < 8){$('siteError').textContent='The site password must be at least 8 characters.';return;}
     if(sitePassword !== sitePasswordConfirm){$('siteError').textContent='The site passwords do not match.';return;}
-  } else if(sitePassword || sitePasswordConfirm){
-    if(sitePassword.length < 8){$('siteError').textContent='The new site password must be at least 8 characters.';return;}
-    if(sitePassword !== sitePasswordConfirm){$('siteError').textContent='The new site passwords do not match.';return;}
+  }else if(sitePassword || sitePasswordConfirm){
+    if(sitePassword.length < 8){$('siteError').textContent='The site password must be at least 8 characters.';return;}
+    if(sitePassword !== sitePasswordConfirm){$('siteError').textContent='The site passwords do not match.';return;}
   }
   $('siteSave').disabled=true;
   $('siteSave').textContent=editingSiteId?'Saving…':'Creating site…';
@@ -603,23 +622,21 @@ $('siteSave').onclick=async()=>{
     if(editingSiteId){
       const result=await supabaseClient.from('sites').update({site_name:siteName,address:address||null}).eq('site_id',editingSiteId);
       if(result.error)throw result.error;
-      if(sitePassword){
-        const passwordResult=await supabaseClient.rpc('set_site_password',{p_site_id:editingSiteId,p_password:sitePassword});
-        if(passwordResult.error)throw passwordResult.error;
-      }
+      if(sitePassword) await saveSiteAuth(editingSiteId, sitePassword);
     }else{
       const bucketResult=await createPhotoBucket(photoBucket);
       const max=Math.max(0,...cachedSites.map(s=>Number(s.sort_order)||0));
       const result=await supabaseClient.from('sites').insert({site_id:siteId,site_name:siteName,address:address||null,photo_bucket:photoBucket,active:true,sort_order:max+1});
       if(result.error){
-        if(bucketResult.created){try{await supabaseClient.storage.deleteBucket(photoBucket)}catch(_){}}
+        if(bucketResult.created){try{await supabaseClient.storage.deleteBucket(photoBucket)}catch(_){} }
         throw result.error;
       }
-      const passwordResult=await supabaseClient.rpc('set_site_password',{p_site_id:siteId,p_password:sitePassword});
-      if(passwordResult.error){
+      try{
+        await saveSiteAuth(siteId, sitePassword);
+      }catch(authError){
         try{await supabaseClient.from('sites').delete().eq('site_id',siteId);}catch(_){}
         if(bucketResult.created){try{await supabaseClient.storage.deleteBucket(photoBucket)}catch(_){} }
-        throw passwordResult.error;
+        throw authError;
       }
     }
     $('siteModal').classList.remove('show');
