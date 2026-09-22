@@ -175,10 +175,14 @@
   <h2 id="siteModalTitle">Add Site</h2><div class="error" id="siteError"></div>
   <label>Site name</label><input id="siteName" placeholder="Example Development">
   <label>Address</label><input id="siteAddress" placeholder="Swords, Co. Dublin">
+  <div id="sitePasswordFields">
+    <label>Site password</label><input id="sitePassword" type="password" autocomplete="new-password" placeholder="Create a password for this site">
+    <label>Confirm site password</label><input id="sitePasswordConfirm" type="password" autocomplete="new-password" placeholder="Re-enter the site password">
+  </div>
   <div class="generated" id="generatedSiteId"><strong>Site ID</strong><span>—</span></div>
   <div class="generated" id="generatedSiteUrl"><strong>Site URL</strong><span>—</span></div>
   <div class="generated" id="generatedPhotoBucket"><strong>Photo storage</strong><span>—</span></div>
-  <div class="helper">The Site ID, GitHub Pages URL and Supabase photo bucket are generated automatically. The photo bucket is also created automatically when you save a new site.</div>
+  <div class="helper">The Site ID, GitHub Pages URL and Supabase photo bucket are generated automatically. Each new site must also have its own password. The password is stored securely and is required to enter that site.</div>
   <div class="actions"><button class="btn secondary" id="siteCancel">Cancel</button><button class="btn primary" id="siteSave">Create Site</button></div>
 </div></div>
 
@@ -192,7 +196,7 @@ let currentSession=null, editingSiteId=null;
 const $=id=>document.getElementById(id);
 function appUrl(siteId){
   const url=new URL('./',window.location.href);
-  if(siteId!=='SWORDS') url.searchParams.set('site',siteId);
+  if(siteId!=='SITE1') url.searchParams.set('site',siteId);
   return url.href;
 }
 function nextSiteId(){
@@ -311,7 +315,7 @@ async function copySiteUrl(){
 }
 
 
-let managementSiteId = 'SWORDS';
+let managementSiteId = 'SITE1';
 let managementBugReports = [];
 let managementSelectedBug = null;
 
@@ -524,6 +528,9 @@ function openAdd(){
   $('siteModalTitle').textContent='Add Site';
   $('siteName').value='';
   $('siteAddress').value='';
+  $('sitePassword').value='';
+  $('sitePasswordConfirm').value='';
+  $('sitePasswordFields').style.display='';
   $('siteError').textContent='';
   $('siteSave').textContent='Create Site';
   updateGeneratedFields(siteId);
@@ -536,6 +543,9 @@ function openEdit(site){
   $('siteModalTitle').textContent='Edit Site';
   $('siteName').value=site.site_name||'';
   $('siteAddress').value=site.address||'';
+  $('sitePassword').value='';
+  $('sitePasswordConfirm').value='';
+  $('sitePasswordFields').style.display='none';
   $('siteError').textContent='';
   $('siteSave').textContent='Save Changes';
   updateGeneratedFields(site.site_id);
@@ -568,7 +578,14 @@ $('siteSave').onclick=async()=>{
   const address=$('siteAddress').value.trim();
   const siteId=$('siteModal').dataset.generatedSiteId||nextSiteId();
   const photoBucket=photoBucketFor(siteId);
+  const sitePassword=$('sitePassword').value;
+  const sitePasswordConfirm=$('sitePasswordConfirm').value;
   if(!siteName){$('siteError').textContent='Site name is required.';return;}
+  if(!editingSiteId){
+    if(!sitePassword){$('siteError').textContent='A site password is required.';return;}
+    if(sitePassword.length < 8){$('siteError').textContent='The site password must be at least 8 characters.';return;}
+    if(sitePassword !== sitePasswordConfirm){$('siteError').textContent='The site passwords do not match.';return;}
+  }
   $('siteSave').disabled=true;
   $('siteSave').textContent=editingSiteId?'Saving…':'Creating site…';
   try{
@@ -582,6 +599,12 @@ $('siteSave').onclick=async()=>{
       if(result.error){
         if(bucketResult.created){try{await supabaseClient.storage.deleteBucket(photoBucket)}catch(_){}}
         throw result.error;
+      }
+      const passwordResult=await supabaseClient.rpc('set_site_password',{p_site_id:siteId,p_password:sitePassword});
+      if(passwordResult.error){
+        try{await supabaseClient.from('sites').delete().eq('site_id',siteId);}catch(_){}
+        if(bucketResult.created){try{await supabaseClient.storage.deleteBucket(photoBucket)}catch(_){} }
+        throw passwordResult.error;
       }
     }
     $('siteModal').classList.remove('show');

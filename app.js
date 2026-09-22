@@ -98,6 +98,74 @@ const form = $('#handoverForm');
 let currentUser = null;
 let authDialog = null;
 let notificationPollTimer = null;
+let sitePasswordVerified = false;
+
+function sitePasswordStorageKey() {
+  return `dgsl-site-password:${SITE.id}`;
+}
+
+function showSitePasswordDialog() {
+  return new Promise(resolve => {
+    let dialog = document.getElementById('dgslSitePasswordDialog');
+    if (!dialog) {
+      dialog = document.createElement('dialog');
+      dialog.id = 'dgslSitePasswordDialog';
+      dialog.style.padding = '0';
+      dialog.style.border = '0';
+      dialog.style.borderRadius = '12px';
+      dialog.style.maxWidth = '380px';
+      dialog.style.width = 'calc(100% - 32px)';
+      dialog.innerHTML = `
+        <div style="padding:22px;">
+          <div style="font-size:20px;font-weight:700;margin-bottom:6px;">${SITE.name.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+          <div style="font-size:14px;margin-bottom:16px;color:#555;">Enter the password for this site.</div>
+          <label style="display:block;margin-bottom:6px;font-weight:600;">Site password</label>
+          <input id="dgslSitePasswordInput" type="password" autocomplete="current-password" style="width:100%;box-sizing:border-box;margin-bottom:10px;">
+          <div id="dgslSitePasswordStatus" style="min-height:20px;margin-bottom:12px;font-size:14px;"></div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button type="button" id="dgslSitePasswordSubmit" style="background:#008e39;color:#fff;border-color:#008e39;">Login</button>
+          </div>
+        </div>`;
+      document.body.appendChild(dialog);
+    }
+    const input = dialog.querySelector('#dgslSitePasswordInput');
+    const status = dialog.querySelector('#dgslSitePasswordStatus');
+    const submit = dialog.querySelector('#dgslSitePasswordSubmit');
+    const finish = async () => {
+      const password = input.value;
+      status.textContent = '';
+      if (!password) { status.textContent = 'Please enter the site password.'; return; }
+      submit.disabled = true;
+      submit.textContent = 'Checking…';
+      const { data, error } = await supabaseClient.rpc('verify_site_password', { p_site_id: SITE.id, p_password: password });
+      submit.disabled = false;
+      submit.textContent = 'Login';
+      if (error || data !== true) {
+        status.textContent = error ? 'Could not verify the site password.' : 'Incorrect site password.';
+        input.focus();
+        return;
+      }
+      sessionStorage.setItem(sitePasswordStorageKey(), '1');
+      sitePasswordVerified = true;
+      dialog.close();
+      resolve(true);
+    };
+    submit.onclick = finish;
+    input.onkeydown = e => { if (e.key === 'Enter') finish(); };
+    input.value = '';
+    status.textContent = '';
+    dialog.showModal();
+    setTimeout(() => input.focus(), 50);
+  });
+}
+
+async function requireSitePassword() {
+  if (sessionStorage.getItem(sitePasswordStorageKey()) === '1') {
+    sitePasswordVerified = true;
+    return true;
+  }
+  return showSitePasswordDialog();
+}
 
 const today = () => {
   const d = new Date();
@@ -4449,6 +4517,8 @@ async function startApp() {
 
     await loadSiteConfiguration();
     NOTIFICATIONS_TABLE = SITE.notificationsTable;
+
+    await requireSitePassword();
 
     const { data: sessionData } =
       await supabaseClient.auth.getSession();
