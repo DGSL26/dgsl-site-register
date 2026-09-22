@@ -145,7 +145,7 @@ function showSitePasswordDialog() {
         input.focus();
         return;
       }
-      sessionStorage.setItem(sitePasswordStorageKey(), '1');
+      localStorage.setItem(sitePasswordStorageKey(), '1');
       sitePasswordVerified = true;
       dialog.close();
       resolve(true);
@@ -160,7 +160,7 @@ function showSitePasswordDialog() {
 }
 
 async function requireSitePassword() {
-  if (sessionStorage.getItem(sitePasswordStorageKey()) === '1') {
+  if (localStorage.getItem(sitePasswordStorageKey()) === '1') {
     sitePasswordVerified = true;
     return true;
   }
