@@ -192,7 +192,7 @@ let currentSession=null, editingSiteId=null;
 const $=id=>document.getElementById(id);
 function appUrl(siteId){
   const url=new URL('./',window.location.href);
-  if(siteId!=='SITE1') url.searchParams.set('site',siteId);
+  if(siteId!=='SWORDS') url.searchParams.set('site',siteId);
   return url.href;
 }
 function nextSiteId(){
@@ -257,7 +257,7 @@ function renderSites(sites){
         <div class="stat loading"><span class="num">…</span><span class="label">Photos</span></div>
       </div>
       <div class="last">Last handover: <strong>…</strong></div>
-      ${site.active?`<a class="open" href="${appUrl(site.site_id)}" target="_blank" rel="noopener">Open ${escapeHtml(site.site_name)} LIVE</a>`:''}
+      ${site.active?`<a class="open" href="${appUrl(site.site_id)}" target="_blank" rel="noopener">Open ${escapeHtml(site.site_name)}</a>`:''}
       ${isAdmin()?`<button class="edit" data-site="${escapeHtml(site.site_id)}">Edit</button><button class="toggle" data-site="${escapeHtml(site.site_id)}">${site.active?'Deactivate':'Activate'}</button>`:''}`;
     card.querySelector('.site-url-link')?.addEventListener('click',(event)=>{event.preventDefault();openUrlModal(siteUrl);});
     card.querySelector('.edit')?.addEventListener('click',()=>openEdit(site));
@@ -311,7 +311,7 @@ async function copySiteUrl(){
 }
 
 
-let managementSiteId = 'SITE1';
+let managementSiteId = 'SWORDS';
 let managementBugReports = [];
 let managementSelectedBug = null;
 
