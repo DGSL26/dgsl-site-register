@@ -176,8 +176,8 @@
   <label>Site name</label><input id="siteName" placeholder="Example Development">
   <label>Address</label><input id="siteAddress" placeholder="Swords, Co. Dublin">
   <div id="sitePasswordFields">
-    <label>Site password</label><input id="sitePassword" type="password" autocomplete="new-password" placeholder="Create a password for this site">
-    <label>Confirm site password</label><input id="sitePasswordConfirm" type="password" autocomplete="new-password" placeholder="Re-enter the site password">
+    <label id="sitePasswordLabel">Site password</label><input id="sitePassword" type="password" autocomplete="new-password" placeholder="Create a password for this site">
+    <label id="sitePasswordConfirmLabel">Confirm site password</label><input id="sitePasswordConfirm" type="password" autocomplete="new-password" placeholder="Re-enter the site password">
   </div>
   <div class="generated" id="generatedSiteId"><strong>Site ID</strong><span>—</span></div>
   <div class="generated" id="generatedSiteUrl"><strong>Site URL</strong><span>—</span></div>
@@ -531,6 +531,10 @@ function openAdd(){
   $('sitePassword').value='';
   $('sitePasswordConfirm').value='';
   $('sitePasswordFields').style.display='';
+  $('sitePasswordLabel').textContent='Site password';
+  $('sitePasswordConfirmLabel').textContent='Confirm site password';
+  $('sitePassword').placeholder='Create a password for this site';
+  $('sitePasswordConfirm').placeholder='Re-enter the site password';
   $('siteError').textContent='';
   $('siteSave').textContent='Create Site';
   updateGeneratedFields(siteId);
@@ -545,7 +549,11 @@ function openEdit(site){
   $('siteAddress').value=site.address||'';
   $('sitePassword').value='';
   $('sitePasswordConfirm').value='';
-  $('sitePasswordFields').style.display='none';
+  $('sitePasswordFields').style.display='';
+  $('sitePasswordLabel').textContent='New site password (optional)';
+  $('sitePasswordConfirmLabel').textContent='Confirm new site password';
+  $('sitePassword').placeholder='Leave blank to keep the current password';
+  $('sitePasswordConfirm').placeholder='Re-enter the new password';
   $('siteError').textContent='';
   $('siteSave').textContent='Save Changes';
   updateGeneratedFields(site.site_id);
@@ -585,6 +593,9 @@ $('siteSave').onclick=async()=>{
     if(!sitePassword){$('siteError').textContent='A site password is required.';return;}
     if(sitePassword.length < 8){$('siteError').textContent='The site password must be at least 8 characters.';return;}
     if(sitePassword !== sitePasswordConfirm){$('siteError').textContent='The site passwords do not match.';return;}
+  } else if(sitePassword || sitePasswordConfirm){
+    if(sitePassword.length < 8){$('siteError').textContent='The new site password must be at least 8 characters.';return;}
+    if(sitePassword !== sitePasswordConfirm){$('siteError').textContent='The new site passwords do not match.';return;}
   }
   $('siteSave').disabled=true;
   $('siteSave').textContent=editingSiteId?'Saving…':'Creating site…';
@@ -592,6 +603,10 @@ $('siteSave').onclick=async()=>{
     if(editingSiteId){
       const result=await supabaseClient.from('sites').update({site_name:siteName,address:address||null}).eq('site_id',editingSiteId);
       if(result.error)throw result.error;
+      if(sitePassword){
+        const passwordResult=await supabaseClient.rpc('set_site_password',{p_site_id:editingSiteId,p_password:sitePassword});
+        if(passwordResult.error)throw passwordResult.error;
+      }
     }else{
       const bucketResult=await createPhotoBucket(photoBucket);
       const max=Math.max(0,...cachedSites.map(s=>Number(s.sort_order)||0));
