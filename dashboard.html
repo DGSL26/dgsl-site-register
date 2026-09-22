@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DGSL Site Register — Dashboard</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#17212b}.wrap{max-width:1150px;margin:0 auto;padding:0 20px 50px}.top{background:#fff;border-bottom:1px solid #dfe4e8;margin:0 -20px 28px;padding:24px 20px 22px;display:flex;flex-direction:column;gap:20px}.brand{display:flex;align-items:center;gap:18px}.brand img{display:block;width:220px;max-width:35vw;height:auto;object-fit:contain}.brand h1{margin:0;font-size:25px}.brand p{margin:4px 0 0;color:#68737d}.btn{border:0;border-radius:7px;padding:10px 15px;font-weight:700;cursor:pointer}.primary{background:#008e39;color:#fff}.secondary{background:#fff;border:1px solid #ccd3d8;color:#17212b}.danger{background:#fff1f0;color:#9f201b;border:1px solid #f2b8b5}.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px}.user{margin-left:auto;color:#68737d;font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.card{background:#fff;border:1px solid #dfe4e8;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.05)}.card h2{margin:0 0 7px;font-size:20px}.meta{color:#68737d;font-size:14px;line-height:1.65}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:16px}.stat{background:#f7f8f9;border:1px solid #e5e8eb;border-radius:8px;padding:10px 8px;text-align:center}.stat .num{display:block;font-size:20px;font-weight:800;color:#17212b;min-height:24px}.stat .label{display:block;margin-top:3px;font-size:11px;color:#68737d}.last{margin-top:10px;font-size:12px;color:#68737d}.stat.loading .num{opacity:.45}.status{display:inline-block;margin-top:13px;padding:5px 9px;border-radius:999px;background:#e7f6ed;color:#16733b;font-size:12px;font-weight:700}.status.inactive{background:#f3f4f6;color:#68737d}.open{display:block;text-align:center;text-decoration:none;background:#008e39;color:#fff;padding:11px;border-radius:7px;margin-top:18px;font-weight:700}.edit{display:block;text-align:center;margin-top:9px;padding:10px;border-radius:7px;border:1px solid #ccd3d8;background:#fff;color:#17212b;font-weight:700;cursor:pointer;width:100%}.toggle{display:block;text-align:center;margin-top:9px;padding:10px;border-radius:7px;border:1px solid #ccd3d8;background:#fff;color:#17212b;font-weight:700;cursor:pointer;width:100%}.note{margin:25px 0 0;color:#68737d;font-size:13px}.error-banner{display:none;background:#fff1f0;border:1px solid #f2b8b5;color:#9f201b;border-radius:10px;padding:14px;margin-bottom:18px}.error-banner.show{display:block}#loading{background:#fff;border:1px solid #dfe4e8;border-radius:12px;padding:25px;color:#68737d}.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}.modal.show{display:flex}.box{background:#fff;border-radius:12px;padding:22px;max-width:430px;width:100%}.box h2{margin-top:0}.box label{display:block;font-size:13px;font-weight:700;margin-top:12px}.box input{width:100%;padding:11px;border:1px solid #ccd3d8;border-radius:6px;margin:7px 0}.box input[readonly]{background:#f7f8f9;color:#4d5963}.generated{background:#f7f8f9;border:1px solid #e5e8eb;border-radius:8px;padding:10px 12px;font-size:13px;color:#33404a;word-break:break-all;margin-top:7px}.generated strong{display:block;font-size:11px;color:#68737d;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.helper{font-size:12px;color:#68737d;line-height:1.45;margin-top:7px}.url-box{max-width:560px}.url-display{background:#f7f8f9;border:1px solid #e5e8eb;border-radius:8px;padding:12px;font-size:13px;line-height:1.45;word-break:break-all;color:#33404a}.copy-row{display:flex;gap:9px;margin-top:10px}.copy-row .url-display{flex:1;margin:0}.copy-btn{white-space:nowrap}.copy-status{font-size:12px;color:#16733b;min-height:17px;margin-top:7px}.storage-ok{color:#16733b}.storage-warn{color:#9a6700}.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.error{color:#b42318;font-size:13px;min-height:18px;margin-bottom:8px}.hidden{display:none!important}.section-title{display:flex;align-items:center;gap:10px;margin:0 0 14px}.section-title h2{font-size:18px;margin:0}@media(max-width:1000px){
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#17212b}.wrap{max-width:1150px;margin:0 auto;padding:0 20px 50px}.top{background:#fff;border-bottom:1px solid #dfe4e8;margin:0 -20px 28px;padding:24px 20px 22px;display:flex;flex-direction:column;gap:20px}.brand{display:flex;align-items:center;gap:18px}.brand img{display:block;width:220px;max-width:35vw;height:auto;object-fit:contain}.brand h1{margin:0;font-size:25px}.brand p{margin:4px 0 0;color:#68737d}.btn{border:0;border-radius:7px;padding:10px 15px;font-weight:700;cursor:pointer}.primary{background:#008e39;color:#fff}.secondary{background:#fff;border:1px solid #ccd3d8;color:#17212b}.danger{background:#fff1f0;color:#9f201b;border:1px solid #f2b8b5}.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px}.user{margin-left:auto;color:#68737d;font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.card{background:#fff;border:1px solid #dfe4e8;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.05)}.card h2{margin:0 0 7px;font-size:20px}.meta{color:#68737d;font-size:14px;line-height:1.65}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:16px}.stat{background:#f7f8f9;border:1px solid #e5e8eb;border-radius:8px;padding:10px 8px;text-align:center}.stat .num{display:block;font-size:20px;font-weight:800;color:#17212b;min-height:24px}.stat .label{display:block;margin-top:3px;font-size:11px;color:#68737d}.last{margin-top:10px;font-size:12px;color:#68737d}.stat.loading .num{opacity:.45}.status{display:inline-block;margin-top:13px;padding:5px 9px;border-radius:999px;background:#e7f6ed;color:#16733b;font-size:12px;font-weight:700}.status.inactive{background:#f3f4f6;color:#68737d}.open{display:block;text-align:center;text-decoration:none;background:#008e39;color:#fff;padding:11px;border-radius:7px;margin-top:18px;font-weight:700}.edit{display:block;text-align:center;margin-top:9px;padding:10px;border-radius:7px;border:1px solid #ccd3d8;background:#fff;color:#17212b;font-weight:700;cursor:pointer;width:100%}.toggle{display:block;text-align:center;margin-top:9px;padding:10px;border-radius:7px;border:1px solid #ccd3d8;background:#fff;color:#17212b;font-weight:700;cursor:pointer;width:100%}.note{margin:25px 0 0;color:#68737d;font-size:13px}.error-banner{display:none;background:#fff1f0;border:1px solid #f2b8b5;color:#9f201b;border-radius:10px;padding:14px;margin-bottom:18px}.error-banner.show{display:block}#loading{background:#fff;border:1px solid #dfe4e8;border-radius:12px;padding:25px;color:#68737d}.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}.modal.show{display:flex}.box{background:#fff;border-radius:12px;padding:22px;max-width:430px;width:100%}.box h2{margin-top:0}.box label{display:block;font-size:13px;font-weight:700;margin-top:12px}.box input{width:100%;padding:11px;border:1px solid #ccd3d8;border-radius:6px;margin:7px 0}.box input[readonly]{background:#f7f8f9;color:#4d5963}.box input.password-mismatch{border-color:#d93025;background:#fff4f3;box-shadow:0 0 0 1px #d93025}.change-password-btn{display:block;width:100%;margin-top:8px}.generated{background:#f7f8f9;border:1px solid #e5e8eb;border-radius:8px;padding:10px 12px;font-size:13px;color:#33404a;word-break:break-all;margin-top:7px}.generated strong{display:block;font-size:11px;color:#68737d;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.helper{font-size:12px;color:#68737d;line-height:1.45;margin-top:7px}.url-box{max-width:560px}.url-display{background:#f7f8f9;border:1px solid #e5e8eb;border-radius:8px;padding:12px;font-size:13px;line-height:1.45;word-break:break-all;color:#33404a}.copy-row{display:flex;gap:9px;margin-top:10px}.copy-row .url-display{flex:1;margin:0}.copy-btn{white-space:nowrap}.copy-status{font-size:12px;color:#16733b;min-height:17px;margin-top:7px}.storage-ok{color:#16733b}.storage-warn{color:#9a6700}.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.error{color:#b42318;font-size:13px;min-height:18px;margin-bottom:8px}.hidden{display:none!important}.section-title{display:flex;align-items:center;gap:10px;margin:0 0 14px}.section-title h2{font-size:18px;margin:0}@media(max-width:1000px){
   .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 }
 @media(max-width:700px){
@@ -175,6 +175,7 @@
   <h2 id="siteModalTitle">Add Site</h2><div class="error" id="siteError"></div>
   <label>Site name</label><input id="siteName" placeholder="Example Development">
   <label>Address</label><input id="siteAddress" placeholder="Swords, Co. Dublin">
+  <button class="btn secondary change-password-btn hidden" id="changePasswordBtn">Change password</button>
   <div id="sitePasswordFields">
     <label>Site password</label><input id="sitePassword" type="password" autocomplete="new-password" placeholder="Create a password for this site">
     <label>Confirm site password</label><input id="sitePasswordConfirm" type="password" autocomplete="new-password" placeholder="Re-enter the site password">
@@ -182,8 +183,16 @@
   <div class="generated" id="generatedSiteId"><strong>Site ID</strong><span>—</span></div>
   <div class="generated" id="generatedSiteUrl"><strong>Site URL</strong><span>—</span></div>
   <div class="generated" id="generatedPhotoBucket"><strong>Photo storage</strong><span>—</span></div>
-  <div class="helper">The Site ID, GitHub Pages URL and Supabase photo bucket are generated automatically. Each site has its own password. When editing a site, leave the password fields blank to keep the existing password.</div>
+  <div class="helper">The Site ID, GitHub Pages URL and Supabase photo bucket are generated automatically. Each site has its own password.</div>
   <div class="actions"><button class="btn secondary" id="siteCancel">Cancel</button><button class="btn primary" id="siteSave">Create Site</button></div>
+</div></div>
+
+<div class="modal" id="changePasswordModal"><div class="box">
+  <h2>Change site password</h2><div class="error" id="changePasswordError"></div>
+  <label>New site password</label><input id="changePasswordNew" type="password" autocomplete="new-password" placeholder="Enter the new site password">
+  <label>Confirm new password</label><input id="changePasswordConfirm" type="password" autocomplete="new-password" placeholder="Re-enter the new site password">
+  <div class="helper">The password must be at least 8 characters and both fields must match exactly.</div>
+  <div class="actions"><button class="btn secondary" id="changePasswordCancel">Cancel</button><button class="btn primary" id="changePasswordSave">Change Password</button></div>
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -522,6 +531,21 @@ function updateGeneratedFields(siteId){
   $('generatedSiteUrl').querySelector('span').textContent=siteId?appUrl(siteId):'—';
   $('generatedPhotoBucket').querySelector('span').textContent=siteId?photoBucketFor(siteId):'—';
 }
+function clearPasswordMatchState(inputId){
+  $(inputId).classList.remove('password-mismatch');
+}
+function updatePasswordMatchState(){
+  const password=$('sitePassword').value;
+  const confirmPassword=$('sitePasswordConfirm').value;
+  const shouldMark=!!password || !!confirmPassword;
+  $('sitePasswordConfirm').classList.toggle('password-mismatch',shouldMark && password!==confirmPassword);
+}
+function updateChangePasswordMatchState(){
+  const password=$('changePasswordNew').value;
+  const confirmPassword=$('changePasswordConfirm').value;
+  const shouldMark=!!password || !!confirmPassword;
+  $('changePasswordConfirm').classList.toggle('password-mismatch',shouldMark && password!==confirmPassword);
+}
 function openAdd(){
   editingSiteId=null;
   const siteId=nextSiteId();
@@ -530,7 +554,9 @@ function openAdd(){
   $('siteAddress').value='';
   $('sitePassword').value='';
   $('sitePasswordConfirm').value='';
+  clearPasswordMatchState('sitePasswordConfirm');
   $('sitePasswordFields').style.display='';
+  $('changePasswordBtn').classList.add('hidden');
   $('siteError').textContent='';
   $('siteSave').textContent='Create Site';
   updateGeneratedFields(siteId);
@@ -545,7 +571,8 @@ function openEdit(site){
   $('siteAddress').value=site.address||'';
   $('sitePassword').value='';
   $('sitePasswordConfirm').value='';
-  $('sitePasswordFields').style.display='';
+  $('sitePasswordFields').style.display='none';
+  $('changePasswordBtn').classList.remove('hidden');
   $('siteError').textContent='';
   $('siteSave').textContent='Save Changes';
   updateGeneratedFields(site.site_id);
@@ -554,6 +581,21 @@ function openEdit(site){
 }
 $('addBtn').onclick=openAdd;
 $('siteCancel').onclick=()=>$('siteModal').classList.remove('show');
+$('changePasswordBtn').onclick=()=>{
+  if(!editingSiteId)return;
+  $('changePasswordNew').value='';
+  $('changePasswordConfirm').value='';
+  clearPasswordMatchState('changePasswordConfirm');
+  $('changePasswordError').textContent='';
+  $('changePasswordModal').classList.add('show');
+  $('changePasswordNew').focus();
+};
+$('changePasswordCancel').onclick=()=>$('changePasswordModal').classList.remove('show');
+$('changePasswordModal').addEventListener('click',e=>{if(e.target===$('changePasswordModal'))$('changePasswordModal').classList.remove('show');});
+$('sitePassword').addEventListener('input',updatePasswordMatchState);
+$('sitePasswordConfirm').addEventListener('input',updatePasswordMatchState);
+$('changePasswordNew').addEventListener('input',updateChangePasswordMatchState);
+$('changePasswordConfirm').addEventListener('input',updateChangePasswordMatchState);
 $('urlClose').onclick=()=>$('urlModal').classList.remove('show');
 $('copySiteUrl').onclick=copySiteUrl;
 $('urlModal').addEventListener('click',e=>{if(e.target===$('urlModal'))$('urlModal').classList.remove('show');});
@@ -598,6 +640,31 @@ async function createPhotoBucket(bucket){
   return {created:true,exists:false};
 }
 
+$('changePasswordSave').onclick=async()=>{
+  if(!isAdmin() || !editingSiteId)return;
+  $('changePasswordError').textContent='';
+  const password=$('changePasswordNew').value;
+  const confirmPassword=$('changePasswordConfirm').value;
+  if(!password){$('changePasswordError').textContent='A new site password is required.';return;}
+  if(password.length < 8){$('changePasswordError').textContent='The site password must be at least 8 characters.';return;}
+  if(!confirmPassword){$('changePasswordError').textContent='Please confirm the new site password.';$('changePasswordConfirm').classList.add('password-mismatch');return;}
+  if(password!==confirmPassword){$('changePasswordError').textContent='The new passwords do not match.';$('changePasswordConfirm').classList.add('password-mismatch');return;}
+  $('changePasswordSave').disabled=true;
+  $('changePasswordSave').textContent='Changing…';
+  try{
+    await saveSiteAuth(editingSiteId,password);
+    $('changePasswordModal').classList.remove('show');
+    $('changePasswordNew').value='';
+    $('changePasswordConfirm').value='';
+    clearPasswordMatchState('changePasswordConfirm');
+  }catch(error){
+    $('changePasswordError').textContent='Could not change password: '+error.message;
+  }finally{
+    $('changePasswordSave').disabled=false;
+    $('changePasswordSave').textContent='Change Password';
+  }
+};
+
 $('siteSave').onclick=async()=>{
   if(!isAdmin())return;
   $('siteError').textContent='';
@@ -611,10 +678,8 @@ $('siteSave').onclick=async()=>{
   if(!editingSiteId){
     if(!sitePassword){$('siteError').textContent='A site password is required.';return;}
     if(sitePassword.length < 8){$('siteError').textContent='The site password must be at least 8 characters.';return;}
-    if(sitePassword !== sitePasswordConfirm){$('siteError').textContent='The site passwords do not match.';return;}
-  }else if(sitePassword || sitePasswordConfirm){
-    if(sitePassword.length < 8){$('siteError').textContent='The site password must be at least 8 characters.';return;}
-    if(sitePassword !== sitePasswordConfirm){$('siteError').textContent='The site passwords do not match.';return;}
+    if(!sitePasswordConfirm){$('siteError').textContent='Please confirm the site password.';$('sitePasswordConfirm').classList.add('password-mismatch');return;}
+    if(sitePassword !== sitePasswordConfirm){$('siteError').textContent='The site passwords do not match.';$('sitePasswordConfirm').classList.add('password-mismatch');return;}
   }
   $('siteSave').disabled=true;
   $('siteSave').textContent=editingSiteId?'Saving…':'Creating site…';
