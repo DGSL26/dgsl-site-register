@@ -929,6 +929,14 @@ function showAuthDialog() {
         return;
       }
 
+      status.textContent = 'Checking site password...';
+
+      const sitePasswordOk = await requireSitePassword();
+      if (!sitePasswordOk) {
+        status.textContent = 'Site login cancelled.';
+        return;
+      }
+
       status.textContent = 'Logging in...';
 
       const { error } = await supabaseClient.auth.signInWithPassword({
@@ -4517,8 +4525,6 @@ async function startApp() {
 
     await loadSiteConfiguration();
     NOTIFICATIONS_TABLE = SITE.notificationsTable;
-
-    await requireSitePassword();
 
     const { data: sessionData } =
       await supabaseClient.auth.getSession();
