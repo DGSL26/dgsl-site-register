@@ -192,7 +192,7 @@ let currentSession=null, editingSiteId=null;
 const $=id=>document.getElementById(id);
 function appUrl(siteId){
   const url=new URL('./',window.location.href);
-  if(siteId!=='SWORDS') url.searchParams.set('site',siteId);
+  if(siteId!=='SITE1') url.searchParams.set('site',siteId);
   return url.href;
 }
 function nextSiteId(){
@@ -311,7 +311,7 @@ async function copySiteUrl(){
 }
 
 
-let managementSiteId = 'SWORDS';
+let managementSiteId = 'SITE1';
 let managementBugReports = [];
 let managementSelectedBug = null;
 

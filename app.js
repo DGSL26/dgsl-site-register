@@ -17,7 +17,7 @@ const SUPABASE_KEY =
 // selected from the URL (?site=SITE2) and its display settings are loaded
 // from sites.
 const DEFAULT_SITE = {
-  id: 'SWORDS',
+  id: 'SITE1',
   name: 'Knocksedan, PH3',
   handoversTable: 'handovers',
   bugReportsTable: 'bug_reports',
@@ -31,7 +31,7 @@ let PHOTO_BUCKET = SITE.photoBucket;
 
 const requestedSite =
   new URLSearchParams(window.location.search).get('site')?.trim().toUpperCase() ||
-  'SWORDS';
+  'SITE1';
 
 async function loadSiteConfiguration() {
   if (!supabaseClient) return;
