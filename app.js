@@ -10,8 +10,63 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
   'sb_publishable_XWLtSyttiEMQA86unKN37A_ZC9OY19j';
 
-const PHOTO_BUCKET =
-  'handover-photos';
+// ------------------------------------------------------------
+// SITE CONFIGURATION
+// ------------------------------------------------------------
+// One shared database structure is used for all sites. The site is
+// selected from the URL (?site=SITE2) and its display settings are loaded
+// from sites.
+const DEFAULT_SITE = {
+  id: 'SWORDS',
+  name: 'Knocksedan, PH3',
+  handoversTable: 'handovers',
+  bugReportsTable: 'bug_reports',
+  notificationsTable: 'site_notifications',
+  notificationReadsTable: 'site_notification_device_reads',
+  photoBucket: 'handover-photos'
+};
+
+let SITE = { ...DEFAULT_SITE };
+let PHOTO_BUCKET = SITE.photoBucket;
+
+const requestedSite =
+  new URLSearchParams(window.location.search).get('site')?.trim().toUpperCase() ||
+  'SWORDS';
+
+async function loadSiteConfiguration() {
+  if (!supabaseClient) return;
+
+  const { data, error } = await supabaseClient
+    .from('sites')
+    .select('site_id,site_name,address,active,photo_bucket')
+    .eq('site_id', requestedSite)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('Could not load site configuration; using default Swords configuration.', error);
+    return;
+  }
+
+  if (!data || data.active === false) {
+    console.warn('Requested site is not configured or is inactive; using Swords configuration.');
+    return;
+  }
+
+  SITE = {
+    ...DEFAULT_SITE,
+    id: data.site_id,
+    name: data.site_name || data.site_id,
+    address: data.address || '',
+    photoBucket: data.photo_bucket || DEFAULT_SITE.photoBucket
+  };
+
+  PHOTO_BUCKET = SITE.photoBucket;
+
+  document.title = `DGSL Site Register — ${SITE.name}`;
+  document.querySelectorAll('[data-site-name]').forEach(el => {
+    el.textContent = SITE.name;
+  });
+}
 
 const LOGO_FILE =
   'dgsl-logo.png';
@@ -22,7 +77,7 @@ let editing = null;
 let filter = 'All';
 
 const SITE_VERSION = '1.3.3';
-const NOTIFICATIONS_TABLE = 'site_notifications';
+let NOTIFICATIONS_TABLE = SITE.notificationsTable;
 
 // Single source of truth for the website version.
 function applySiteVersion() {
@@ -104,9 +159,7 @@ function updateAuthUi() {
   if (newButton) newButton.style.display = currentUser ? '' : 'none';
   if (notificationsButton) notificationsButton.style.display = currentUser ? '' : 'none';
   if (settingsButton) settingsButton.style.display = currentUser ? '' : 'none';
-  showBugReportsButtonForAdmin();
-  const bugReportsButton = document.getElementById('settingsBugReports');
-  if (bugReportsButton) bugReportsButton.style.display = isBugReportAdmin() ? '' : 'none';
+
 
   const editHeader = document.getElementById('editHeader');
   if (editHeader) editHeader.style.display = currentUser ? '' : 'none';
@@ -143,7 +196,6 @@ function openSettingsDialog() {
         <div class="settings-options">
           <button type="button" id="settingsChangeLog" class="settings-option">Change Log</button>
           <button type="button" id="settingsBugReport" class="settings-option">Report a Bug</button>
-          <button type="button" id="settingsDataManagement" class="settings-option" style="position:relative;">Data Management <span id="dataManagementBadge" class="notification-badge bug-reports-badge" aria-label="unread bug reports" style="display:none;"></span></button>
           <button type="button" id="settingsLogout" class="settings-option settings-logout">Log out</button>
         </div>
       </div>
@@ -159,97 +211,16 @@ function openSettingsDialog() {
       dialog.close();
       openBugReportDialog();
     };
-    dialog.querySelector('#settingsDataManagement').onclick = () => {
-      dialog.close();
-      openDataManagementDialog();
-    };
     dialog.querySelector('#settingsLogout').onclick = () => {
       dialog.close();
       showLogoutConfirmDialog();
     };
   }
   if (!dialog.open) dialog.showModal();
-  showBugReportsButtonForAdmin();
 }
 
 
-function openDataManagementDialog() {
-  let dialog = document.getElementById('dgslDataManagementDialog');
-
-  if (!dialog) {
-    dialog = document.createElement('dialog');
-    dialog.id = 'dgslDataManagementDialog';
-    dialog.className = 'header-settings-dialog';
-    dialog.innerHTML = `
-      <div class="header-dialog-inner">
-        <div class="header-dialog-head">
-          <div>
-            <p class="eyebrow">DGSL SITE REGISTER</p>
-            <h2>Data Management</h2>
-          </div>
-          <button type="button" class="icon" id="closeDataManagement" aria-label="Close">×</button>
-        </div>
-        <div class="settings-options">
-          <button type="button" id="dataManagementBugReports" class="settings-option" style="position:relative;">
-            Bug Reports
-            <span id="dataManagementBugReportsBadge" class="notification-badge bug-reports-badge" aria-label="unread bug reports" style="display:none;"></span>
-          </button>
-          <button type="button" id="dataManagementExport" class="settings-option">Export Data</button>
-          <label class="settings-option settings-import-option" for="dataManagementImport">
-            <span>Import Data</span>
-            <input id="dataManagementImport" type="file" accept="application/json" hidden>
-          </label>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(dialog);
-
-    dialog.querySelector('#closeDataManagement').onclick = () => dialog.close();
-
-    dialog.querySelector('#dataManagementBugReports').onclick = () => {
-      dialog.close();
-      openBugReportsDialog();
-    };
-
-    dialog.querySelector('#dataManagementExport').onclick = () => {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' }));
-      link.download = `DGSL-site-register-${today()}.json`;
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(link.href), 0);
-    };
-
-    dialog.querySelector('#dataManagementImport').onchange = async e => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = async () => {
-        try {
-          const imported = JSON.parse(reader.result);
-          if (!Array.isArray(imported)) throw new Error('Invalid backup');
-          for (const record of imported) {
-            const databaseRecord = toDatabase(record);
-            const { error } = await supabaseClient.from('handovers').upsert(databaseRecord);
-            if (error) throw error;
-          }
-          await loadRecords();
-          alert('Backup imported.');
-        } catch (error) {
-          console.error(error);
-          alert('That file is not a valid DGSL backup.');
-        } finally {
-          e.target.value = '';
-        }
-      };
-      reader.readAsText(file);
-    };
-  }
-
-  if (!dialog.open) dialog.showModal();
-  refreshBugReportsBadge();
-}
-
-const BUG_REPORTS_TABLE = 'bug_reports';
+const BUG_REPORTS_TABLE = SITE.bugReportsTable;
 
 function isBugReportAdmin() {
   // Bug Reports are available to any logged-in user.
@@ -260,51 +231,6 @@ function bugReportEscape(value) {
   return String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[char]));
-}
-
-function updateBugReportsBadge(unreadCount) {
-  const count = Number(unreadCount) || 0;
-  const badges = [
-    document.getElementById('dataManagementBadge'),
-    document.getElementById('dataManagementBugReportsBadge')
-  ];
-
-  badges.forEach(badge => {
-    if (!badge) return;
-    badge.textContent = count > 99 ? '99+' : (count > 0 ? String(count) : '');
-    badge.className = 'notification-badge bug-reports-badge';
-    // Use an inline !important rule so the badge can never be forced visible
-    // by the notification CSS when there are zero unread reports.
-    badge.style.setProperty('display', count > 0 ? 'inline-flex' : 'none', 'important');
-  });
-}
-
-async function refreshBugReportsBadge() {
-  if (!isBugReportAdmin() || !supabaseClient) {
-    updateBugReportsBadge(0);
-    return;
-  }
-
-  try {
-    const { count, error } = await supabaseClient
-      .from(BUG_REPORTS_TABLE)
-      .select('id', { count: 'exact', head: true })
-      .eq('is_read', false);
-    if (error) throw error;
-    updateBugReportsBadge(count || 0);
-  } catch (error) {
-    console.error('Bug report unread count error:', error);
-    // If the unread-count request fails (for example because the table
-    // policy rejects the request), do not leave a stale badge showing.
-    updateBugReportsBadge(0);
-  }
-}
-
-function showBugReportsButtonForAdmin() {
-  const button = document.getElementById('settingsDataManagement');
-  if (button) button.style.display = isBugReportAdmin() ? '' : 'none';
-  if (isBugReportAdmin()) refreshBugReportsBadge();
-  else updateBugReportsBadge(0);
 }
 
 function openBugReportDialog() {
@@ -372,6 +298,7 @@ async function submitBugReport() {
       website_version: SITE_VERSION,
       page_url: window.location.href,
       account_id: currentUser.id,
+      site_id: SITE.id,
       status: 'New',
       is_read: false
     });
@@ -381,7 +308,6 @@ async function submitBugReport() {
     dialog.querySelector('#bugReportTask').value = '';
     dialog.querySelector('#bugReportDescription').value = '';
     status.textContent = 'Bug report submitted. Thank you.';
-    if (isBugReportAdmin()) refreshBugReportsBadge();
     setTimeout(() => { if (dialog.open) dialog.close(); }, 900);
   } catch (error) {
     console.error('Bug report error:', error);
@@ -401,7 +327,8 @@ async function openBugReportDetail(item, parentDialog) {
     const { error } = await supabaseClient
       .from(BUG_REPORTS_TABLE)
       .update({ is_read: true })
-      .eq('id', item.id);
+      .eq('id', item.id)
+      .eq('site_id', SITE.id);
 
     if (error) {
       console.error('Bug report read error:', error);
@@ -410,7 +337,6 @@ async function openBugReportDetail(item, parentDialog) {
     }
 
     item.is_read = true;
-    refreshBugReportsBadge();
   }
 
   let detail = document.getElementById('dgslBugReportDetailDialog');
@@ -493,7 +419,8 @@ async function openBugReportDetail(item, parentDialog) {
       const { error } = await supabaseClient
         .from(BUG_REPORTS_TABLE)
         .delete()
-        .eq('id', item.id);
+        .eq('id', item.id)
+        .eq('site_id', SITE.id);
       if (error) throw error;
 
       // Remove the deleted report from the visible list immediately.
@@ -508,7 +435,6 @@ async function openBugReportDetail(item, parentDialog) {
       if (parentDialog?.open) {
         await openBugReportsDialog();
       }
-      await refreshBugReportsBadge();
     } catch (error) {
       console.error('Bug report delete error:', error);
       alert('Unable to delete this bug report. Please check the Supabase DELETE policy.');
@@ -576,18 +502,17 @@ async function openBugReportsDialog() {
     const { data, error } = await supabaseClient
       .from(BUG_REPORTS_TABLE)
       .select('id,name,trying_to_do,report,created_at,website_version,page_url,is_read')
+      .eq('site_id', SITE.id)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
 
     if (!data?.length) {
       list.innerHTML = '<p>No bug reports have been submitted.</p>';
-      updateBugReportsBadge(0);
       return;
     }
 
     const unreadCount = data.filter(item => !item.is_read).length;
-    updateBugReportsBadge(unreadCount);
 
     list.innerHTML = data.map((item, index) => `
       <button type="button" class="bug-report-list-item" data-bug-report-index="${index}" data-bug-report-id="${bugReportEscape(item.id)}"
@@ -617,7 +542,6 @@ async function openBugReportsDialog() {
 
         const remainingUnread = Array.from(list.querySelectorAll('[data-bug-report-index]'))
           .filter(row => !row.dataset.bugReportRead && row.querySelector('[data-bug-report-new]')).length;
-        updateBugReportsBadge(remainingUnread);
       };
     });
   } catch (error) {
@@ -626,7 +550,7 @@ async function openBugReportsDialog() {
   }
 }
 
-const NOTIFICATION_DEVICE_READS_TABLE = 'site_notification_device_reads';
+const NOTIFICATION_DEVICE_READS_TABLE = SITE.notificationReadsTable;
 
 function getNotificationDeviceKey() {
   const values = [
@@ -656,7 +580,8 @@ async function getSeenNotificationIds() {
       .from(NOTIFICATION_DEVICE_READS_TABLE)
       .select('notification_id')
       .eq('user_id', currentUser.id)
-      .eq('device_key', deviceKey);
+      .eq('device_key', deviceKey)
+      .eq('site_id', SITE.id);
 
     if (error) throw error;
 
@@ -677,7 +602,8 @@ async function markNotificationsSeen(notifications) {
     const rows = notifications.map(notification => ({
       user_id: currentUser.id,
       device_key: deviceKey,
-      notification_id: String(notification.id)
+      notification_id: String(notification.id),
+      site_id: SITE.id
     }));
 
     const { error } = await supabaseClient
@@ -719,6 +645,7 @@ async function loadSiteNotifications() {
     const { data, error } = await supabaseClient
       .from(NOTIFICATIONS_TABLE)
       .select('id,version,title,message,created_at')
+      .eq('site_id', SITE.id)
       .order('created_at', { ascending: false })
       .limit(25);
 
@@ -1099,6 +1026,9 @@ let photosToRemove = [];
     id:
       x.id,
 
+    site_id:
+      SITE.id,
+
     zone:
       x.zone || '',
 
@@ -1193,6 +1123,9 @@ function toDatabase(x) {
     id:
       x.id,
 
+    site_id:
+      SITE.id,
+
     zone:
       x.zone || null,
 
@@ -1284,8 +1217,9 @@ async function loadRecords() {
       error
     } =
       await supabaseClient
-        .from('handovers')
-        .select('*');
+        .from(SITE.handoversTable)
+        .select('*')
+        .eq('site_id', SITE.id);
 
     if (error) {
       throw error;
@@ -1353,7 +1287,8 @@ async function setupRealtime() {
       {
         event: '*',
         schema: 'public',
-        table: 'handovers'
+        table: SITE.handoversTable,
+        filter: `site_id=eq.${SITE.id}`
       },
       async () => {
         await loadRecords();
@@ -1362,7 +1297,7 @@ async function setupRealtime() {
 
   handoversRealtimeChannel.subscribe((status) => {
     if (status === 'SUBSCRIBED') {
-      console.log('Supabase realtime connected: handovers');
+      console.log(`Supabase realtime connected: ${SITE.handoversTable} (${SITE.id})`);
     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
       console.warn('Supabase realtime status:', status);
     }
@@ -2136,9 +2071,10 @@ function showRowMoreDialog(record) {
           }
         }
         const { error } = await supabaseClient
-          .from('handovers')
+          .from(SITE.handoversTable)
           .delete()
-          .eq('id', record.id);
+          .eq('id', record.id)
+          .eq('site_id', SITE.id);
         if (error) throw error;
         if (editing?.id === record.id) editing = null;
         await loadRecords();
@@ -3229,13 +3165,17 @@ for (
           error
         } =
           await supabaseClient
-            .from('handovers')
+            .from(SITE.handoversTable)
             .update(
               databaseRecord
             )
             .eq(
               'id',
               x.id
+            )
+            .eq(
+              'site_id',
+              SITE.id
             );
 
 
@@ -3249,7 +3189,7 @@ for (
           error
         } =
           await supabaseClient
-            .from('handovers')
+            .from(SITE.handoversTable)
             .insert(
               databaseRecord
             );
@@ -3478,7 +3418,7 @@ async function copyHandover(record) {
 
     const { error } =
       await supabaseClient
-        .from('handovers')
+        .from(SITE.handoversTable)
         .insert(databaseRecord);
 
     if (error) {
@@ -3923,11 +3863,15 @@ $('#delete').onclick =
         error
       } =
         await supabaseClient
-          .from('handovers')
+          .from(SITE.handoversTable)
           .delete()
           .eq(
             'id',
             editing.id
+          )
+          .eq(
+            'site_id',
+            SITE.id
           );
 
 
@@ -4503,6 +4447,9 @@ async function startApp() {
 
     await loadSupabase();
 
+    await loadSiteConfiguration();
+    NOTIFICATIONS_TABLE = SITE.notificationsTable;
+
     const { data: sessionData } =
       await supabaseClient.auth.getSession();
 
@@ -4650,7 +4597,7 @@ async function generatePdf(viewOnly = false) {
 
 
     pdf.text(
-      'Knocksedan, PH3',
+      SITE.name,
       margin,
       y
     );
