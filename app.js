@@ -531,41 +531,138 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
   return pdf;
 }
 
+async function loadExcelJs() {
+  if (window.ExcelJS) return window.ExcelJS;
+
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-dgsl-exceljs]');
+    if (existing) {
+      existing.addEventListener('load', () => resolve(window.ExcelJS));
+      existing.addEventListener('error', () => reject(new Error('Excel tools could not be loaded.')));
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
+    script.async = true;
+    script.dataset.dgslExceljs = 'true';
+    script.onload = () => window.ExcelJS ? resolve(window.ExcelJS) : reject(new Error('Excel tools could not be loaded.'));
+    script.onerror = () => reject(new Error('Excel tools could not be loaded.'));
+    document.head.appendChild(script);
+  });
+}
+
 async function generateWorkPermitOverviewExcel(contractor, permits) {
-  const escapeHtml = value => String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  const ExcelJS = await loadExcelJs();
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'DGSL Site Register';
+  workbook.created = new Date();
+  workbook.modified = new Date();
 
-  const rowsHtml = permits.map(record => {
-    const statusClass = overviewStatusClass(record.status);
-    return `<tr><td>${escapeHtml(record.zone || '')}</td><td>${escapeHtml(record.description || '')}</td><td>${escapeHtml(overviewDate(record.handoverDate))}</td><td class="${statusClass}">${escapeHtml(record.status === 'Work Permit on Hold' ? 'On Hold' : 'Open')}</td></tr>`;
-  }).join('');
+  const sheet = workbook.addWorksheet('Open Permits', {
+    pageSetup: {
+      orientation: 'landscape',
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      paperSize: 9
+    }
+  });
 
-  // Embed the same DGSL logo used by the PDF. This keeps the Excel-compatible
-  // workbook-style download branded without requiring another external file.
+  sheet.columns = [
+    { header: 'Zone / Area', key: 'zone', width: 28 },
+    { header: 'Work Description', key: 'description', width: 58 },
+    { header: 'Handover Date', key: 'handoverDate', width: 18 },
+    { header: 'Status', key: 'status', width: 18 }
+  ];
+
+  // Add the same DGSL logo used by the PDF as a real embedded Excel image.
   const logoData = await loadLogoForPdf();
-  const logoHtml = logoData
-    ? `<div style="margin-bottom:10px"><img src="${logoData}" alt="DGSL Logo" style="width:220px;height:auto"></div>`
-    : '';
+  if (logoData) {
+    const imageId = workbook.addImage({
+      base64: logoData,
+      extension: 'png'
+    });
+    sheet.addImage(imageId, {
+      tl: { col: 0, row: 0 },
+      ext: { width: 250, height: 50 }
+    });
+  }
 
-  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
-    body{font-family:Arial,sans-serif;font-size:11pt;color:#222}
-    h1{color:#1f4e78;margin-bottom:4px} h2{font-size:12pt;margin-top:0}
-    table{border-collapse:collapse;width:100%;margin-top:18px} th,td{border:1px solid #d7dde2;padding:7px;text-align:left}
-    th{background:#1f4e78;color:#fff} .status-open{background:#f6c453;font-weight:700} .status-hold{background:#ef7777;font-weight:700}
-  </style></head><body>
-    ${logoHtml}
-    <h1>DGSL SITE REGISTER</h1><h2>OPEN WORK PERMITS</h2>
-    <div>${escapeHtml(SITE.name || SITE.id)}</div>
-    <div>Sub-Contractor: <strong>${escapeHtml(contractor)}</strong></div>
-    <div>Generated: ${escapeHtml(formatTableDate(today()))}</div>
-    <table><thead><tr><th>Zone / Area</th><th>Work Description</th><th>Handover Date</th><th>Status</th></tr></thead><tbody>${rowsHtml}</tbody></table>
-    <p><strong>Total outstanding: ${permits.length}</strong></p>
-  </body></html>`;
+  sheet.mergeCells('A6:D6');
+  sheet.getCell('A6').value = 'DGSL SITE REGISTER';
+  sheet.getCell('A6').font = { bold: true, size: 16, color: { argb: '1F4E78' } };
 
-  return new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+  sheet.mergeCells('A7:D7');
+  sheet.getCell('A7').value = 'OPEN WORK PERMITS';
+  sheet.getCell('A7').font = { bold: true, size: 14, color: { argb: '1F4E78' } };
+
+  sheet.mergeCells('A8:D8');
+  sheet.getCell('A8').value = SITE.name || SITE.id;
+  sheet.getCell('A9').value = 'Sub-Contractor:';
+  sheet.getCell('B9').value = contractor;
+  sheet.getCell('A10').value = 'Generated:';
+  sheet.getCell('B10').value = formatTableDate(today());
+  sheet.getCell('A9').font = { bold: true };
+  sheet.getCell('A10').font = { bold: true };
+
+  // Leave room for the heading information before the table.
+  const headerRow = 12;
+  sheet.getRow(headerRow).values = ['Zone / Area', 'Work Description', 'Handover Date', 'Status'];
+  const header = sheet.getRow(headerRow);
+  header.height = 22;
+  header.eachCell(cell => {
+    cell.font = { bold: true, color: { argb: 'FFFFFF' } };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1F4E78' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'left' };
+    cell.border = {
+      top: { style: 'thin', color: { argb: 'D7DDE2' } },
+      bottom: { style: 'thin', color: { argb: 'D7DDE2' } },
+      left: { style: 'thin', color: { argb: 'D7DDE2' } },
+      right: { style: 'thin', color: { argb: 'D7DDE2' } }
+    };
+  });
+
+  permits.forEach(record => {
+    const row = sheet.addRow([
+      record.zone || '—',
+      record.description || '—',
+      overviewDate(record.handoverDate),
+      record.status === 'Work Permit on Hold' ? 'On Hold' : 'Open'
+    ]);
+    row.height = 20;
+    row.eachCell(cell => {
+      cell.alignment = { vertical: 'middle', wrapText: true };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'E1E5E8' } },
+        bottom: { style: 'thin', color: { argb: 'E1E5E8' } },
+        left: { style: 'thin', color: { argb: 'E1E5E8' } },
+        right: { style: 'thin', color: { argb: 'E1E5E8' } }
+      };
+    });
+
+    const statusCell = row.getCell(4);
+    statusCell.font = { bold: true };
+    statusCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    statusCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: record.status === 'Work Permit on Hold' ? 'EF7777' : 'F6C453' }
+    };
+  });
+
+  const totalRow = sheet.addRow([]);
+  totalRow.getCell(1).value = `Total outstanding: ${permits.length}`;
+  totalRow.getCell(1).font = { bold: true, size: 12 };
+  sheet.mergeCells(`A${totalRow.number}:D${totalRow.number}`);
+
+  sheet.freezePanes = 'A13';
+  sheet.autoFilter = {
+    from: 'A12',
+    to: `D${12 + permits.length}`
+  };
+
+  return workbook.xlsx.writeBuffer();
 }
 
 async function downloadWorkPermitOverview(type) {
@@ -580,14 +677,15 @@ async function downloadWorkPermitOverview(type) {
   try {
     const safeContractor = overviewSafeFilePart(contractor);
     if (type === 'pdf') {
-      const pdf = generateWorkPermitOverviewPdf(contractor, permits);
+      const pdf = await generateWorkPermitOverviewPdf(contractor, permits);
       pdf.save(`DGSL-${safeContractor}-Open-Work-Permits-${today()}.pdf`);
     } else {
-      const blob = await generateWorkPermitOverviewExcel(contractor, permits);
+      const buffer = await generateWorkPermitOverviewExcel(contractor, permits);
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `DGSL-${safeContractor}-Open-Work-Permits-${today()}.xls`;
+      link.download = `DGSL-${safeContractor}-Open-Work-Permits-${today()}.xlsx`;
       document.body.appendChild(link);
       link.click();
       link.remove();
