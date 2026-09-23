@@ -267,6 +267,7 @@ function openSettingsDialog() {
           <button type="button" class="icon" id="closeSettings" aria-label="Close">×</button>
         </div>
         <div class="settings-options">
+          <button type="button" id="settingsWorkPermitOverview" class="settings-option">Open Permit Summary</button>
           <button type="button" id="settingsChangeLog" class="settings-option">Change Log</button>
           <button type="button" id="settingsBugReport" class="settings-option">Report a Bug</button>
           <button type="button" id="settingsLogout" class="settings-option settings-logout">Log out</button>
@@ -276,6 +277,10 @@ function openSettingsDialog() {
     document.body.appendChild(dialog);
 
     dialog.querySelector('#closeSettings').onclick = () => dialog.close();
+    dialog.querySelector('#settingsWorkPermitOverview').onclick = () => {
+      dialog.close();
+      openWorkPermitOverviewDialog();
+    };
     dialog.querySelector('#settingsChangeLog').onclick = () => {
       dialog.close();
       openChangeLogDialog();
@@ -290,6 +295,294 @@ function openSettingsDialog() {
     };
   }
   if (!dialog.open) dialog.showModal();
+}
+
+
+// ============================================================
+// OPEN WORK PERMIT OVERVIEW
+// ============================================================
+
+function openWorkPermitOverviewDialog() {
+  if (!currentUser) return;
+
+  let dialog = document.getElementById('dgslWorkPermitOverviewDialog');
+  if (!dialog) {
+    dialog = document.createElement('dialog');
+    dialog.id = 'dgslWorkPermitOverviewDialog';
+    dialog.className = 'header-settings-dialog work-permit-overview-dialog';
+    dialog.innerHTML = `
+      <div class="header-dialog-inner">
+        <div class="header-dialog-head">
+          <div>
+            <p class="eyebrow">DGSL SITE REGISTER</p>
+            <h2>Open Permit Summary</h2>
+          </div>
+          <button type="button" class="icon" id="closeWorkPermitOverview" aria-label="Close">×</button>
+        </div>
+
+        <div class="overview-form">
+          <label for="overviewContractor">Sub-Contractor</label>
+          <select id="overviewContractor">
+            <option value="">Select a sub-contractor</option>
+          </select>
+          <p class="overview-help">Shows open and on-hold work permits only.</p>
+          <p id="overviewCount" class="overview-count">Select a sub-contractor to continue.</p>
+        </div>
+
+        <div class="overview-actions">
+          <button type="button" id="overviewDownloadPdf" class="primary overview-primary">Download PDF</button>
+          <button type="button" id="overviewDownloadExcel" class="settings-option overview-secondary">Download Excel</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(dialog);
+
+    dialog.querySelector('#closeWorkPermitOverview').onclick = () => dialog.close();
+    dialog.querySelector('#overviewContractor').addEventListener('change', updateWorkPermitOverviewDialog);
+    dialog.querySelector('#overviewDownloadPdf').onclick = () => downloadWorkPermitOverview('pdf');
+    dialog.querySelector('#overviewDownloadExcel').onclick = () => downloadWorkPermitOverview('excel');
+  }
+
+  populateWorkPermitOverviewContractors(dialog.querySelector('#overviewContractor'));
+  updateWorkPermitOverviewDialog();
+  if (!dialog.open) dialog.showModal();
+}
+
+function getOpenWorkPermitsForContractor(contractor) {
+  const selected = String(contractor || '').trim();
+  return records
+    .filter(record => {
+      const open =
+        record.status === 'Work Permit Open' ||
+        record.status === 'Work Permit on Hold';
+      return open && (!selected || String(record.contractor || '').trim() === selected);
+    })
+    .sort((a, b) => {
+      const aDate = String(a.handoverDate || '');
+      const bDate = String(b.handoverDate || '');
+      if (aDate !== bDate) {
+        if (!aDate) return 1;
+        if (!bDate) return -1;
+        return aDate.localeCompare(bDate);
+      }
+      return (Date.parse(a.createdAt || '') || 0) - (Date.parse(b.createdAt || '') || 0);
+    });
+}
+
+function populateWorkPermitOverviewContractors(select) {
+  if (!select) return;
+  const current = select.value;
+  const contractors = [...new Set(
+    records
+      .filter(record => record.status === 'Work Permit Open' || record.status === 'Work Permit on Hold')
+      .map(record => String(record.contractor || '').trim())
+      .filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+
+  select.innerHTML = '<option value="">Select a sub-contractor</option>' +
+    contractors.map(contractor => `<option value="${esc(contractor)}">${esc(contractor)}</option>`).join('');
+
+  if (contractors.includes(current)) select.value = current;
+}
+
+function updateWorkPermitOverviewDialog() {
+  const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
+  if (!dialog) return;
+  const select = dialog.querySelector('#overviewContractor');
+  const pdfButton = dialog.querySelector('#overviewDownloadPdf');
+  const excelButton = dialog.querySelector('#overviewDownloadExcel');
+  const count = dialog.querySelector('#overviewCount');
+  const contractor = select?.value || '';
+  const permits = contractor ? getOpenWorkPermitsForContractor(contractor) : [];
+
+  if (!contractor) {
+    count.textContent = 'Select a sub-contractor to continue.';
+  } else {
+    count.textContent = `${permits.length} outstanding work permit${permits.length === 1 ? '' : 's'} found.`;
+  }
+
+  pdfButton.disabled = !contractor || permits.length === 0;
+  excelButton.disabled = !contractor || permits.length === 0;
+}
+
+function overviewSafeFilePart(value) {
+  return String(value || 'Overview')
+    .replace(/[^a-z0-9-_ ]/gi, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '') || 'Overview';
+}
+
+function overviewDate(value) {
+  return value ? formatTableDate(value) : '—';
+}
+
+function overviewStatusClass(status) {
+  if (status === 'Work Permit Open') return 'status-open';
+  if (status === 'Work Permit on Hold') return 'status-hold';
+  return '';
+}
+
+function generateWorkPermitOverviewPdf(contractor, permits) {
+  if (!window.jspdf?.jsPDF) throw new Error('PDF tools are not available.');
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const margin = 14;
+  const pageWidth = pdf.internal.pageSize.getWidth();
+  let y = 18;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(10);
+  pdf.text('DGSL SITE REGISTER', margin, y);
+  y += 7;
+  pdf.setFontSize(18);
+  pdf.setTextColor(31, 78, 120);
+  pdf.text('OPEN WORK PERMITS', margin, y);
+  y += 8;
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setFontSize(10);
+  pdf.text(SITE.name || SITE.id, margin, y);
+  y += 5;
+  pdf.text(`Sub-Contractor: ${contractor}`, margin, y);
+  y += 5;
+  pdf.text(`Generated: ${formatTableDate(today())}`, margin, y);
+  y += 9;
+
+  pdf.setFillColor(31, 78, 120);
+  pdf.rect(margin, y, pageWidth - margin * 2, 9, 'F');
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(9);
+  pdf.text('Zone / Area', margin + 3, y + 6);
+  pdf.text('Work Description', margin + 43, y + 6);
+  pdf.text('Handover Date', pageWidth - 73, y + 6);
+  pdf.text('Status', pageWidth - margin - 30, y + 6);
+  y += 9;
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFont('helvetica', 'normal');
+
+  const zoneX = margin + 3;
+  const descX = margin + 43;
+  const dateX = pageWidth - 73;
+  const statusX = pageWidth - margin - 30;
+  const descWidth = 91;
+
+  permits.forEach((record, index) => {
+    const description = pdf.splitTextToSize(String(record.description || '—'), descWidth);
+    const rowHeight = Math.max(9, description.length * 4.5 + 4);
+    if (y + rowHeight > 188) {
+      pdf.addPage();
+      y = 18;
+      pdf.setFillColor(31, 78, 120);
+      pdf.rect(margin, y, pageWidth - margin * 2, 9, 'F');
+      pdf.setTextColor(255, 255, 255);
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Zone / Area', margin + 3, y + 6);
+      pdf.text('Work Description', margin + 43, y + 6);
+      pdf.text('Handover Date', pageWidth - 73, y + 6);
+      pdf.text('Status', pageWidth - margin - 30, y + 6);
+      y += 9;
+      pdf.setTextColor(0, 0, 0);
+      pdf.setFont('helvetica', 'normal');
+    }
+
+    if (index % 2 === 0) {
+      pdf.setFillColor(247, 249, 251);
+      pdf.rect(margin, y, pageWidth - margin * 2, rowHeight, 'F');
+    }
+
+    pdf.setFontSize(9);
+    pdf.text(String(record.zone || '—'), zoneX, y + 6);
+    pdf.text(description, descX, y + 5.5);
+    pdf.text(overviewDate(record.handoverDate), dateX, y + 6);
+
+    const status = String(record.status || '');
+    const pillClass = overviewStatusClass(status);
+    const pillWidth = status === 'Work Permit on Hold' ? 30 : 25;
+    if (pillClass === 'status-open') pdf.setFillColor(246, 196, 83);
+    if (pillClass === 'status-hold') pdf.setFillColor(239, 119, 119);
+    pdf.roundedRect(statusX, y + 2, pillWidth, 6, 3, 3, 'F');
+    pdf.setTextColor(34, 34, 34);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(7);
+    pdf.text(status === 'Work Permit on Hold' ? 'On Hold' : 'Open', statusX + pillWidth / 2, y + 5.9, { align: 'center' });
+    pdf.setFont('helvetica', 'normal');
+    y += rowHeight;
+  });
+
+  y += 8;
+  if (y > 190) {
+    pdf.addPage();
+    y = 18;
+  }
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(11);
+  pdf.text(`Total outstanding: ${permits.length}`, margin, y);
+  pdf.setFont('helvetica', 'normal');
+
+  return pdf;
+}
+
+function generateWorkPermitOverviewExcel(contractor, permits) {
+  const escapeHtml = value => String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+  const rowsHtml = permits.map(record => {
+    const statusClass = overviewStatusClass(record.status);
+    return `<tr><td>${escapeHtml(record.zone || '')}</td><td>${escapeHtml(record.description || '')}</td><td>${escapeHtml(overviewDate(record.handoverDate))}</td><td class="${statusClass}">${escapeHtml(record.status === 'Work Permit on Hold' ? 'On Hold' : 'Open')}</td></tr>`;
+  }).join('');
+
+  const html = `<!doctype html><html><head><meta charset="utf-8"><style>
+    body{font-family:Arial,sans-serif;font-size:11pt;color:#222}
+    h1{color:#1f4e78;margin-bottom:4px} h2{font-size:12pt;margin-top:0}
+    table{border-collapse:collapse;width:100%;margin-top:18px} th,td{border:1px solid #d7dde2;padding:7px;text-align:left}
+    th{background:#1f4e78;color:#fff} .status-open{background:#f6c453;font-weight:700} .status-hold{background:#ef7777;font-weight:700}
+  </style></head><body>
+    <h1>DGSL SITE REGISTER</h1><h2>OPEN WORK PERMITS</h2>
+    <div>${escapeHtml(SITE.name || SITE.id)}</div>
+    <div>Sub-Contractor: <strong>${escapeHtml(contractor)}</strong></div>
+    <div>Generated: ${escapeHtml(formatTableDate(today()))}</div>
+    <table><thead><tr><th>Zone / Area</th><th>Work Description</th><th>Handover Date</th><th>Status</th></tr></thead><tbody>${rowsHtml}</tbody></table>
+    <p><strong>Total outstanding: ${permits.length}</strong></p>
+  </body></html>`;
+
+  return new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' });
+}
+
+async function downloadWorkPermitOverview(type) {
+  const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
+  if (!dialog || !currentUser) return;
+
+  const contractor = dialog.querySelector('#overviewContractor')?.value || '';
+  if (!contractor) return;
+  const permits = getOpenWorkPermitsForContractor(contractor);
+  if (!permits.length) return;
+
+  try {
+    const safeContractor = overviewSafeFilePart(contractor);
+    if (type === 'pdf') {
+      const pdf = generateWorkPermitOverviewPdf(contractor, permits);
+      pdf.save(`DGSL-${safeContractor}-Open-Work-Permits-${today()}.pdf`);
+    } else {
+      const blob = generateWorkPermitOverviewExcel(contractor, permits);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `DGSL-${safeContractor}-Open-Work-Permits-${today()}.xls`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+  } catch (error) {
+    console.error('Work permit overview error:', error);
+    alert(`Unable to create the ${type === 'pdf' ? 'PDF' : 'Excel file'}.`);
+  }
 }
 
 

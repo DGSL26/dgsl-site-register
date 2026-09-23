@@ -2105,3 +2105,18 @@ body.change-log-open {
 #dgslBugReportDetailDialog #bugReportDetailContent {
   padding-top: 18px !important;
 }
+
+
+/* ============================================================
+   WORK PERMIT OVERVIEW
+   ============================================================ */
+.work-permit-overview-dialog { width:min(430px, calc(100vw - 32px)) !important; max-width:430px !important; }
+.overview-form { padding-top:18px; }
+.overview-form label { display:block; margin-bottom:7px; font-weight:700; color:#1f2933; }
+.overview-form select { width:100%; box-sizing:border-box; }
+.overview-help { margin:8px 0 0; color:#68737d; font-size:13px; }
+.overview-count { margin:15px 0 0; font-weight:600; color:#1f4e78; }
+.overview-actions { display:grid; gap:10px; padding-top:18px; }
+.overview-primary { width:100%; min-height:44px; }
+.overview-secondary { text-align:center; }
+.overview-actions button:disabled { opacity:.5; cursor:not-allowed; }
