@@ -231,7 +231,7 @@ async function getSiteStats(site){
     supabaseClient.from('handovers').select('id',{count:'exact',head:true}).eq('site_id',site.site_id),
     supabaseClient.from('bug_reports').select('id',{count:'exact',head:true}).eq('site_id',site.site_id).eq('is_read',false),
     supabaseClient.from('handovers').select('handover_date').eq('site_id',site.site_id).not('handover_date','is',null).order('handover_date',{ascending:false,nullsLast:true}).limit(1).maybeSingle(),
-    countStorageFiles(site.photo_bucket)
+    countAttachedPhotos(site.site_id)
   ]);
   return {
     handovers:handoverResult.count ?? 0,
@@ -240,19 +240,44 @@ async function getSiteStats(site){
     photos:photoResult
   };
 }
-async function countStorageFiles(bucket){
-  if(!bucket) return 0;
+
+// Count only photos that are actually attached to existing handover records.
+// Storage can contain orphaned/duplicate files, so counting the bucket itself
+// can make the dashboard show more photos than the site actually uses.
+async function countAttachedPhotos(siteId){
   let total=0;
-  async function walk(prefix=''){
-    const {data,error}=await supabaseClient.storage.from(bucket).list(prefix,{limit:1000,offset:0,sortBy:{column:'name',order:'asc'}});
-    if(error) return;
-    for(const item of (data||[])){
-      const path=prefix ? `${prefix}/${item.name}` : item.name;
-      if(item.id){ total++; }
-      else { await walk(path); }
+  const pageSize=1000;
+  let from=0;
+
+  while(true){
+    const {data,error}=await supabaseClient
+      .from('handovers')
+      .select('photos')
+      .eq('site_id',siteId)
+      .range(from,from+pageSize-1);
+
+    if(error) return 0;
+
+    for(const row of (data||[])){
+      if(Array.isArray(row.photos)){
+        total += row.photos.length;
+        continue;
+      }
+
+      if(typeof row.photos==='string' && row.photos.trim()){
+        try{
+          const parsed=JSON.parse(row.photos);
+          if(Array.isArray(parsed)) total += parsed.length;
+        }catch(_){
+          // Ignore malformed photo data rather than inflating the count.
+        }
+      }
     }
+
+    if(!data || data.length < pageSize) break;
+    from += pageSize;
   }
-  await walk('');
+
   return total;
 }
 function renderSites(sites){
