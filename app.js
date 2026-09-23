@@ -423,7 +423,7 @@ function overviewStatusClass(status) {
   return '';
 }
 
-function generateWorkPermitOverviewPdf(contractor, permits) {
+async function generateWorkPermitOverviewPdf(contractor, permits) {
   if (!window.jspdf?.jsPDF) throw new Error('PDF tools are not available.');
 
   const { jsPDF } = window.jspdf;
@@ -431,6 +431,12 @@ function generateWorkPermitOverviewPdf(contractor, permits) {
   const margin = 14;
   const pageWidth = pdf.internal.pageSize.getWidth();
   let y = 18;
+
+  // Use the same DGSL logo and proportions as the standard handover/work permit PDFs.
+  const logoData = await loadLogoForPdf();
+  if (logoData) {
+    pdf.addImage(logoData, 'PNG', pageWidth - 69, 10, 55, 11.1);
+  }
 
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(10);
@@ -525,7 +531,7 @@ function generateWorkPermitOverviewPdf(contractor, permits) {
   return pdf;
 }
 
-function generateWorkPermitOverviewExcel(contractor, permits) {
+async function generateWorkPermitOverviewExcel(contractor, permits) {
   const escapeHtml = value => String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -537,12 +543,20 @@ function generateWorkPermitOverviewExcel(contractor, permits) {
     return `<tr><td>${escapeHtml(record.zone || '')}</td><td>${escapeHtml(record.description || '')}</td><td>${escapeHtml(overviewDate(record.handoverDate))}</td><td class="${statusClass}">${escapeHtml(record.status === 'Work Permit on Hold' ? 'On Hold' : 'Open')}</td></tr>`;
   }).join('');
 
+  // Embed the same DGSL logo used by the PDF. This keeps the Excel-compatible
+  // workbook-style download branded without requiring another external file.
+  const logoData = await loadLogoForPdf();
+  const logoHtml = logoData
+    ? `<div style="margin-bottom:10px"><img src="${logoData}" alt="DGSL Logo" style="width:220px;height:auto"></div>`
+    : '';
+
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>
     body{font-family:Arial,sans-serif;font-size:11pt;color:#222}
     h1{color:#1f4e78;margin-bottom:4px} h2{font-size:12pt;margin-top:0}
     table{border-collapse:collapse;width:100%;margin-top:18px} th,td{border:1px solid #d7dde2;padding:7px;text-align:left}
     th{background:#1f4e78;color:#fff} .status-open{background:#f6c453;font-weight:700} .status-hold{background:#ef7777;font-weight:700}
   </style></head><body>
+    ${logoHtml}
     <h1>DGSL SITE REGISTER</h1><h2>OPEN WORK PERMITS</h2>
     <div>${escapeHtml(SITE.name || SITE.id)}</div>
     <div>Sub-Contractor: <strong>${escapeHtml(contractor)}</strong></div>
@@ -569,7 +583,7 @@ async function downloadWorkPermitOverview(type) {
       const pdf = generateWorkPermitOverviewPdf(contractor, permits);
       pdf.save(`DGSL-${safeContractor}-Open-Work-Permits-${today()}.pdf`);
     } else {
-      const blob = generateWorkPermitOverviewExcel(contractor, permits);
+      const blob = await generateWorkPermitOverviewExcel(contractor, permits);
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
