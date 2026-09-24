@@ -1331,17 +1331,23 @@ function showAuthDialog() {
             alt="DGSL Building Ltd"
             style="display:block;width:170px;max-width:65%;height:auto;margin:0 auto 16px;"
           >
-          <div style="font-size:21px;font-weight:700;color:#111;">
-            DGSL Site Register Login
-          </div>
         </div>
 
-        <div style="background:#1f4e78;color:#fff;padding:14px 24px;">
-          <div style="font-size:12px;font-weight:700;letter-spacing:.7px;opacity:.9;margin-bottom:3px;">
-            SITE REGISTER
+        <div style="background:#1f4e78;color:#fff;padding:10px 20px;display:flex;align-items:center;gap:12px;">
+          <div style="flex:0 0 auto;width:27px;height:32px;display:flex;align-items:center;justify-content:center;">
+            <svg width="27" height="32" viewBox="0 0 24 28" aria-hidden="true" style="display:block;">
+              <path d="M12 1.5C6.5 1.5 2 6 2 11.5C2 18.2 12 26.5 12 26.5C12 26.5 22 18.2 22 11.5C22 6 17.5 1.5 12 1.5Z"
+                    fill="none" stroke="currentColor" stroke-width="2.2"/>
+              <circle cx="12" cy="11.5" r="3.3" fill="none" stroke="currentColor" stroke-width="2.2"/>
+            </svg>
           </div>
-          <div style="font-size:21px;font-weight:700;line-height:1.2;">
-            ${String(SITE.name || SITE.id).replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+          <div style="min-width:0;">
+            <div style="font-size:10px;font-weight:700;letter-spacing:.6px;opacity:.9;margin-bottom:1px;">
+              SITE REGISTER
+            </div>
+            <div style="font-size:17px;font-weight:700;line-height:1.15;">
+              ${String(SITE.name || SITE.id).replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+            </div>
           </div>
         </div>
 
