@@ -1408,13 +1408,15 @@ function showAuthDialog() {
     const sitePasswordToggle = authDialog.querySelector('#dgslLoginPasswordToggle');
 
     sitePasswordToggle.onclick = () => {
-      const showing = sitePasswordInput.type === 'text';
-      sitePasswordInput.type = showing ? 'password' : 'text';
-      sitePasswordToggle.innerHTML = showing
+      sitePasswordInput.type = sitePasswordInput.type === 'password' ? 'text' : 'password';
+      const visible = sitePasswordInput.type === 'text';
+
+      sitePasswordToggle.innerHTML = visible
         ? '<svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.7" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>'
         : '<svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A10.8 10.8 0 0 0 3 12c1.8 3.5 5 5.5 9 5.5 1.4 0 2.7-.3 3.9-.8M14.1 5.1C18.1 5.8 20.8 8.3 22 12c-.7 1.4-1.5 2.5-2.5 3.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      sitePasswordToggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
-      sitePasswordToggle.title = showing ? 'Show password' : 'Hide password';
+
+      sitePasswordToggle.setAttribute('aria-label', visible ? 'Hide password' : 'Show password');
+      sitePasswordToggle.title = visible ? 'Hide password' : 'Show password';
       sitePasswordInput.focus();
     };
 
