@@ -17,6 +17,7 @@ const SUPABASE_KEY =
 // selected from the URL (?site=SITE2) and its display settings are loaded
 // from sites.
 const DEFAULT_FIRST_FIX_KEYWORDS = ['First Fix', '1st Fix'];
+const DEFAULT_FIRST_FIX_TITLE_KEYWORDS = [];
 
 const DEFAULT_SITE = {
   id: 'SITE1',
@@ -31,6 +32,7 @@ const DEFAULT_SITE = {
 let SITE = { ...DEFAULT_SITE };
 let PHOTO_BUCKET = SITE.photoBucket;
 let FIRST_FIX_KEYWORDS = [...DEFAULT_FIRST_FIX_KEYWORDS];
+let FIRST_FIX_TITLE_KEYWORDS = [...DEFAULT_FIRST_FIX_TITLE_KEYWORDS];
 
 const requestedSite =
   new URLSearchParams(window.location.search).get('site')?.trim().toUpperCase() ||
@@ -41,7 +43,7 @@ async function loadSiteConfiguration() {
 
   const { data, error } = await supabaseClient
     .from('sites')
-    .select('site_id,site_name,address,active,photo_bucket,first_fix_keywords')
+    .select('site_id,site_name,address,active,photo_bucket,first_fix_keywords,first_fix_title_keywords')
     .eq('site_id', requestedSite)
     .maybeSingle();
 
@@ -66,6 +68,10 @@ async function loadSiteConfiguration() {
   FIRST_FIX_KEYWORDS = Array.isArray(data.first_fix_keywords) && data.first_fix_keywords.length
     ? data.first_fix_keywords.map(value => String(value || '').trim()).filter(Boolean)
     : [...DEFAULT_FIRST_FIX_KEYWORDS];
+
+  FIRST_FIX_TITLE_KEYWORDS = Array.isArray(data.first_fix_title_keywords)
+    ? data.first_fix_title_keywords.map(value => String(value || '').trim()).filter(Boolean)
+    : [...DEFAULT_FIRST_FIX_TITLE_KEYWORDS];
 
   PHOTO_BUCKET = SITE.photoBucket;
 
@@ -2289,6 +2295,34 @@ function generateFirstFixVariants(value) {
   return [...variants].filter(v => v.toLowerCase() !== raw.toLowerCase());
 }
 
+function findFirstFixKeywordMatch(value) {
+  const text = String(value || '');
+  if (!text.trim()) return null;
+
+  const lowerText = text.toLocaleLowerCase();
+  const matches = [];
+
+  FIRST_FIX_KEYWORDS.forEach(keyword => {
+    const cleanKeyword = String(keyword || '').trim();
+    if (!cleanKeyword) return;
+    const variants = [cleanKeyword, ...generateFirstFixVariants(cleanKeyword)];
+    if (variants.some(variant => {
+      const term = String(variant || '').trim().toLocaleLowerCase();
+      return term && lowerText.includes(term);
+    })) {
+      matches.push(cleanKeyword);
+    }
+  });
+
+  if (!matches.length) return null;
+
+  // If more than one configured keyword matches, use the longest one.
+  // This prevents a generic keyword such as "heating" from overriding a
+  // more specific title keyword such as "underfloor heating".
+  matches.sort((a, b) => b.length - a.length);
+  return matches[0];
+}
+
 function isFirstFixWorkDescription(value) {
   const text = String(value || '');
   if (!text.trim()) return false;
@@ -2296,14 +2330,18 @@ function isFirstFixWorkDescription(value) {
   const builtInMatch = /(?:\b1\s*st\b|\bfirst\b)[\s\u00a0\-\u2010\u2011\u2012\u2013\u2014_\/\\.,:;()]*fix\b/i.test(text);
   if (builtInMatch) return true;
 
-  const lowerText = text.toLocaleLowerCase();
-  return FIRST_FIX_KEYWORDS.some(keyword => {
-    const variants = [keyword, ...generateFirstFixVariants(keyword)];
-    return variants.some(variant => {
-      const term = String(variant || '').trim().toLocaleLowerCase();
-      return term && lowerText.includes(term);
-    });
-  });
+  return Boolean(findFirstFixKeywordMatch(text));
+}
+
+function getFirstFixTitleForDescription(value) {
+  const matchedKeyword = findFirstFixKeywordMatch(value);
+  if (!matchedKeyword) return 'First-Fix';
+
+  const useCustomTitle = FIRST_FIX_TITLE_KEYWORDS.some(keyword =>
+    String(keyword || '').trim().toLocaleLowerCase() === matchedKeyword.toLocaleLowerCase()
+  );
+
+  return useCustomTitle ? matchedKeyword : 'First-Fix';
 }
 
 function updateFirstFixFieldsVisibility() {
@@ -2318,10 +2356,41 @@ function updateFirstFixFieldsVisibility() {
     return;
   }
 
+  const firstFixVisible = isFirstFixWorkDescription(description);
+
   fields.classList.toggle(
     'hidden',
-    !isFirstFixWorkDescription(description)
+    !firstFixVisible
   );
+
+  const title = getFirstFixTitleForDescription(description);
+  const statusTitle = `Video/photographic records of ${title} complete and submitted`;
+  const locationTitle = `${title} Records: Location/Recipient`;
+
+  const statusLabel = document.getElementById('firstFixRecordsStatusLabel');
+  const locationLabel = document.getElementById('firstFixRecordsLocationLabel');
+  if (statusLabel) statusLabel.textContent = statusTitle;
+  if (locationLabel) locationLabel.textContent = locationTitle;
+
+  // LIVE index.html keeps these labels as normal text nodes. Update those
+  // text nodes as well so no index.html change is required for this feature.
+  const statusControl = form.elements.firstFixRecordsStatus;
+  const locationControl = form.elements.firstFixRecordsLocation;
+  const statusParent = statusControl?.closest('label');
+  const locationParent = locationControl?.closest('label');
+
+  const replaceLabelText = (label, text) => {
+    if (!label) return;
+    for (const node of label.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE && node.nodeValue.trim()) {
+        node.nodeValue = `\n\n    ${text}\n\n    `;
+        return;
+      }
+    }
+  };
+
+  replaceLabelText(statusParent, statusTitle);
+  replaceLabelText(locationParent, locationTitle);
 
 }
 
@@ -5344,12 +5413,12 @@ healthSafetyScaffolding:
 
     if (isFirstFixWorkDescription(data.description)) {
       addField(
-        'Video/photographic records of First-Fix complete and submitted',
+        `Video/photographic records of ${getFirstFixTitleForDescription(data.description)} complete and submitted`,
         data.firstFixRecordsStatus
       );
 
       addField(
-        'First-Fix Records: Location/Recipient',
+        `${getFirstFixTitleForDescription(data.description)} Records: Location/Recipient`,
         data.firstFixRecordsLocation
       );
     }

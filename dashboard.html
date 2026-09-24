@@ -92,7 +92,7 @@
   border-radius:50%!important;
 }
 
-.first-fix-keywords-box{max-width:620px}.first-fix-keywords-list{display:grid;gap:8px;margin:14px 0;max-height:360px;overflow:auto}.first-fix-keyword-row{border:1px solid #d6dde3;border-radius:8px;padding:10px 12px;background:#fff}.first-fix-keyword-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.first-fix-keyword-text{font-weight:600;overflow-wrap:anywhere}.first-fix-keyword-actions{display:flex;align-items:center;gap:7px;flex:none}.first-fix-keyword-remove{flex:none;border:1px solid #c62828;background:#fff;color:#c62828;border-radius:6px;padding:6px 10px;cursor:pointer}.first-fix-keyword-remove:hover{background:#fff3f3}.first-fix-keyword-variants{display:none;margin:10px 0 0;padding:9px 11px;border-radius:7px;background:#f7f9fb;border:1px solid #e3e8ed}.first-fix-keyword-variants.show{display:block}.first-fix-keyword-variants-title{font-size:12px;font-weight:700;color:#68737d;margin-bottom:6px}.first-fix-keyword-variant{font-size:13px;padding:2px 0;overflow-wrap:anywhere}.first-fix-keyword-add{margin-top:6px}.first-fix-keyword-add .copy-row{display:flex;gap:8px;align-items:center}.first-fix-keyword-add input{flex:1;min-width:0}.first-fix-keyword-add .error{min-height:20px;margin-top:6px}.first-fix-keyword-options{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;color:#34404b}.first-fix-keyword-options input{width:auto}.first-fix-keyword-hint{font-size:12px;color:#68737d;line-height:1.4;margin-top:5px}
+.first-fix-keywords-box{max-width:620px}.first-fix-keywords-list{display:grid;gap:8px;margin:14px 0;max-height:360px;overflow:auto}.first-fix-keyword-row{border:1px solid #d6dde3;border-radius:8px;padding:10px 12px;background:#fff}.first-fix-keyword-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.first-fix-keyword-text{font-weight:600;overflow-wrap:anywhere}.first-fix-keyword-title-badge{display:inline-block;margin-left:7px;padding:3px 7px;border-radius:999px;background:#e7f6ed;color:#16733b;font-size:11px;font-weight:700;vertical-align:middle}.first-fix-keyword-actions{display:flex;align-items:center;gap:7px;flex:none}.first-fix-keyword-remove{flex:none;border:1px solid #c62828;background:#fff;color:#c62828;border-radius:6px;padding:6px 10px;cursor:pointer}.first-fix-keyword-remove:hover{background:#fff3f3}.first-fix-keyword-variants{display:none;margin:10px 0 0;padding:9px 11px;border-radius:7px;background:#f7f9fb;border:1px solid #e3e8ed}.first-fix-keyword-variants.show{display:block}.first-fix-keyword-variants-title{font-size:12px;font-weight:700;color:#68737d;margin-bottom:6px}.first-fix-keyword-variant{font-size:13px;padding:2px 0;overflow-wrap:anywhere}.first-fix-keyword-add{margin-top:6px}.first-fix-keyword-add .copy-row{display:flex;gap:8px;align-items:center}.first-fix-keyword-add input{flex:1;min-width:0}.first-fix-keyword-add .error{min-height:20px;margin-top:6px}.first-fix-keyword-options{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;color:#34404b}.first-fix-keyword-options input{width:auto}.first-fix-keyword-hint{font-size:12px;color:#68737d;line-height:1.4;margin-top:5px}
 </style>
 </head>
 <body>
@@ -169,6 +169,7 @@
     <label for="firstFixKeywordInput">Add keyword or phrase</label>
     <div class="copy-row"><input id="firstFixKeywordInput" type="text" placeholder="e.g. Underfloor heating"><button class="btn primary" id="firstFixKeywordAdd">Add</button></div>
     <label class="first-fix-keyword-options"><input id="firstFixKeywordOtherVersions" type="checkbox"> Generate other versions automatically</label>
+    <label class="first-fix-keyword-options"><input id="firstFixKeywordUseInTitle" type="checkbox"> Use this keyword in the First-Fix field titles</label>
     <div class="first-fix-keyword-hint">This recognises spacing, joined, hyphenated, underscore and capitalisation variations automatically. Compound-word split options are also generated where possible.</div>
     <div class="error" id="firstFixKeywordError"></div>
   </div>
@@ -296,7 +297,7 @@ function renderSites(sites){
     });
   });
 }
-async function loadSites(){clearError();$('loading').hidden=false;$('grid').hidden=true;const {data,error}=await supabaseClient.from('sites').select('site_id,site_name,address,active,sort_order,photo_bucket,first_fix_keywords').order('sort_order',{ascending:true}).order('site_name',{ascending:true});if(error){showError('Could not load the site list: '+error.message);$('loading').hidden=true;return;}cachedSites=data||[];populateManagementSites();renderSites(cachedSites);refreshDashboardBugBadge();}
+async function loadSites(){clearError();$('loading').hidden=false;$('grid').hidden=true;const {data,error}=await supabaseClient.from('sites').select('site_id,site_name,address,active,sort_order,photo_bucket,first_fix_keywords,first_fix_title_keywords').order('sort_order',{ascending:true}).order('site_name',{ascending:true});if(error){showError('Could not load the site list: '+error.message);$('loading').hidden=true;return;}cachedSites=data||[];populateManagementSites();renderSites(cachedSites);refreshDashboardBugBadge();}
 let cachedSites=[];
 async function updateAuthUI(){const {data}=await supabaseClient.auth.getSession();currentSession=data.session||null;$('userLabel').textContent='';$('addBtn').classList.toggle('hidden',!isAdmin());$('settingsBtn').classList.toggle('hidden',!currentSession);$('headerLogin').classList.toggle('hidden',!!currentSession);$('settingsLogout').classList.toggle('hidden',!currentSession);if(cachedSites.length){renderSites(cachedSites);populateManagementSites();}if(!currentSession){closeDashboardDataManagement();$('managementBugReportsModal').classList.remove('show');$('managementBugDetailModal').classList.remove('show');}refreshDashboardBugBadge();}
 async function refresh(){await loadSites();}
@@ -512,6 +513,7 @@ async function deleteManagementBugReport(){
 
 const DEFAULT_FIRST_FIX_KEYWORDS=['First Fix','1st Fix'];
 let firstFixKeywords=[];
+let firstFixTitleKeywords=[];
 
 // Generates practical spelling/format variations for any keyword or phrase.
 // The canonical keyword remains the only value stored in Supabase; the site
@@ -605,10 +607,12 @@ function renderFirstFixKeywords(){
   const list=$('firstFixKeywordsList');
   if(!list) return;
   firstFixKeywords=normaliseFirstFixKeywords(firstFixKeywords);
+  firstFixTitleKeywords=normaliseFirstFixKeywords(firstFixTitleKeywords);
   if(!firstFixKeywords.length){list.innerHTML='<div class="settings-account">No additional keywords have been added.</div>';return;}
   list.innerHTML=firstFixKeywords.map((keyword,index)=>{
     const variants=generateFirstFixVariants(keyword);
-    return `<div class="first-fix-keyword-row"><div class="first-fix-keyword-head"><span class="first-fix-keyword-text">${escapeHtml(keyword)}</span><div class="first-fix-keyword-actions"><button class="btn secondary first-fix-keyword-other" data-index="${index}">Other versions</button><button class="first-fix-keyword-remove" data-index="${index}">Remove</button></div></div><div class="first-fix-keyword-variants" data-variants-index="${index}"><div class="first-fix-keyword-variants-title">Automatically recognised versions</div>${variants.length?variants.map(v=>`<div class="first-fix-keyword-variant">✓ ${escapeHtml(v)}</div>`).join(''):'<div class="first-fix-keyword-variant">No additional versions needed.</div>'}</div></div>`;
+    const useInTitle=firstFixTitleKeywords.some(x=>x.toLowerCase()===keyword.toLowerCase());
+    return `<div class="first-fix-keyword-row"><div class="first-fix-keyword-head"><div><span class="first-fix-keyword-text">${escapeHtml(keyword)}</span>${useInTitle?'<span class="first-fix-keyword-title-badge">Field title</span>':''}</div><div class="first-fix-keyword-actions"><button class="btn secondary first-fix-keyword-other" data-index="${index}">Other versions</button><button class="first-fix-keyword-remove" data-index="${index}">Remove</button></div></div><div class="first-fix-keyword-variants" data-variants-index="${index}"><div class="first-fix-keyword-variants-title">Automatically recognised versions</div>${variants.length?variants.map(v=>`<div class="first-fix-keyword-variant">✓ ${escapeHtml(v)}</div>`).join(''):'<div class="first-fix-keyword-variant">No additional versions needed.</div>'}</div></div>`;
   }).join('');
   list.querySelectorAll('.first-fix-keyword-remove').forEach(btn=>btn.onclick=()=>removeFirstFixKeyword(Number(btn.dataset.index)));
   list.querySelectorAll('.first-fix-keyword-other').forEach(btn=>btn.onclick=()=>{
@@ -621,13 +625,15 @@ function renderFirstFixKeywords(){
 async function saveFirstFixKeywords(){
   if(!isAdmin()) return false;
   const keywords=normaliseFirstFixKeywords(firstFixKeywords);
+  const titleKeywords=normaliseFirstFixKeywords(firstFixTitleKeywords).filter(keyword=>keywords.some(x=>x.toLowerCase()===keyword.toLowerCase()));
   const sites=cachedSites.length?cachedSites:[{site_id:'SITE1'}];
   try{
     for(const site of sites){
-      const {error}=await supabaseClient.from('sites').update({first_fix_keywords:keywords}).eq('site_id',site.site_id);
+      const {error}=await supabaseClient.from('sites').update({first_fix_keywords:keywords,first_fix_title_keywords:titleKeywords}).eq('site_id',site.site_id);
       if(error) throw error;
     }
-    cachedSites=cachedSites.map(site=>({...site,first_fix_keywords:[...keywords]}));
+    cachedSites=cachedSites.map(site=>({...site,first_fix_keywords:[...keywords],first_fix_title_keywords:[...titleKeywords]}));
+    firstFixTitleKeywords=[...titleKeywords];
     return true;
   }catch(error){
     console.error('First-Fix keyword save error:',error);
@@ -641,7 +647,9 @@ function openFirstFixKeywords(){
   $('firstFixKeywordError').textContent='';
   $('firstFixKeywordInput').value='';
   $('firstFixKeywordOtherVersions').checked=false;
+  $('firstFixKeywordUseInTitle').checked=false;
   firstFixKeywords=getDashboardFirstFixKeywords();
+  firstFixTitleKeywords=normaliseFirstFixKeywords(cachedSites.flatMap(site=>Array.isArray(site.first_fix_title_keywords)?site.first_fix_title_keywords:[]));
   renderFirstFixKeywords();
   $('firstFixKeywordsModal').classList.add('show');
 }
@@ -650,14 +658,17 @@ async function addFirstFixKeyword(){
   if(!isAdmin()) return;
   const input=$('firstFixKeywordInput');
   const value=input.value.trim();
+  const withVersions=$('firstFixKeywordOtherVersions').checked;
+  const useInTitle=$('firstFixKeywordUseInTitle').checked;
   $('firstFixKeywordError').textContent='';
   if(!value){$('firstFixKeywordError').textContent='Enter a keyword or phrase.';return;}
   if(firstFixKeywords.some(x=>x.toLowerCase()===value.toLowerCase())){$('firstFixKeywordError').textContent='That keyword is already in the list.';return;}
   firstFixKeywords.push(value);
+  if(useInTitle) firstFixTitleKeywords.push(value);
   if(await saveFirstFixKeywords()){
     input.value='';
-    const withVersions=$('firstFixKeywordOtherVersions').checked;
     $('firstFixKeywordOtherVersions').checked=false;
+    $('firstFixKeywordUseInTitle').checked=false;
     renderFirstFixKeywords();
     if(withVersions){
       const index=firstFixKeywords.findIndex(x=>x.toLowerCase()===value.toLowerCase());
@@ -668,6 +679,7 @@ async function addFirstFixKeyword(){
     }
   }else{
     firstFixKeywords=firstFixKeywords.filter(x=>x.toLowerCase()!==value.toLowerCase());
+    firstFixTitleKeywords=firstFixTitleKeywords.filter(x=>x.toLowerCase()!==value.toLowerCase());
   }
 }
 
@@ -677,8 +689,10 @@ async function removeFirstFixKeyword(index){
   if(!keyword) return;
   if(!confirm(`Remove "${keyword}" from the First-Fix keyword list?`)) return;
   const previous=[...firstFixKeywords];
+  const previousTitle=[...firstFixTitleKeywords];
   firstFixKeywords.splice(index,1);
-  if(!(await saveFirstFixKeywords())) firstFixKeywords=previous;
+  firstFixTitleKeywords=firstFixTitleKeywords.filter(x=>x.toLowerCase()!==keyword.toLowerCase());
+  if(!(await saveFirstFixKeywords())){ firstFixKeywords=previous; firstFixTitleKeywords=previousTitle; }
   renderFirstFixKeywords();
 }
 
@@ -805,7 +819,7 @@ $('siteSave').onclick=async()=>{
     }else{
       const bucketResult=await createPhotoBucket(photoBucket);
       const max=Math.max(0,...cachedSites.map(s=>Number(s.sort_order)||0));
-      const result=await supabaseClient.from('sites').insert({site_id:siteId,site_name:siteName,address:address||null,photo_bucket:photoBucket,first_fix_keywords:[...DEFAULT_FIRST_FIX_KEYWORDS],active:true,sort_order:max+1});
+      const result=await supabaseClient.from('sites').insert({site_id:siteId,site_name:siteName,address:address||null,photo_bucket:photoBucket,first_fix_keywords:[...DEFAULT_FIRST_FIX_KEYWORDS],first_fix_title_keywords:[],active:true,sort_order:max+1});
       if(result.error){
         if(bucketResult.created){try{await supabaseClient.storage.deleteBucket(photoBucket)}catch(_){}}
         throw result.error;
