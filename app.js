@@ -1359,12 +1359,21 @@ function showAuthDialog() {
             Password
           </label>
 
-          <input
-            id="dgslLoginPassword"
-            type="password"
-            autocomplete="current-password"
-            style="width:100%;box-sizing:border-box;height:48px;padding:10px 13px;font-size:17px;border:1px solid #9aa9b8;border-radius:7px;background:#f8fbff;"
-          >
+          <div style="position:relative;">
+            <input
+              id="dgslLoginPassword"
+              type="password"
+              autocomplete="current-password"
+              style="width:100%;box-sizing:border-box;height:48px;padding:10px 46px 10px 13px;font-size:17px;border:1px solid #9aa9b8;border-radius:7px;background:#f8fbff;"
+            >
+            <button type="button" id="dgslLoginPasswordToggle" aria-label="Show password" title="Show password"
+              style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:32px;height:32px;padding:0;border:0;background:transparent;color:#555;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+              <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                <circle cx="12" cy="12" r="2.7" fill="none" stroke="currentColor" stroke-width="1.8"/>
+              </svg>
+            </button>
+          </div>
 
           <div
             id="dgslAuthStatus"
@@ -1394,6 +1403,20 @@ function showAuthDialog() {
     `;
 
     document.body.appendChild(authDialog);
+
+    const sitePasswordInput = authDialog.querySelector('#dgslLoginPassword');
+    const sitePasswordToggle = authDialog.querySelector('#dgslLoginPasswordToggle');
+
+    sitePasswordToggle.onclick = () => {
+      const showing = sitePasswordInput.type === 'text';
+      sitePasswordInput.type = showing ? 'password' : 'text';
+      sitePasswordToggle.innerHTML = showing
+        ? '<svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.7" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>'
+        : '<svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A10.8 10.8 0 0 0 3 12c1.8 3.5 5 5.5 9 5.5 1.4 0 2.7-.3 3.9-.8M14.1 5.1C18.1 5.8 20.8 8.3 22 12c-.7 1.4-1.5 2.5-2.5 3.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      sitePasswordToggle.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+      sitePasswordToggle.title = showing ? 'Show password' : 'Hide password';
+      sitePasswordInput.focus();
+    };
 
     authDialog.querySelector('#dgslLoginCancel').onclick = () => authDialog.close();
 

@@ -177,10 +177,39 @@
   <div class="actions"><button class="btn secondary" id="firstFixKeywordsClose">Close</button></div>
 </div></div>
 
-<div class="modal" id="loginModal"><div class="box">
-  <h2>DGSL Login</h2><div class="error" id="loginError"></div>
-  <label>Password</label><input id="password" type="password" autocomplete="current-password">
-  <div class="actions"><button class="btn secondary" id="loginCancel">Cancel</button><button class="btn primary" id="loginSubmit">Login</button></div>
+<div class="modal" id="loginModal"><div class="box" style="padding:0;overflow:hidden;max-width:500px;border-radius:14px;">
+  <div style="padding:24px 28px 20px;text-align:center;">
+    <img src="dgsl-logo.png" alt="DGSL Building Ltd" style="display:block;width:170px;max-width:65%;height:auto;margin:0 auto;">
+  </div>
+
+  <div style="background:#1f4e78;color:#fff;padding:10px 20px;display:flex;align-items:center;gap:12px;">
+    <div style="flex:0 0 auto;width:27px;height:32px;display:flex;align-items:center;justify-content:center;">
+      <svg width="27" height="32" viewBox="0 0 24 28" aria-hidden="true" style="display:block;">
+        <path d="M12 1.5C6.5 1.5 2 6 2 11.5C2 18.2 12 26.5 12 26.5C12 26.5 22 18.2 22 11.5C22 6 17.5 1.5 12 1.5Z" fill="none" stroke="currentColor" stroke-width="2.2"/>
+        <circle cx="12" cy="11.5" r="3.3" fill="none" stroke="currentColor" stroke-width="2.2"/>
+      </svg>
+    </div>
+    <div style="min-width:0;">
+      <div style="font-size:10px;font-weight:700;letter-spacing:.6px;opacity:.9;margin-bottom:1px;">DGSL DASHBOARD</div>
+      <div style="font-size:17px;font-weight:700;line-height:1.15;">Login</div>
+    </div>
+  </div>
+
+  <div style="padding:26px 28px 24px;">
+    <label for="password" style="display:block;margin-bottom:8px;font-size:18px;font-weight:700;color:#111;">Password</label>
+    <div style="position:relative;">
+      <input id="password" type="password" autocomplete="current-password" style="width:100%;box-sizing:border-box;height:48px;padding:10px 46px 10px 13px;font-size:17px;border:1px solid #9aa9b8;border-radius:7px;background:#f8fbff;margin:0;">
+      <button type="button" id="passwordToggle" aria-label="Show password" title="Show password"
+        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:32px;height:32px;padding:0;border:0;background:transparent;color:#555;cursor:pointer;display:flex;align-items:center;justify-content:center;">
+        <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" stroke-width="1.8"/>
+          <circle cx="12" cy="12" r="2.7" fill="none" stroke="currentColor" stroke-width="1.8"/>
+        </svg>
+      </button>
+    </div>
+    <div class="error" id="loginError" style="margin-top:9px;"></div>
+    <div class="actions"><button class="btn secondary" id="loginCancel">Cancel</button><button class="btn primary" id="loginSubmit">Login</button></div>
+  </div>
 </div></div>
 
 <div class="modal" id="urlModal"><div class="box url-box">
@@ -341,6 +370,19 @@ $('headerLogin').onclick=()=>{$('loginModal').classList.add('show');setTimeout((
 $('settingsClose').onclick=()=>$('settingsModal').classList.remove('show');
 $('settingsLogout').onclick=async()=>{await supabaseClient.auth.signOut();$('settingsModal').classList.remove('show');await updateAuthUI();await refresh();};
 $('loginCancel').onclick=()=>$('loginModal').classList.remove('show');
+
+$('passwordToggle').onclick=()=>{
+  const input=$('password');
+  const showing=input.type==='text';
+  input.type=showing?'password':'text';
+  $('passwordToggle').innerHTML=showing
+    ? '<svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.7" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>'
+    : '<svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A10.8 10.8 0 0 0 3 12c1.8 3.5 5 5.5 9 5.5 1.4 0 2.7-.3 3.9-.8M14.1 5.1C18.1 5.8 20.8 8.3 22 12c-.7 1.4-1.5 2.5-2.5 3.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  $('passwordToggle').setAttribute('aria-label',showing?'Show password':'Hide password');
+  $('passwordToggle').title=showing?'Show password':'Hide password';
+  input.focus();
+};
+
 $('loginSubmit').onclick=async()=>{const p=$('password').value;$('loginError').textContent='';if(!p){$('loginError').textContent='Please enter your password.';return;}const {error}=await supabaseClient.auth.signInWithPassword({email:ADMIN_EMAIL,password:p});if(error){$('loginError').textContent=error.message;return;}$('loginModal').classList.remove('show');$('password').value='';await updateAuthUI();await refresh();};
 $('password').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginSubmit').click()});
 
