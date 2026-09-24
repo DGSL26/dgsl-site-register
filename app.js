@@ -1369,7 +1369,7 @@ function showAuthDialog() {
             <button type="button" id="dgslLoginPasswordToggle" aria-label="Show password" title="Show password"
               style="position:absolute;right:8px;top:50%;transform:translateY(-50%);width:32px;height:32px;padding:0;border:0;background:transparent;color:#555;cursor:pointer;display:flex;align-items:center;justify-content:center;">
               <svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z" fill="none" stroke="currentColor" stroke-width="1.8"/>
+                <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A10.8 10.8 0 0 0 3 12c1.8 3.5 5 5.5 9 5.5 1.4 0 2.7-.3 3.9-.8M14.1 5.1C18.1 5.8 20.8 8.3 22 12c-.7 1.4-1.5 2.5-2.5 3.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                 <circle cx="12" cy="12" r="2.7" fill="none" stroke="currentColor" stroke-width="1.8"/>
               </svg>
             </button>
@@ -1452,6 +1452,15 @@ function showAuthDialog() {
         status.textContent = error.message || 'Unable to log in.';
       }
     };
+  }
+
+  const openingPasswordInput = authDialog.querySelector('#dgslLoginPassword');
+  const openingPasswordToggle = authDialog.querySelector('#dgslLoginPasswordToggle');
+  if (openingPasswordInput && openingPasswordToggle) {
+    openingPasswordInput.type = 'password';
+    openingPasswordToggle.innerHTML = '<svg width="19" height="19" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A10.8 10.8 0 0 0 3 12c1.8 3.5 5 5.5 9 5.5 1.4 0 2.7-.3 3.9-.8M14.1 5.1C18.1 5.8 20.8 8.3 22 12c-.7 1.4-1.5 2.5-2.5 3.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    openingPasswordToggle.setAttribute('aria-label', 'Show password');
+    openingPasswordToggle.title = 'Show password';
   }
 
   authDialog.showModal();
