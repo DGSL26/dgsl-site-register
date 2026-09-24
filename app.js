@@ -16,6 +16,8 @@ const SUPABASE_KEY =
 // One shared database structure is used for all sites. The site is
 // selected from the URL (?site=SITE2) and its display settings are loaded
 // from sites.
+const DEFAULT_FIRST_FIX_KEYWORDS = ['First Fix', '1st Fix'];
+
 const DEFAULT_SITE = {
   id: 'SITE1',
   name: 'Knocksedan, PH3',
@@ -28,6 +30,7 @@ const DEFAULT_SITE = {
 
 let SITE = { ...DEFAULT_SITE };
 let PHOTO_BUCKET = SITE.photoBucket;
+let FIRST_FIX_KEYWORDS = [...DEFAULT_FIRST_FIX_KEYWORDS];
 
 const requestedSite =
   new URLSearchParams(window.location.search).get('site')?.trim().toUpperCase() ||
@@ -38,7 +41,7 @@ async function loadSiteConfiguration() {
 
   const { data, error } = await supabaseClient
     .from('sites')
-    .select('site_id,site_name,address,active,photo_bucket')
+    .select('site_id,site_name,address,active,photo_bucket,first_fix_keywords')
     .eq('site_id', requestedSite)
     .maybeSingle();
 
@@ -59,6 +62,10 @@ async function loadSiteConfiguration() {
     address: data.address || '',
     photoBucket: data.photo_bucket || DEFAULT_SITE.photoBucket
   };
+
+  FIRST_FIX_KEYWORDS = Array.isArray(data.first_fix_keywords) && data.first_fix_keywords.length
+    ? data.first_fix_keywords.map(value => String(value || '').trim()).filter(Boolean)
+    : [...DEFAULT_FIRST_FIX_KEYWORDS];
 
   PHOTO_BUCKET = SITE.photoBucket;
 
@@ -102,11 +109,6 @@ let sitePasswordVerified = false;
 
 function sitePasswordStorageKey() {
   return `dgsl-site-password:${SITE.id}`;
-}
-
-function siteAuthEmail(siteId = SITE.id) {
-  const safe = String(siteId || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
-  return `site-${safe}-login@dgsl.ie`;
 }
 
 function showSitePasswordDialog() {
@@ -267,7 +269,6 @@ function openSettingsDialog() {
           <button type="button" class="icon" id="closeSettings" aria-label="Close">×</button>
         </div>
         <div class="settings-options">
-          <button type="button" id="settingsWorkPermitOverview" class="settings-option">Open Permit Summary</button>
           <button type="button" id="settingsChangeLog" class="settings-option">Change Log</button>
           <button type="button" id="settingsBugReport" class="settings-option">Report a Bug</button>
           <button type="button" id="settingsLogout" class="settings-option settings-logout">Log out</button>
@@ -277,10 +278,6 @@ function openSettingsDialog() {
     document.body.appendChild(dialog);
 
     dialog.querySelector('#closeSettings').onclick = () => dialog.close();
-    dialog.querySelector('#settingsWorkPermitOverview').onclick = () => {
-      dialog.close();
-      openWorkPermitOverviewDialog();
-    };
     dialog.querySelector('#settingsChangeLog').onclick = () => {
       dialog.close();
       openChangeLogDialog();
@@ -295,406 +292,6 @@ function openSettingsDialog() {
     };
   }
   if (!dialog.open) dialog.showModal();
-}
-
-
-// ============================================================
-// OPEN WORK PERMIT OVERVIEW
-// ============================================================
-
-function openWorkPermitOverviewDialog() {
-  if (!currentUser) return;
-
-  let dialog = document.getElementById('dgslWorkPermitOverviewDialog');
-  if (!dialog) {
-    dialog = document.createElement('dialog');
-    dialog.id = 'dgslWorkPermitOverviewDialog';
-    dialog.className = 'header-settings-dialog work-permit-overview-dialog';
-    dialog.innerHTML = `
-      <div class="header-dialog-inner">
-        <div class="header-dialog-head">
-          <div>
-            <p class="eyebrow">DGSL SITE REGISTER</p>
-            <h2>Open Permit Summary</h2>
-          </div>
-          <button type="button" class="icon" id="closeWorkPermitOverview" aria-label="Close">×</button>
-        </div>
-
-        <div class="overview-form">
-          <label for="overviewContractor">Sub-Contractor</label>
-          <select id="overviewContractor">
-            <option value="">Select a sub-contractor</option>
-          </select>
-          <p class="overview-help">Shows open and on-hold work permits only.</p>
-          <p id="overviewCount" class="overview-count">Select a sub-contractor to continue.</p>
-        </div>
-
-        <div class="overview-actions">
-          <button type="button" id="overviewDownloadPdf" class="primary overview-primary">Download PDF</button>
-          <button type="button" id="overviewDownloadExcel" class="settings-option overview-secondary">Download Excel</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(dialog);
-
-    dialog.querySelector('#closeWorkPermitOverview').onclick = () => dialog.close();
-    dialog.querySelector('#overviewContractor').addEventListener('change', updateWorkPermitOverviewDialog);
-    dialog.querySelector('#overviewDownloadPdf').onclick = () => downloadWorkPermitOverview('pdf');
-    dialog.querySelector('#overviewDownloadExcel').onclick = () => downloadWorkPermitOverview('excel');
-  }
-
-  populateWorkPermitOverviewContractors(dialog.querySelector('#overviewContractor'));
-  updateWorkPermitOverviewDialog();
-  if (!dialog.open) dialog.showModal();
-}
-
-function getOpenWorkPermitsForContractor(contractor) {
-  const selected = String(contractor || '').trim();
-  return records
-    .filter(record => {
-      const open =
-        record.status === 'Work Permit Open' ||
-        record.status === 'Work Permit on Hold';
-      return open && (!selected || String(record.contractor || '').trim() === selected);
-    })
-    .sort((a, b) => {
-      const aDate = String(a.handoverDate || '');
-      const bDate = String(b.handoverDate || '');
-      if (aDate !== bDate) {
-        if (!aDate) return 1;
-        if (!bDate) return -1;
-        return aDate.localeCompare(bDate);
-      }
-      return (Date.parse(a.createdAt || '') || 0) - (Date.parse(b.createdAt || '') || 0);
-    });
-}
-
-function populateWorkPermitOverviewContractors(select) {
-  if (!select) return;
-  const current = select.value;
-  const contractors = [...new Set(
-    records
-      .filter(record => record.status === 'Work Permit Open' || record.status === 'Work Permit on Hold')
-      .map(record => String(record.contractor || '').trim())
-      .filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-
-  select.innerHTML = '<option value="">Select a sub-contractor</option>' +
-    contractors.map(contractor => `<option value="${esc(contractor)}">${esc(contractor)}</option>`).join('');
-
-  if (contractors.includes(current)) select.value = current;
-}
-
-function updateWorkPermitOverviewDialog() {
-  const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
-  if (!dialog) return;
-  const select = dialog.querySelector('#overviewContractor');
-  const pdfButton = dialog.querySelector('#overviewDownloadPdf');
-  const excelButton = dialog.querySelector('#overviewDownloadExcel');
-  const count = dialog.querySelector('#overviewCount');
-  const contractor = select?.value || '';
-  const permits = contractor ? getOpenWorkPermitsForContractor(contractor) : [];
-
-  if (!contractor) {
-    count.textContent = 'Select a sub-contractor to continue.';
-  } else {
-    count.textContent = `${permits.length} outstanding work permit${permits.length === 1 ? '' : 's'} found.`;
-  }
-
-  pdfButton.disabled = !contractor || permits.length === 0;
-  excelButton.disabled = !contractor || permits.length === 0;
-}
-
-function overviewSafeFilePart(value) {
-  return String(value || 'Overview')
-    .replace(/[^a-z0-9-_ ]/gi, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '') || 'Overview';
-}
-
-function overviewDate(value) {
-  return value ? formatTableDate(value) : '—';
-}
-
-function overviewStatusClass(status) {
-  if (status === 'Work Permit Open') return 'status-open';
-  if (status === 'Work Permit on Hold') return 'status-hold';
-  return '';
-}
-
-async function generateWorkPermitOverviewPdf(contractor, permits) {
-  if (!window.jspdf?.jsPDF) throw new Error('PDF tools are not available.');
-
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-  const margin = 14;
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  let y = 18;
-
-  // Use the same DGSL logo and proportions as the standard handover/work permit PDFs.
-  const logoData = await loadLogoForPdf();
-  if (logoData) {
-    pdf.addImage(logoData, 'PNG', pageWidth - 69, 10, 55, 11.1);
-  }
-
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(10);
-  pdf.text('DGSL SITE REGISTER', margin, y);
-  y += 7;
-  pdf.setFontSize(18);
-  pdf.setTextColor(31, 78, 120);
-  pdf.text('OPEN WORK PERMITS', margin, y);
-  y += 8;
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(10);
-  pdf.text(SITE.name || SITE.id, margin, y);
-  y += 5;
-  pdf.text(`Sub-Contractor: ${contractor}`, margin, y);
-  y += 5;
-  pdf.text(`Generated: ${formatTableDate(today())}`, margin, y);
-  y += 9;
-
-  pdf.setFillColor(31, 78, 120);
-  pdf.rect(margin, y, pageWidth - margin * 2, 9, 'F');
-  pdf.setTextColor(255, 255, 255);
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(9);
-  pdf.text('Zone / Area', margin + 3, y + 6);
-  pdf.text('Work Description', margin + 43, y + 6);
-  pdf.text('Handover Date', pageWidth - 73, y + 6);
-  pdf.text('Status', pageWidth - margin - 30, y + 6);
-  y += 9;
-  pdf.setTextColor(0, 0, 0);
-  pdf.setFont('helvetica', 'normal');
-
-  const zoneX = margin + 3;
-  const descX = margin + 43;
-  const dateX = pageWidth - 73;
-  const statusX = pageWidth - margin - 30;
-  const descWidth = 91;
-
-  permits.forEach((record, index) => {
-    const description = pdf.splitTextToSize(String(record.description || '—'), descWidth);
-    const rowHeight = Math.max(9, description.length * 4.5 + 4);
-    if (y + rowHeight > 188) {
-      pdf.addPage();
-      y = 18;
-      pdf.setFillColor(31, 78, 120);
-      pdf.rect(margin, y, pageWidth - margin * 2, 9, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Zone / Area', margin + 3, y + 6);
-      pdf.text('Work Description', margin + 43, y + 6);
-      pdf.text('Handover Date', pageWidth - 73, y + 6);
-      pdf.text('Status', pageWidth - margin - 30, y + 6);
-      y += 9;
-      pdf.setTextColor(0, 0, 0);
-      pdf.setFont('helvetica', 'normal');
-    }
-
-    if (index % 2 === 0) {
-      pdf.setFillColor(247, 249, 251);
-      pdf.rect(margin, y, pageWidth - margin * 2, rowHeight, 'F');
-    }
-
-    pdf.setFontSize(9);
-    pdf.text(String(record.zone || '—'), zoneX, y + 6);
-    pdf.text(description, descX, y + 5.5);
-    pdf.text(overviewDate(record.handoverDate), dateX, y + 6);
-
-    const status = String(record.status || '');
-    const pillClass = overviewStatusClass(status);
-    const pillWidth = status === 'Work Permit on Hold' ? 30 : 25;
-    if (pillClass === 'status-open') pdf.setFillColor(246, 196, 83);
-    if (pillClass === 'status-hold') pdf.setFillColor(239, 119, 119);
-    pdf.roundedRect(statusX, y + 2, pillWidth, 6, 3, 3, 'F');
-    pdf.setTextColor(34, 34, 34);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(7);
-    pdf.text(status === 'Work Permit on Hold' ? 'On Hold' : 'Open', statusX + pillWidth / 2, y + 5.9, { align: 'center' });
-    pdf.setFont('helvetica', 'normal');
-    y += rowHeight;
-  });
-
-  y += 8;
-  if (y > 190) {
-    pdf.addPage();
-    y = 18;
-  }
-  pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(11);
-  pdf.text(`Total outstanding: ${permits.length}`, margin, y);
-  pdf.setFont('helvetica', 'normal');
-
-  return pdf;
-}
-
-async function loadExcelJs() {
-  if (window.ExcelJS) return window.ExcelJS;
-
-  return new Promise((resolve, reject) => {
-    const existing = document.querySelector('script[data-dgsl-exceljs]');
-    if (existing) {
-      existing.addEventListener('load', () => resolve(window.ExcelJS));
-      existing.addEventListener('error', () => reject(new Error('Excel tools could not be loaded.')));
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js';
-    script.async = true;
-    script.dataset.dgslExceljs = 'true';
-    script.onload = () => window.ExcelJS ? resolve(window.ExcelJS) : reject(new Error('Excel tools could not be loaded.'));
-    script.onerror = () => reject(new Error('Excel tools could not be loaded.'));
-    document.head.appendChild(script);
-  });
-}
-
-async function generateWorkPermitOverviewExcel(contractor, permits) {
-  const ExcelJS = await loadExcelJs();
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'DGSL Site Register';
-  workbook.created = new Date();
-  workbook.modified = new Date();
-
-  const sheet = workbook.addWorksheet('Open Permits', {
-    pageSetup: {
-      orientation: 'landscape',
-      fitToPage: true,
-      fitToWidth: 1,
-      fitToHeight: 0,
-      paperSize: 9
-    }
-  });
-
-  sheet.columns = [
-    { header: 'Zone / Area', key: 'zone', width: 28 },
-    { header: 'Work Description', key: 'description', width: 58 },
-    { header: 'Handover Date', key: 'handoverDate', width: 18 },
-    { header: 'Status', key: 'status', width: 18 }
-  ];
-
-  // Add the same DGSL logo used by the PDF as a real embedded Excel image.
-  const logoData = await loadLogoForPdf();
-  if (logoData) {
-    const imageId = workbook.addImage({
-      base64: logoData,
-      extension: 'png'
-    });
-    sheet.addImage(imageId, {
-      tl: { col: 0, row: 0 },
-      ext: { width: 250, height: 50 }
-    });
-  }
-
-  sheet.mergeCells('A6:D6');
-  sheet.getCell('A6').value = 'DGSL SITE REGISTER';
-  sheet.getCell('A6').font = { bold: true, size: 16, color: { argb: '1F4E78' } };
-
-  sheet.mergeCells('A7:D7');
-  sheet.getCell('A7').value = 'OPEN WORK PERMITS';
-  sheet.getCell('A7').font = { bold: true, size: 14, color: { argb: '1F4E78' } };
-
-  sheet.mergeCells('A8:D8');
-  sheet.getCell('A8').value = SITE.name || SITE.id;
-  sheet.getCell('A9').value = 'Sub-Contractor:';
-  sheet.getCell('B9').value = contractor;
-  sheet.getCell('A10').value = 'Generated:';
-  sheet.getCell('B10').value = formatTableDate(today());
-  sheet.getCell('A9').font = { bold: true };
-  sheet.getCell('A10').font = { bold: true };
-
-  // Leave room for the heading information before the table.
-  const headerRow = 12;
-  sheet.getRow(headerRow).values = ['Zone / Area', 'Work Description', 'Handover Date', 'Status'];
-  const header = sheet.getRow(headerRow);
-  header.height = 22;
-  header.eachCell(cell => {
-    cell.font = { bold: true, color: { argb: 'FFFFFF' } };
-    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1F4E78' } };
-    cell.alignment = { vertical: 'middle', horizontal: 'left' };
-    cell.border = {
-      top: { style: 'thin', color: { argb: 'D7DDE2' } },
-      bottom: { style: 'thin', color: { argb: 'D7DDE2' } },
-      left: { style: 'thin', color: { argb: 'D7DDE2' } },
-      right: { style: 'thin', color: { argb: 'D7DDE2' } }
-    };
-  });
-
-  permits.forEach(record => {
-    const row = sheet.addRow([
-      record.zone || '—',
-      record.description || '—',
-      overviewDate(record.handoverDate),
-      record.status === 'Work Permit on Hold' ? 'On Hold' : 'Open'
-    ]);
-    row.height = 20;
-    row.eachCell(cell => {
-      cell.alignment = { vertical: 'middle', wrapText: true };
-      cell.border = {
-        top: { style: 'thin', color: { argb: 'E1E5E8' } },
-        bottom: { style: 'thin', color: { argb: 'E1E5E8' } },
-        left: { style: 'thin', color: { argb: 'E1E5E8' } },
-        right: { style: 'thin', color: { argb: 'E1E5E8' } }
-      };
-    });
-
-    const statusCell = row.getCell(4);
-    statusCell.font = { bold: true };
-    statusCell.alignment = { horizontal: 'center', vertical: 'middle' };
-    statusCell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: record.status === 'Work Permit on Hold' ? 'EF7777' : 'F6C453' }
-    };
-  });
-
-  const totalRow = sheet.addRow([]);
-  totalRow.getCell(1).value = `Total outstanding: ${permits.length}`;
-  totalRow.getCell(1).font = { bold: true, size: 12 };
-  sheet.mergeCells(`A${totalRow.number}:D${totalRow.number}`);
-
-  sheet.freezePanes = 'A13';
-  sheet.autoFilter = {
-    from: 'A12',
-    to: `D${12 + permits.length}`
-  };
-
-  return workbook.xlsx.writeBuffer();
-}
-
-async function downloadWorkPermitOverview(type) {
-  const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
-  if (!dialog || !currentUser) return;
-
-  const contractor = dialog.querySelector('#overviewContractor')?.value || '';
-  if (!contractor) return;
-  const permits = getOpenWorkPermitsForContractor(contractor);
-  if (!permits.length) return;
-
-  try {
-    const safeContractor = overviewSafeFilePart(contractor);
-    if (type === 'pdf') {
-      const pdf = await generateWorkPermitOverviewPdf(contractor, permits);
-      pdf.save(`DGSL-${safeContractor}-Open-Work-Permits-${today()}.pdf`);
-    } else {
-      const buffer = await generateWorkPermitOverviewExcel(contractor, permits);
-      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `DGSL-${safeContractor}-Open-Work-Permits-${today()}.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
-    }
-  } catch (error) {
-    console.error('Work permit overview error:', error);
-    alert(`Unable to create the ${type === 'pdf' ? 'PDF' : 'Excel file'}.`);
-  }
 }
 
 
@@ -1311,11 +908,10 @@ function showAuthDialog() {
 
     authDialog.innerHTML = `
       <div style="padding:22px;">
-        <div style="font-size:20px;font-weight:700;margin-bottom:6px;">
-          ${SITE.name.replace(/</g,'&lt;').replace(/>/g,'&gt;')} Login
+        <div style="font-size:20px;font-weight:700;margin-bottom:16px;">
+          DGSL Site Register Login
         </div>
-        <div style="font-size:14px;color:#555;margin-bottom:16px;">Enter the password for this site.</div>
-        <label style="display:block;margin-bottom:6px;font-weight:600;">Site password</label>
+        <label style="display:block;margin-bottom:6px;font-weight:600;">Password</label>
         <input id="dgslLoginPassword" type="password" autocomplete="current-password"
           style="width:100%;box-sizing:border-box;margin-bottom:12px;">
         <div id="dgslAuthStatus" style="min-height:20px;margin-bottom:12px;font-size:14px;"></div>
@@ -1330,48 +926,42 @@ function showAuthDialog() {
 
     authDialog.querySelector('#dgslLoginCancel').onclick = () => authDialog.close();
 
-    const submitLogin = async () => {
+    authDialog.querySelector('#dgslLoginSubmit').onclick = async () => {
+      const email = 'elvira@dgsl.ie';
       const password = authDialog.querySelector('#dgslLoginPassword').value;
       const status = authDialog.querySelector('#dgslAuthStatus');
-      const submit = authDialog.querySelector('#dgslLoginSubmit');
 
-      if (!password) {
-        status.textContent = 'Please enter the site password.';
+      if (!email || !password) {
+        status.textContent = 'Please enter your password.';
         return;
       }
 
-      submit.disabled = true;
-      status.textContent = 'Logging in…';
+      status.textContent = 'Checking site password...';
+
+      const sitePasswordOk = await requireSitePassword();
+      if (!sitePasswordOk) {
+        status.textContent = 'Site login cancelled.';
+        return;
+      }
+
+      status.textContent = 'Logging in...';
 
       const { error } = await supabaseClient.auth.signInWithPassword({
-        email: siteAuthEmail(),
+        email,
         password
       });
 
-      submit.disabled = false;
-
       if (error) {
-        status.textContent = 'Incorrect site password.';
+        status.textContent = error.message;
         return;
       }
 
-      localStorage.setItem(sitePasswordStorageKey(), '1');
-      sitePasswordVerified = true;
-      authDialog.close();
-      authDialog.querySelector('#dgslLoginPassword').value = '';
       status.textContent = '';
-    };
-
-    authDialog.querySelector('#dgslLoginSubmit').onclick = submitLogin;
-    authDialog.querySelector('#dgslLoginPassword').onkeydown = e => {
-      if (e.key === 'Enter') submitLogin();
+      authDialog.close();
     };
   }
 
-  authDialog.querySelector('#dgslLoginPassword').value = '';
-  authDialog.querySelector('#dgslAuthStatus').textContent = '';
   authDialog.showModal();
-  setTimeout(() => authDialog.querySelector('#dgslLoginPassword').focus(), 50);
 }
 
 
@@ -1400,23 +990,10 @@ async function loadSupabase() {
 
   }
 
-  // The Site Register uses its own persisted Supabase Auth storage.
-  // This keeps the site's login completely separate from the dashboard
-  // administrator session, even though both use the same Supabase project.
-  const siteStorageKey = `dgsl-site-register-auth-${requestedSite.toLowerCase()}`;
-
   supabaseClient =
     window.supabase.createClient(
       SUPABASE_URL,
-      SUPABASE_KEY,
-      {
-        auth: {
-          storageKey: siteStorageKey,
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: false
-        }
-      }
+      SUPABASE_KEY
     );
 
 }
@@ -2648,9 +2225,15 @@ async function sharePdfToDevice(record) {
 
 function isFirstFixWorkDescription(value) {
 
-  return /(?:\b1\s*st\b|\bfirst\b)[\s\u00a0\-\u2010\u2011\u2012\u2013\u2014_\/\\.,:;()]*fix\b/i.test(
-    String(value || '')
-  );
+  const text = String(value || '');
+
+  const builtInMatch = /(?:\b1\s*st\b|\bfirst\b)[\s\u00a0\-\u2010\u2011\u2012\u2013\u2014_\/\\.,:;()]*fix\b/i.test(text);
+  if (builtInMatch) return true;
+
+  return FIRST_FIX_KEYWORDS.some(keyword => {
+    const term = String(keyword || '').trim();
+    return term && text.toLocaleLowerCase().includes(term.toLocaleLowerCase());
+  });
 
 }
 
