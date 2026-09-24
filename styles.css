@@ -2121,21 +2121,19 @@ body.change-log-open {
 .overview-secondary { text-align:center; }
 .overview-actions button:disabled { opacity:.5; cursor:not-allowed; }
 
-/* First-Fix fields: keep both input controls aligned when one title wraps. */
+/* First-Fix fields: title text is wrapped by app.js so the two controls can be aligned dynamically. */
 .first-fix-fields > label {
   display: flex;
   flex-direction: column;
 }
 
-.first-fix-fields > label > span {
+.first-fix-fields > label > .first-fix-field-title {
   display: block;
   line-height: 1.25;
-  min-height: 2.5em;
 }
 
-/* First-Fix: move the right-hand field down to align with the left field. */
-@media (min-width: 701px) {
-  .first-fix-fields > label:nth-child(2) {
-    padding-top: 20px;
+@media (max-width: 700px) {
+  .first-fix-fields > label {
+    padding-top: 0 !important;
   }
 }
