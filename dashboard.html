@@ -91,6 +91,9 @@
   vertical-align:middle!important;
   border-radius:50%!important;
 }
+
+
+.first-fix-keywords-box{max-width:620px}.first-fix-keywords-list{display:grid;gap:8px;margin:14px 0;max-height:360px;overflow:auto}.first-fix-keyword-row{border:1px solid #d6dde3;border-radius:8px;padding:10px 12px;background:#fff}.first-fix-keyword-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.first-fix-keyword-text{font-weight:600;overflow-wrap:anywhere}.first-fix-keyword-title-badge{display:inline-block;margin-left:7px;padding:3px 7px;border-radius:999px;background:#e7f6ed;color:#16733b;font-size:11px;font-weight:700;vertical-align:middle}.first-fix-keyword-actions{display:flex;align-items:center;gap:7px;flex:none}.first-fix-keyword-remove{flex:none;border:1px solid #c62828;background:#fff;color:#c62828;border-radius:6px;padding:6px 10px;cursor:pointer}.first-fix-keyword-remove:hover{background:#fff3f3}.first-fix-keyword-variants{display:none;margin:10px 0 0;padding:9px 11px;border-radius:7px;background:#f7f9fb;border:1px solid #e3e8ed}.first-fix-keyword-variants.show{display:block}.first-fix-keyword-variants-title{font-size:12px;font-weight:700;color:#68737d;margin-bottom:6px}.first-fix-keyword-variant{font-size:13px;padding:2px 0;overflow-wrap:anywhere}.first-fix-keyword-add{margin-top:6px}.first-fix-keyword-add .copy-row{display:flex;gap:8px;align-items:center}.first-fix-keyword-add input{flex:1;min-width:0}.first-fix-keyword-add .error{min-height:20px;margin-top:6px}.first-fix-keyword-options{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;color:#34404b}.first-fix-keyword-options input{width:auto}.first-fix-keyword-hint{font-size:12px;color:#68737d;line-height:1.4;margin-top:5px}
 </style>
 </head>
 <body>
@@ -126,6 +129,7 @@
   <h2>Settings</h2>
   <div class="settings-menu">
     <button class="settings-menu-btn" id="settingsDataManagement">Data Management <span id="dashboardBugBadge" class="dashboard-badge hidden"></span></button>
+    <button class="settings-menu-btn" id="settingsFirstFixKeywords">First-Fix Keywords</button>
   </div>
   <div class="actions">
     <button class="btn secondary" id="settingsClose">Close</button>
@@ -156,6 +160,21 @@
   <div class="management-modal-head"><h2>Bug Report</h2><button class="modal-x" id="managementBugDetailClose" aria-label="Close">×</button></div>
   <div id="managementBugDetailContent"></div>
   <div class="actions"><button class="btn danger-btn" id="managementBugDelete">Delete Bug Report</button></div>
+</div></div>
+
+<div class="modal" id="firstFixKeywordsModal"><div class="box first-fix-keywords-box">
+  <h2>First-Fix Keywords</h2>
+  <p class="settings-account">Add words or phrases that should make the First-Fix fields appear in the site registers.</p>
+  <div id="firstFixKeywordsList" class="first-fix-keywords-list"></div>
+  <div class="first-fix-keyword-add">
+    <label for="firstFixKeywordInput">Add keyword or phrase</label>
+    <div class="copy-row"><input id="firstFixKeywordInput" type="text" placeholder="e.g. Underfloor heating"><button class="btn primary" id="firstFixKeywordAdd">Add</button></div>
+    <label class="first-fix-keyword-options"><input id="firstFixKeywordOtherVersions" type="checkbox"> Generate other versions automatically</label>
+    <label class="first-fix-keyword-options"><input id="firstFixKeywordUseInTitle" type="checkbox"> Use this keyword in the First-Fix field titles</label>
+    <div class="first-fix-keyword-hint">This recognises spacing, joined, hyphenated, underscore and capitalisation variations automatically. Compound-word split options are also generated where possible.</div>
+    <div class="error" id="firstFixKeywordError"></div>
+  </div>
+  <div class="actions"><button class="btn secondary" id="firstFixKeywordsClose">Close</button></div>
 </div></div>
 
 <div class="modal" id="loginModal"><div class="box">
@@ -313,7 +332,7 @@ function renderSites(sites){
     });
   });
 }
-async function loadSites(){clearError();$('loading').hidden=false;$('grid').hidden=true;const {data,error}=await supabaseClient.from('sites').select('site_id,site_name,address,active,sort_order,photo_bucket').order('sort_order',{ascending:true}).order('site_name',{ascending:true});if(error){showError('Could not load the site list: '+error.message);$('loading').hidden=true;return;}cachedSites=data||[];populateManagementSites();renderSites(cachedSites);refreshDashboardBugBadge();}
+async function loadSites(){clearError();$('loading').hidden=false;$('grid').hidden=true;const {data,error}=await supabaseClient.from('sites').select('site_id,site_name,address,active,sort_order,photo_bucket,first_fix_keywords,first_fix_title_keywords').order('sort_order',{ascending:true}).order('site_name',{ascending:true});if(error){showError('Could not load the site list: '+error.message);$('loading').hidden=true;return;}cachedSites=data||[];populateManagementSites();renderSites(cachedSites);refreshDashboardBugBadge();}
 let cachedSites=[];
 async function updateAuthUI(){const {data}=await supabaseClient.auth.getSession();currentSession=data.session||null;$('userLabel').textContent='';$('addBtn').classList.toggle('hidden',!isAdmin());$('settingsBtn').classList.toggle('hidden',!currentSession);$('headerLogin').classList.toggle('hidden',!!currentSession);$('settingsLogout').classList.toggle('hidden',!currentSession);if(cachedSites.length){renderSites(cachedSites);populateManagementSites();}if(!currentSession){closeDashboardDataManagement();$('managementBugReportsModal').classList.remove('show');$('managementBugDetailModal').classList.remove('show');}refreshDashboardBugBadge();}
 async function refresh(){await loadSites();}
@@ -526,6 +545,197 @@ async function deleteManagementBugReport(){
   await refreshDashboardBugBadge();
   await openManagementBugReports();
 }
+
+const DEFAULT_FIRST_FIX_KEYWORDS=['First Fix','1st Fix'];
+let firstFixKeywords=[];
+let firstFixTitleKeywords=[];
+
+// Generates practical spelling/format variations for any keyword or phrase.
+// The canonical keyword remains the only value stored in Supabase; the site
+// register generates the same variants when it performs the First-Fix check.
+const COMMON_COMPOUND_WORD_PARTS = new Set(`
+under floor over head fire stop stopping proof proving water tight weather board plaster dry lining line block brick ground roof wall ceiling concrete screed
+insulation electrical mechanical heating cooling ventilation pipework ductwork drainage carpentry joinery flooring tiling painting decorating render rendering
+seal sealing silicone mastic fireproof waterproof damp proofing cavity tray traywork steel metal timber door window frame framework skirting architrave
+kitchen bathroom bedroom staircase handrail balustrade cable containment containmentwork cabletray cabletraywork
+air conditioning conditioningwork underlay groundwork earthwork groundwork first second fix back fill
+`.trim().toLowerCase().split(/\\s+/));
+
+function normaliseFirstFixKeywords(values){
+  const list=Array.isArray(values)?values:[];
+  const seen=new Set();
+  return list.map(v=>String(v??'').trim()).filter(Boolean).filter(v=>{
+    const key=v.toLowerCase();
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function splitCamelAndSeparators(value){
+  return String(value||'')
+    .replace(/([a-z0-9])([A-Z])/g,'$1 $2')
+    .replace(/[\\-_]+/g,' ')
+    .replace(/\\s+/g,' ')
+    .trim();
+}
+
+function possibleCompoundSplits(word){
+  const clean=String(word||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(clean.length<5) return [];
+  const results=[];
+  for(let i=2;i<=clean.length-2;i++){
+    const left=clean.slice(0,i),right=clean.slice(i);
+    if(COMMON_COMPOUND_WORD_PARTS.has(left) && COMMON_COMPOUND_WORD_PARTS.has(right)){
+      results.push(`${left} ${right}`);
+    }
+  }
+  return results;
+}
+
+function generateFirstFixVariants(value){
+  const raw=String(value||'').trim();
+  if(!raw) return [];
+  const base=splitCamelAndSeparators(raw);
+  const words=base.split(' ').filter(Boolean);
+  const variants=new Set();
+  const add=v=>{const x=String(v||'').trim();if(x)variants.add(x);};
+
+  add(raw);
+  add(base);
+  add(words.join(' '));
+  add(words.join(''));
+  add(words.join('-'));
+  add(words.join('_'));
+  if(words.length>1){
+    add(words.map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(''));
+    add(words.map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join('-'));
+    add(words.map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '));
+  }
+
+  // If a phrase contains a compound word such as "underfloor", generate
+  // recognised word-boundary versions such as "under floor heating".
+  const splitOptions=words.map(word=>[word,...possibleCompoundSplits(word)]);
+  function combine(index,current){
+    if(index>=splitOptions.length){
+      const parts=current.join(' ').split(' ').filter(Boolean);
+      add(parts.join(' '));
+      add(parts.join('-'));
+      add(parts.join(''));
+      return;
+    }
+    splitOptions[index].forEach(option=>combine(index+1,current.concat(option.split(' '))));
+  }
+  if(words.length) combine(0,[]);
+
+  return [...variants].filter(v=>v.toLowerCase()!==raw.toLowerCase());
+}
+
+function getDashboardFirstFixKeywords(){
+  const all=[];
+  cachedSites.forEach(site=>{ all.push(...(Array.isArray(site.first_fix_keywords)?site.first_fix_keywords:[])); });
+  const merged=normaliseFirstFixKeywords(all);
+  return merged.length?merged:[...DEFAULT_FIRST_FIX_KEYWORDS];
+}
+
+function renderFirstFixKeywords(){
+  const list=$('firstFixKeywordsList');
+  if(!list) return;
+  firstFixKeywords=normaliseFirstFixKeywords(firstFixKeywords);
+  firstFixTitleKeywords=normaliseFirstFixKeywords(firstFixTitleKeywords);
+  if(!firstFixKeywords.length){list.innerHTML='<div class="settings-account">No additional keywords have been added.</div>';return;}
+  list.innerHTML=firstFixKeywords.map((keyword,index)=>{
+    const variants=generateFirstFixVariants(keyword);
+    const useInTitle=firstFixTitleKeywords.some(x=>x.toLowerCase()===keyword.toLowerCase());
+    return `<div class="first-fix-keyword-row"><div class="first-fix-keyword-head"><div><span class="first-fix-keyword-text">${escapeHtml(keyword)}</span>${useInTitle?'<span class="first-fix-keyword-title-badge">Field title</span>':''}</div><div class="first-fix-keyword-actions"><button class="btn secondary first-fix-keyword-other" data-index="${index}">Other versions</button><button class="first-fix-keyword-remove" data-index="${index}">Remove</button></div></div><div class="first-fix-keyword-variants" data-variants-index="${index}"><div class="first-fix-keyword-variants-title">Automatically recognised versions</div>${variants.length?variants.map(v=>`<div class="first-fix-keyword-variant">✓ ${escapeHtml(v)}</div>`).join(''):'<div class="first-fix-keyword-variant">No additional versions needed.</div>'}</div></div>`;
+  }).join('');
+  list.querySelectorAll('.first-fix-keyword-remove').forEach(btn=>btn.onclick=()=>removeFirstFixKeyword(Number(btn.dataset.index)));
+  list.querySelectorAll('.first-fix-keyword-other').forEach(btn=>btn.onclick=()=>{
+    const panel=list.querySelector(`[data-variants-index="${btn.dataset.index}"]`);
+    if(panel) panel.classList.toggle('show');
+    btn.textContent=panel?.classList.contains('show')?'Hide versions':'Other versions';
+  });
+}
+
+async function saveFirstFixKeywords(){
+  if(!isAdmin()) return false;
+  const keywords=normaliseFirstFixKeywords(firstFixKeywords);
+  const titleKeywords=normaliseFirstFixKeywords(firstFixTitleKeywords).filter(keyword=>keywords.some(x=>x.toLowerCase()===keyword.toLowerCase()));
+  const sites=cachedSites.length?cachedSites:[{site_id:'SITE1'}];
+  try{
+    for(const site of sites){
+      const {error}=await supabaseClient.from('sites').update({first_fix_keywords:keywords,first_fix_title_keywords:titleKeywords}).eq('site_id',site.site_id);
+      if(error) throw error;
+    }
+    cachedSites=cachedSites.map(site=>({...site,first_fix_keywords:[...keywords],first_fix_title_keywords:[...titleKeywords]}));
+    firstFixTitleKeywords=[...titleKeywords];
+    return true;
+  }catch(error){
+    console.error('First-Fix keyword save error:',error);
+    $('firstFixKeywordError').textContent='Unable to save the keyword list: '+error.message;
+    return false;
+  }
+}
+
+function openFirstFixKeywords(){
+  if(!currentSession) return;
+  $('firstFixKeywordError').textContent='';
+  $('firstFixKeywordInput').value='';
+  $('firstFixKeywordOtherVersions').checked=false;
+  $('firstFixKeywordUseInTitle').checked=false;
+  firstFixKeywords=getDashboardFirstFixKeywords();
+  firstFixTitleKeywords=normaliseFirstFixKeywords(cachedSites.flatMap(site=>Array.isArray(site.first_fix_title_keywords)?site.first_fix_title_keywords:[]));
+  renderFirstFixKeywords();
+  $('firstFixKeywordsModal').classList.add('show');
+}
+
+async function addFirstFixKeyword(){
+  if(!isAdmin()) return;
+  const input=$('firstFixKeywordInput');
+  const value=input.value.trim();
+  const withVersions=$('firstFixKeywordOtherVersions').checked;
+  const useInTitle=$('firstFixKeywordUseInTitle').checked;
+  $('firstFixKeywordError').textContent='';
+  if(!value){$('firstFixKeywordError').textContent='Enter a keyword or phrase.';return;}
+  if(firstFixKeywords.some(x=>x.toLowerCase()===value.toLowerCase())){$('firstFixKeywordError').textContent='That keyword is already in the list.';return;}
+  firstFixKeywords.push(value);
+  if(useInTitle) firstFixTitleKeywords.push(value);
+  if(await saveFirstFixKeywords()){
+    input.value='';
+    $('firstFixKeywordOtherVersions').checked=false;
+    $('firstFixKeywordUseInTitle').checked=false;
+    renderFirstFixKeywords();
+    if(withVersions){
+      const index=firstFixKeywords.findIndex(x=>x.toLowerCase()===value.toLowerCase());
+      const panel=$('firstFixKeywordsList').querySelector(`[data-variants-index="${index}"]`);
+      const button=$('firstFixKeywordsList').querySelector(`.first-fix-keyword-other[data-index="${index}"]`);
+      if(panel) panel.classList.add('show');
+      if(button) button.textContent='Hide versions';
+    }
+  }else{
+    firstFixKeywords=firstFixKeywords.filter(x=>x.toLowerCase()!==value.toLowerCase());
+    firstFixTitleKeywords=firstFixTitleKeywords.filter(x=>x.toLowerCase()!==value.toLowerCase());
+  }
+}
+
+async function removeFirstFixKeyword(index){
+  if(!isAdmin()) return;
+  const keyword=firstFixKeywords[index];
+  if(!keyword) return;
+  if(!confirm(`Remove "${keyword}" from the First-Fix keyword list?`)) return;
+  const previous=[...firstFixKeywords];
+  const previousTitle=[...firstFixTitleKeywords];
+  firstFixKeywords.splice(index,1);
+  firstFixTitleKeywords=firstFixTitleKeywords.filter(x=>x.toLowerCase()!==keyword.toLowerCase());
+  if(!(await saveFirstFixKeywords())){ firstFixKeywords=previous; firstFixTitleKeywords=previousTitle; }
+  renderFirstFixKeywords();
+}
+
+$('settingsFirstFixKeywords').onclick=()=>{closeDashboardDataManagement();openFirstFixKeywords()};
+$('firstFixKeywordsClose').onclick=()=>{$('firstFixKeywordsModal').classList.remove('show')};
+$('firstFixKeywordAdd').onclick=addFirstFixKeyword;
+$('firstFixKeywordInput').addEventListener('keydown',e=>{if(e.key==='Enter')addFirstFixKeyword()});
+$('firstFixKeywordsModal').addEventListener('click',e=>{if(e.target===$('firstFixKeywordsModal'))$('firstFixKeywordsModal').classList.remove('show')});
 
 $('settingsDataManagement').onclick=()=>{closeDashboardDataManagement();openDashboardDataManagement()};
 $('managementClose').onclick=closeDashboardDataManagement;
