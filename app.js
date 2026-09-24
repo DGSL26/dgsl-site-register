@@ -16,9 +16,6 @@ const SUPABASE_KEY =
 // One shared database structure is used for all sites. The site is
 // selected from the URL (?site=SITE2) and its display settings are loaded
 // from sites.
-const DEFAULT_FIRST_FIX_KEYWORDS = ['First Fix', '1st Fix'];
-const DEFAULT_FIRST_FIX_TITLE_KEYWORDS = [];
-
 const DEFAULT_SITE = {
   id: 'SITE1',
   name: 'Knocksedan, PH3',
@@ -31,8 +28,6 @@ const DEFAULT_SITE = {
 
 let SITE = { ...DEFAULT_SITE };
 let PHOTO_BUCKET = SITE.photoBucket;
-let FIRST_FIX_KEYWORDS = [...DEFAULT_FIRST_FIX_KEYWORDS];
-let FIRST_FIX_TITLE_KEYWORDS = [...DEFAULT_FIRST_FIX_TITLE_KEYWORDS];
 
 const requestedSite =
   new URLSearchParams(window.location.search).get('site')?.trim().toUpperCase() ||
@@ -43,7 +38,7 @@ async function loadSiteConfiguration() {
 
   const { data, error } = await supabaseClient
     .from('sites')
-    .select('site_id,site_name,address,active,photo_bucket,first_fix_keywords,first_fix_title_keywords')
+    .select('site_id,site_name,address,active,photo_bucket')
     .eq('site_id', requestedSite)
     .maybeSingle();
 
@@ -64,14 +59,6 @@ async function loadSiteConfiguration() {
     address: data.address || '',
     photoBucket: data.photo_bucket || DEFAULT_SITE.photoBucket
   };
-
-  FIRST_FIX_KEYWORDS = Array.isArray(data.first_fix_keywords) && data.first_fix_keywords.length
-    ? data.first_fix_keywords.map(value => String(value || '').trim()).filter(Boolean)
-    : [...DEFAULT_FIRST_FIX_KEYWORDS];
-
-  FIRST_FIX_TITLE_KEYWORDS = Array.isArray(data.first_fix_title_keywords)
-    ? data.first_fix_title_keywords.map(value => String(value || '').trim()).filter(Boolean)
-    : [...DEFAULT_FIRST_FIX_TITLE_KEYWORDS];
 
   PHOTO_BUCKET = SITE.photoBucket;
 
@@ -902,6 +889,12 @@ function showLogoutConfirmDialog() {
 }
 
 
+function siteAuthEmail(siteId = SITE.id) {
+  const safe = String(siteId || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+  if (!safe) throw new Error('Invalid site ID');
+  return `site-${safe}-login@dgsl.ie`;
+}
+
 function showAuthDialog() {
   if (!authDialog) {
     authDialog = document.createElement('dialog');
@@ -933,37 +926,36 @@ function showAuthDialog() {
     authDialog.querySelector('#dgslLoginCancel').onclick = () => authDialog.close();
 
     authDialog.querySelector('#dgslLoginSubmit').onclick = async () => {
-      const email = 'elvira@dgsl.ie';
       const password = authDialog.querySelector('#dgslLoginPassword').value;
       const status = authDialog.querySelector('#dgslAuthStatus');
 
-      if (!email || !password) {
-        status.textContent = 'Please enter your password.';
-        return;
-      }
-
-      status.textContent = 'Checking site password...';
-
-      const sitePasswordOk = await requireSitePassword();
-      if (!sitePasswordOk) {
-        status.textContent = 'Site login cancelled.';
+      if (!password) {
+        status.textContent = 'Please enter the site password.';
         return;
       }
 
       status.textContent = 'Logging in...';
 
-      const { error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
-      });
+      try {
+        const { error } = await supabaseClient.auth.signInWithPassword({
+          email: siteAuthEmail(),
+          password
+        });
 
-      if (error) {
-        status.textContent = error.message;
-        return;
+        if (error) {
+          status.textContent = error.message === 'Invalid login credentials'
+            ? 'Incorrect site password.'
+            : error.message;
+          return;
+        }
+
+        status.textContent = '';
+        authDialog.querySelector('#dgslLoginPassword').value = '';
+        authDialog.close();
+      } catch (error) {
+        console.error('Site login error:', error);
+        status.textContent = error.message || 'Unable to log in.';
       }
-
-      status.textContent = '';
-      authDialog.close();
     };
   }
 
@@ -2239,119 +2231,12 @@ async function sharePdfToDevice(record) {
 // CHECKLIST
 // ============================================================
 
-const COMMON_COMPOUND_WORD_PARTS = new Set(`
-under floor over head fire stop stopping proof proving water tight weather board plaster dry lining line block brick ground roof wall ceiling concrete screed
-insulation electrical mechanical heating cooling ventilation pipework ductwork drainage carpentry joinery flooring tiling painting decorating render rendering
-seal sealing silicone mastic fireproof waterproof damp proofing cavity tray traywork steel metal timber door window frame framework skirting architrave
-kitchen bathroom bedroom staircase handrail balustrade cable containment containmentwork cabletray cabletraywork
-air conditioning conditioningwork underlay groundwork earthwork first second fix back fill
-`.trim().toLowerCase().split(/\s+/));
-
-function splitCamelAndSeparators(value) {
-  return String(value || '')
-    .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-    .replace(/[\-_]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function possibleCompoundSplits(word) {
-  const clean = String(word || '').toLowerCase().replace(/[^a-z0-9]/g, '');
-  if (clean.length < 5) return [];
-  const results = [];
-  for (let i = 2; i <= clean.length - 2; i++) {
-    const left = clean.slice(0, i);
-    const right = clean.slice(i);
-    if (COMMON_COMPOUND_WORD_PARTS.has(left) && COMMON_COMPOUND_WORD_PARTS.has(right)) {
-      results.push(`${left} ${right}`);
-    }
-  }
-  return results;
-}
-
-function generateFirstFixVariants(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return [];
-  const base = splitCamelAndSeparators(raw);
-  const words = base.split(' ').filter(Boolean);
-  const variants = new Set();
-  const add = v => { const x = String(v || '').trim(); if (x) variants.add(x); };
-
-  add(raw);
-  add(base);
-  add(words.join(' '));
-  add(words.join(''));
-  add(words.join('-'));
-  add(words.join('_'));
-  if (words.length > 1) {
-    add(words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(''));
-    add(words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('-'));
-    add(words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '));
-  }
-
-  const splitOptions = words.map(word => [word, ...possibleCompoundSplits(word)]);
-  function combine(index, current) {
-    if (index >= splitOptions.length) {
-      const parts = current.join(' ').split(' ').filter(Boolean);
-      add(parts.join(' '));
-      add(parts.join('-'));
-      add(parts.join(''));
-      return;
-    }
-    splitOptions[index].forEach(option => combine(index + 1, current.concat(option.split(' '))));
-  }
-  if (words.length) combine(0, []);
-
-  return [...variants].filter(v => v.toLowerCase() !== raw.toLowerCase());
-}
-
-function findFirstFixKeywordMatch(value) {
-  const text = String(value || '');
-  if (!text.trim()) return null;
-
-  const lowerText = text.toLocaleLowerCase();
-  const matches = [];
-
-  FIRST_FIX_KEYWORDS.forEach(keyword => {
-    const cleanKeyword = String(keyword || '').trim();
-    if (!cleanKeyword) return;
-    const variants = [cleanKeyword, ...generateFirstFixVariants(cleanKeyword)];
-    if (variants.some(variant => {
-      const term = String(variant || '').trim().toLocaleLowerCase();
-      return term && lowerText.includes(term);
-    })) {
-      matches.push(cleanKeyword);
-    }
-  });
-
-  if (!matches.length) return null;
-
-  // If more than one configured keyword matches, use the longest one.
-  // This prevents a generic keyword such as "heating" from overriding a
-  // more specific title keyword such as "underfloor heating".
-  matches.sort((a, b) => b.length - a.length);
-  return matches[0];
-}
-
 function isFirstFixWorkDescription(value) {
-  const text = String(value || '');
-  if (!text.trim()) return false;
 
-  const builtInMatch = /(?:\b1\s*st\b|\bfirst\b)[\s\u00a0\-\u2010\u2011\u2012\u2013\u2014_\/\\.,:;()]*fix\b/i.test(text);
-  if (builtInMatch) return true;
-
-  return Boolean(findFirstFixKeywordMatch(text));
-}
-
-function getFirstFixTitleForDescription(value) {
-  const matchedKeyword = findFirstFixKeywordMatch(value);
-  if (!matchedKeyword) return 'First-Fix';
-
-  const useCustomTitle = FIRST_FIX_TITLE_KEYWORDS.some(keyword =>
-    String(keyword || '').trim().toLocaleLowerCase() === matchedKeyword.toLocaleLowerCase()
+  return /(?:\b1\s*st\b|\bfirst\b)[\s\u00a0\-\u2010\u2011\u2012\u2013\u2014_\/\\.,:;()]*fix\b/i.test(
+    String(value || '')
   );
 
-  return useCustomTitle ? matchedKeyword : 'First-Fix';
 }
 
 function updateFirstFixFieldsVisibility() {
@@ -2366,41 +2251,10 @@ function updateFirstFixFieldsVisibility() {
     return;
   }
 
-  const firstFixVisible = isFirstFixWorkDescription(description);
-
   fields.classList.toggle(
     'hidden',
-    !firstFixVisible
+    !isFirstFixWorkDescription(description)
   );
-
-  const title = getFirstFixTitleForDescription(description);
-  const statusTitle = `Video/photographic records of ${title} complete and submitted`;
-  const locationTitle = `${title} Records: Location/Recipient`;
-
-  const statusLabel = document.getElementById('firstFixRecordsStatusLabel');
-  const locationLabel = document.getElementById('firstFixRecordsLocationLabel');
-  if (statusLabel) statusLabel.textContent = statusTitle;
-  if (locationLabel) locationLabel.textContent = locationTitle;
-
-  // LIVE index.html keeps these labels as normal text nodes. Update those
-  // text nodes as well so no index.html change is required for this feature.
-  const statusControl = form.elements.firstFixRecordsStatus;
-  const locationControl = form.elements.firstFixRecordsLocation;
-  const statusParent = statusControl?.closest('label');
-  const locationParent = locationControl?.closest('label');
-
-  const replaceLabelText = (label, text) => {
-    if (!label) return;
-    for (const node of label.childNodes) {
-      if (node.nodeType === Node.TEXT_NODE && node.nodeValue.trim()) {
-        node.nodeValue = `\n\n    ${text}\n\n    `;
-        return;
-      }
-    }
-  };
-
-  replaceLabelText(statusParent, statusTitle);
-  replaceLabelText(locationParent, locationTitle);
 
 }
 
@@ -5423,12 +5277,12 @@ healthSafetyScaffolding:
 
     if (isFirstFixWorkDescription(data.description)) {
       addField(
-        `Video/photographic records of ${getFirstFixTitleForDescription(data.description)} complete and submitted`,
+        'Video/photographic records of First-Fix complete and submitted',
         data.firstFixRecordsStatus
       );
 
       addField(
-        `${getFirstFixTitleForDescription(data.description)} Records: Location/Recipient`,
+        'First-Fix Records: Location/Recipient',
         data.firstFixRecordsLocation
       );
     }
