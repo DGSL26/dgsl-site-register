@@ -1326,6 +1326,9 @@ function showAuthDialog() {
         <div style="font-size:20px;font-weight:700;margin-bottom:16px;">
           DGSL Site Register Login
         </div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:12px;">
+          ${String(SITE.name || SITE.id).replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+        </div>
         <label style="display:block;margin-bottom:6px;font-weight:600;">Password</label>
         <input id="dgslLoginPassword" type="password" autocomplete="current-password"
           style="width:100%;box-sizing:border-box;margin-bottom:12px;">
@@ -3669,9 +3672,9 @@ form.onsubmit =
 
 
     const saveButton =
-      form.querySelector(
-        'button[value="default"]'
-      );
+      (e.submitter && e.submitter.matches('button[value="default"]'))
+        ? e.submitter
+        : form.querySelector('button[value="default"]');
 
 
     try {
