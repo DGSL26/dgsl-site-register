@@ -627,31 +627,61 @@ $('urlModal').addEventListener('click',e=>{if(e.target===$('urlModal'))$('urlMod
 $('settingsModal').addEventListener('click',e=>{if(e.target===$('settingsModal'))$('settingsModal').classList.remove('show');});
 $('siteModal').addEventListener('click',e=>{if(e.target===$('siteModal'))$('siteModal').classList.remove('show');});
 
-async function saveSiteAuth(siteId, password){
-  const session = currentSession || (await supabaseClient.auth.getSession()).data.session;
+async function getDashboardAccessToken(){
+  let {data,error}=await supabaseClient.auth.getSession();
+  let session=data?.session||null;
+  if(error) session=null;
   if(!session?.access_token) throw new Error('Your dashboard session has expired. Please log in again.');
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/site-auth`, {
+
+  // Always refresh a near-expiry token before calling the Edge Function.
+  // This prevents an old dashboard token from being rejected as "Not authenticated".
+  const expiresAt=Number(session.expires_at||0)*1000;
+  if(!expiresAt || expiresAt-Date.now()<120000){
+    const refreshed=await supabaseClient.auth.refreshSession();
+    if(refreshed.error || !refreshed.data?.session){
+      throw new Error('Your dashboard session has expired. Please log in again.');
+    }
+    session=refreshed.data.session;
+  }
+  currentSession=session;
+  return session.access_token;
+}
+
+async function callSiteAuth(action, siteId, password){
+  let token=await getDashboardAccessToken();
+  const request=async(accessToken)=>fetch(`${SUPABASE_URL}/functions/v1/site-auth`,{
     method:'POST',
     headers:{
       'Content-Type':'application/json',
-      'Authorization':`Bearer ${session.access_token}`,
+      'Authorization':`Bearer ${accessToken}`,
       'apikey':SUPABASE_KEY
     },
-    body:JSON.stringify({action:'upsert',site_id:siteId,password})
+    body:JSON.stringify({action,site_id:siteId,...(password!==undefined?{password}: {})})
   });
-  const body = await response.json().catch(()=>({}));
+
+  let response=await request(token);
+  let body=await response.json().catch(()=>({}));
+
+  // If the function rejects the token, refresh once and retry with a fresh access token.
+  if(response.status===401 || body.error==='Not authenticated.'){
+    const refreshed=await supabaseClient.auth.refreshSession();
+    if(!refreshed.error && refreshed.data?.session){
+      currentSession=refreshed.data.session;
+      response=await request(refreshed.data.session.access_token);
+      body=await response.json().catch(()=>({}));
+    }
+  }
+
   if(!response.ok || !body.ok) throw new Error(body.error || 'Could not save the site password.');
   return body;
 }
 
+async function saveSiteAuth(siteId, password){
+  return callSiteAuth('upsert',siteId,password);
+}
+
 async function deleteSiteAuth(siteId){
-  const session = currentSession || (await supabaseClient.auth.getSession()).data.session;
-  if(!session?.access_token) return;
-  await fetch(`${SUPABASE_URL}/functions/v1/site-auth`, {
-    method:'POST',
-    headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`,'apikey':SUPABASE_KEY},
-    body:JSON.stringify({action:'delete',site_id:siteId})
-  });
+  try{ await callSiteAuth('delete',siteId); }catch(error){ console.error('Could not delete site login:',error); }
 }
 
 async function createPhotoBucket(bucket){
