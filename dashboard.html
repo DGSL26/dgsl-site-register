@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>DGSL Site Register — Dashboard</title>
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#17212b}.wrap{max-width:1150px;margin:0 auto;padding:0 20px 50px}.top{background:#fff;border-bottom:1px solid #dfe4e8;margin:0 -20px 28px;padding:24px 20px 22px;display:flex;flex-direction:column;gap:20px}.brand{display:flex;align-items:center;gap:18px}.brand img{display:block;width:220px;max-width:35vw;height:auto;object-fit:contain}.brand h1{margin:0;font-size:25px}.brand p{margin:4px 0 0;color:#68737d}.btn{border:0;border-radius:7px;padding:10px 15px;font-weight:700;cursor:pointer}.primary{background:#008e39;color:#fff}.secondary{background:#fff;border:1px solid #ccd3d8;color:#17212b}.danger{background:#fff1f0;color:#9f201b;border:1px solid #f2b8b5}.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px}.user{margin-left:auto;color:#68737d;font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.card{background:#fff;border:1px solid #dfe4e8;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.05)}.card h2{margin:0 0 7px;font-size:20px}.meta{color:#68737d;font-size:14px;line-height:1.65}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:16px}.stat{background:#f7f8f9;border:1px solid #e5e8eb;border-radius:8px;padding:10px 8px;text-align:center}.stat .num{display:block;font-size:20px;font-weight:800;color:#17212b;min-height:24px}.stat .label{display:block;margin-top:3px;font-size:11px;color:#68737d}.last{margin-top:10px;font-size:12px;color:#68737d}.stat.loading .num{opacity:.45}.status{display:inline-block;margin-top:13px;padding:5px 9px;border-radius:999px;background:#e7f6ed;color:#16733b;font-size:12px;font-weight:700}.status.inactive{background:#f3f4f6;color:#68737d}.open{display:block;text-align:center;text-decoration:none;background:#008e39;color:#fff;padding:11px;border-radius:7px;margin-top:18px;font-weight:700}.edit{display:block;text-align:center;margin-top:9px;padding:10px;border-radius:7px;border:1px solid #ccd3d8;background:#fff;color:#17212b;font-weight:700;cursor:pointer;width:100%}.toggle{display:block;text-align:center;margin-top:9px;padding:10px;border-radius:7px;border:1px solid #ccd3d8;background:#fff;color:#17212b;font-weight:700;cursor:pointer;width:100%}.note{margin:25px 0 0;color:#68737d;font-size:13px}.error-banner{display:none;background:#fff1f0;border:1px solid #f2b8b5;color:#9f201b;border-radius:10px;padding:14px;margin-bottom:18px}.error-banner.show{display:block}#loading{background:#fff;border:1px solid #dfe4e8;border-radius:12px;padding:25px;color:#68737d}.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}.modal.show{display:flex}.box{background:#fff;border-radius:12px;padding:22px;max-width:430px;width:100%}.box h2{margin-top:0}.box label{display:block;font-size:13px;font-weight:700;margin-top:12px}.box input{width:100%;padding:11px;border:1px solid #ccd3d8;border-radius:6px;margin:7px 0}.box input[readonly]{background:#f7f8f9;color:#4d5963}.generated{background:#f7f8f9;border:1px solid #e5e8eb;border-radius:8px;padding:10px 12px;font-size:13px;color:#33404a;word-break:break-all;margin-top:7px}.generated strong{display:block;font-size:11px;color:#68737d;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.helper{font-size:12px;color:#68737d;line-height:1.45;margin-top:7px}.url-box{max-width:560px}.url-display{background:#f7f8f9;border:1px solid #e5e8eb;border-radius:8px;padding:12px;font-size:13px;line-height:1.45;word-break:break-all;color:#33404a}.copy-row{display:flex;gap:9px;margin-top:10px}.copy-row .url-display{flex:1;margin:0}.copy-btn{white-space:nowrap}.copy-status{font-size:12px;color:#16733b;min-height:17px;margin-top:7px}.storage-ok{color:#16733b}.storage-warn{color:#9a6700}.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.error{color:#b42318;font-size:13px;min-height:18px;margin-bottom:8px}.hidden{display:none!important}.section-title{display:flex;align-items:center;gap:10px;margin:0 0 14px}.section-title h2{font-size:18px;margin:0}@media(max-width:1000px){
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#17212b}.wrap{max-width:1150px;margin:0 auto;padding:0 20px 50px}.top{background:#fff;border-bottom:1px solid #dfe4e8;margin:0 -20px 28px;padding:24px 20px 22px;display:flex;flex-direction:column;gap:20px}.brand{display:flex;align-items:center;gap:18px}.brand img{display:block;width:220px;max-width:35vw;height:auto;object-fit:contain}.brand h1{margin:0;font-size:25px}.brand p{margin:4px 0 0;color:#68737d}.btn{border:0;border-radius:7px;padding:10px 15px;font-weight:700;cursor:pointer}.primary{background:#008e39;color:#fff}.secondary{background:#fff;border:1px solid #ccd3d8;color:#17212b}.danger{background:#fff1f0;color:#9f201b;border:1px solid #f2b8b5}.toolbar{display:flex;gap:10px;align-items:center;margin-bottom:18px}.user{margin-left:auto;color:#68737d;font-size:13px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.card{background:#fff;border:1px solid #dfe4e8;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.05)}.card h2{margin:0 0 7px;font-size:20px}.meta{color:#68737d;font-size:14px;line-height:1.65}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:16px}.stat{background:#f7f8f9;border:1px solid #e5e8eb;border-radius:8px;padding:10px 8px;text-align:center}.stat .num{display:block;font-size:20px;font-weight:800;color:#17212b;min-height:24px}.stat .label{display:block;margin-top:3px;font-size:11px;color:#68737d}.last{margin-top:10px;font-size:12px;color:#68737d}.stat.loading .num{opacity:.45}.status{display:inline-block;margin-top:13px;padding:5px 9px;border-radius:999px;background:#e7f6ed;color:#16733b;font-size:12px;font-weight:700}.status.inactive{background:#f3f4f6;color:#68737d}.open{display:block;text-align:center;text-decoration:none;background:#008e39;color:#fff;padding:11px;border-radius:7px;margin-top:18px;font-weight:700}.edit{display:block;text-align:center;margin-top:9px;padding:10px;border-radius:7px;border:1px solid #ccd3d8;background:#fff;color:#17212b;font-weight:700;cursor:pointer;width:100%}.toggle{display:block;text-align:center;margin-top:9px;padding:10px;border-radius:7px;border:1px solid #ccd3d8;background:#fff;color:#17212b;font-weight:700;cursor:pointer;width:100%}.note{margin:25px 0 0;color:#68737d;font-size:13px}.error-banner{display:none;background:#fff1f0;border:1px solid #f2b8b5;color:#9f201b;border-radius:10px;padding:14px;margin-bottom:18px}.error-banner.show{display:block}#loading{background:#fff;border:1px solid #dfe4e8;border-radius:12px;padding:25px;color:#68737d}.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:10}.modal.show{display:flex}.box{background:#fff;border-radius:12px;padding:22px;max-width:430px;width:100%}.box h2{margin-top:0}.box label{display:block;font-size:13px;font-weight:700;margin-top:12px}.box input{width:100%;padding:11px;border:1px solid #ccd3d8;border-radius:6px;margin:7px 0}.box input[readonly]{background:#f7f8f9;color:#4d5963}.box input.password-mismatch{border-color:#d93025;background:#fff4f3;box-shadow:0 0 0 1px #d93025}.change-password-btn{display:block;width:100%;margin-top:8px}.generated{background:#f7f8f9;border:1px solid #e5e8eb;border-radius:8px;padding:10px 12px;font-size:13px;color:#33404a;word-break:break-all;margin-top:7px}.generated strong{display:block;font-size:11px;color:#68737d;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}.helper{font-size:12px;color:#68737d;line-height:1.45;margin-top:7px}.url-box{max-width:560px}.url-display{background:#f7f8f9;border:1px solid #e5e8eb;border-radius:8px;padding:12px;font-size:13px;line-height:1.45;word-break:break-all;color:#33404a}.copy-row{display:flex;gap:9px;margin-top:10px}.copy-row .url-display{flex:1;margin:0}.copy-btn{white-space:nowrap}.copy-status{font-size:12px;color:#16733b;min-height:17px;margin-top:7px}.storage-ok{color:#16733b}.storage-warn{color:#9a6700}.actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.error{color:#b42318;font-size:13px;min-height:18px;margin-bottom:8px}.hidden{display:none!important}.section-title{display:flex;align-items:center;gap:10px;margin:0 0 14px}.section-title h2{font-size:18px;margin:0}@media(max-width:1000px){
   .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
 }
 @media(max-width:700px){
@@ -91,8 +91,6 @@
   vertical-align:middle!important;
   border-radius:50%!important;
 }
-
-.first-fix-keywords-box{max-width:620px}.first-fix-keywords-list{display:grid;gap:8px;margin:14px 0;max-height:360px;overflow:auto}.first-fix-keyword-row{border:1px solid #d6dde3;border-radius:8px;padding:10px 12px;background:#fff}.first-fix-keyword-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.first-fix-keyword-text{font-weight:600;overflow-wrap:anywhere}.first-fix-keyword-title-badge{display:inline-block;margin-left:7px;padding:3px 7px;border-radius:999px;background:#e7f6ed;color:#16733b;font-size:11px;font-weight:700;vertical-align:middle}.first-fix-keyword-actions{display:flex;align-items:center;gap:7px;flex:none}.first-fix-keyword-remove{flex:none;border:1px solid #c62828;background:#fff;color:#c62828;border-radius:6px;padding:6px 10px;cursor:pointer}.first-fix-keyword-remove:hover{background:#fff3f3}.first-fix-keyword-variants{display:none;margin:10px 0 0;padding:9px 11px;border-radius:7px;background:#f7f9fb;border:1px solid #e3e8ed}.first-fix-keyword-variants.show{display:block}.first-fix-keyword-variants-title{font-size:12px;font-weight:700;color:#68737d;margin-bottom:6px}.first-fix-keyword-variant{font-size:13px;padding:2px 0;overflow-wrap:anywhere}.first-fix-keyword-add{margin-top:6px}.first-fix-keyword-add .copy-row{display:flex;gap:8px;align-items:center}.first-fix-keyword-add input{flex:1;min-width:0}.first-fix-keyword-add .error{min-height:20px;margin-top:6px}.first-fix-keyword-options{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;color:#34404b}.first-fix-keyword-options input{width:auto}.first-fix-keyword-hint{font-size:12px;color:#68737d;line-height:1.4;margin-top:5px}
 </style>
 </head>
 <body>
@@ -128,7 +126,6 @@
   <h2>Settings</h2>
   <div class="settings-menu">
     <button class="settings-menu-btn" id="settingsDataManagement">Data Management <span id="dashboardBugBadge" class="dashboard-badge hidden"></span></button>
-    <button class="settings-menu-btn" id="settingsFirstFixKeywords">First-Fix Keywords</button>
   </div>
   <div class="actions">
     <button class="btn secondary" id="settingsClose">Close</button>
@@ -161,21 +158,6 @@
   <div class="actions"><button class="btn danger-btn" id="managementBugDelete">Delete Bug Report</button></div>
 </div></div>
 
-<div class="modal" id="firstFixKeywordsModal"><div class="box first-fix-keywords-box">
-  <h2>First-Fix Keywords</h2>
-  <p class="settings-account">Add words or phrases that should make the First-Fix fields appear in the site registers.</p>
-  <div id="firstFixKeywordsList" class="first-fix-keywords-list"></div>
-  <div class="first-fix-keyword-add">
-    <label for="firstFixKeywordInput">Add keyword or phrase</label>
-    <div class="copy-row"><input id="firstFixKeywordInput" type="text" placeholder="e.g. Underfloor heating"><button class="btn primary" id="firstFixKeywordAdd">Add</button></div>
-    <label class="first-fix-keyword-options"><input id="firstFixKeywordOtherVersions" type="checkbox"> Generate other versions automatically</label>
-    <label class="first-fix-keyword-options"><input id="firstFixKeywordUseInTitle" type="checkbox"> Use this keyword in the First-Fix field titles</label>
-    <div class="first-fix-keyword-hint">This recognises spacing, joined, hyphenated, underscore and capitalisation variations automatically. Compound-word split options are also generated where possible.</div>
-    <div class="error" id="firstFixKeywordError"></div>
-  </div>
-  <div class="actions"><button class="btn secondary" id="firstFixKeywordsClose">Close</button></div>
-</div></div>
-
 <div class="modal" id="loginModal"><div class="box">
   <h2>DGSL Login</h2><div class="error" id="loginError"></div>
   <label>Password</label><input id="password" type="password" autocomplete="current-password">
@@ -193,15 +175,24 @@
   <h2 id="siteModalTitle">Add Site</h2><div class="error" id="siteError"></div>
   <label>Site name</label><input id="siteName" placeholder="Example Development">
   <label>Address</label><input id="siteAddress" placeholder="Swords, Co. Dublin">
+  <button class="btn secondary change-password-btn hidden" id="changePasswordBtn">Change password</button>
   <div id="sitePasswordFields">
-    <label id="sitePasswordLabel">Site password</label><input id="sitePassword" type="password" autocomplete="new-password" placeholder="Create a password for this site">
-    <label id="sitePasswordConfirmLabel">Confirm site password</label><input id="sitePasswordConfirm" type="password" autocomplete="new-password" placeholder="Re-enter the site password">
+    <label>Site password</label><input id="sitePassword" type="password" autocomplete="new-password" placeholder="Create a password for this site">
+    <label>Confirm site password</label><input id="sitePasswordConfirm" type="password" autocomplete="new-password" placeholder="Re-enter the site password">
   </div>
   <div class="generated" id="generatedSiteId"><strong>Site ID</strong><span>—</span></div>
   <div class="generated" id="generatedSiteUrl"><strong>Site URL</strong><span>—</span></div>
   <div class="generated" id="generatedPhotoBucket"><strong>Photo storage</strong><span>—</span></div>
-  <div class="helper">The Site ID, GitHub Pages URL and Supabase photo bucket are generated automatically. Each new site must also have its own password. The password is stored securely and is required to enter that site.</div>
+  <div class="helper">The Site ID, GitHub Pages URL and Supabase photo bucket are generated automatically. Each site has its own password.</div>
   <div class="actions"><button class="btn secondary" id="siteCancel">Cancel</button><button class="btn primary" id="siteSave">Create Site</button></div>
+</div></div>
+
+<div class="modal" id="changePasswordModal"><div class="box">
+  <h2>Change site password</h2><div class="error" id="changePasswordError"></div>
+  <label>New site password</label><input id="changePasswordNew" type="password" autocomplete="new-password" placeholder="Enter the new site password">
+  <label>Confirm new password</label><input id="changePasswordConfirm" type="password" autocomplete="new-password" placeholder="Re-enter the new site password">
+  <div class="helper">The password must be at least 8 characters and both fields must match exactly.</div>
+  <div class="actions"><button class="btn secondary" id="changePasswordCancel">Cancel</button><button class="btn primary" id="changePasswordSave">Change Password</button></div>
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -240,7 +231,7 @@ async function getSiteStats(site){
     supabaseClient.from('handovers').select('id',{count:'exact',head:true}).eq('site_id',site.site_id),
     supabaseClient.from('bug_reports').select('id',{count:'exact',head:true}).eq('site_id',site.site_id).eq('is_read',false),
     supabaseClient.from('handovers').select('handover_date').eq('site_id',site.site_id).not('handover_date','is',null).order('handover_date',{ascending:false,nullsLast:true}).limit(1).maybeSingle(),
-    countStorageFiles(site.photo_bucket)
+    countAttachedPhotos(site.site_id)
   ]);
   return {
     handovers:handoverResult.count ?? 0,
@@ -249,19 +240,44 @@ async function getSiteStats(site){
     photos:photoResult
   };
 }
-async function countStorageFiles(bucket){
-  if(!bucket) return 0;
+
+// Count only photos that are actually attached to existing handover records.
+// Storage can contain orphaned/duplicate files, so counting the bucket itself
+// can make the dashboard show more photos than the site actually uses.
+async function countAttachedPhotos(siteId){
   let total=0;
-  async function walk(prefix=''){
-    const {data,error}=await supabaseClient.storage.from(bucket).list(prefix,{limit:1000,offset:0,sortBy:{column:'name',order:'asc'}});
-    if(error) return;
-    for(const item of (data||[])){
-      const path=prefix ? `${prefix}/${item.name}` : item.name;
-      if(item.id){ total++; }
-      else { await walk(path); }
+  const pageSize=1000;
+  let from=0;
+
+  while(true){
+    const {data,error}=await supabaseClient
+      .from('handovers')
+      .select('photos')
+      .eq('site_id',siteId)
+      .range(from,from+pageSize-1);
+
+    if(error) return 0;
+
+    for(const row of (data||[])){
+      if(Array.isArray(row.photos)){
+        total += row.photos.length;
+        continue;
+      }
+
+      if(typeof row.photos==='string' && row.photos.trim()){
+        try{
+          const parsed=JSON.parse(row.photos);
+          if(Array.isArray(parsed)) total += parsed.length;
+        }catch(_){
+          // Ignore malformed photo data rather than inflating the count.
+        }
+      }
     }
+
+    if(!data || data.length < pageSize) break;
+    from += pageSize;
   }
-  await walk('');
+
   return total;
 }
 function renderSites(sites){
@@ -297,7 +313,7 @@ function renderSites(sites){
     });
   });
 }
-async function loadSites(){clearError();$('loading').hidden=false;$('grid').hidden=true;const {data,error}=await supabaseClient.from('sites').select('site_id,site_name,address,active,sort_order,photo_bucket,first_fix_keywords,first_fix_title_keywords').order('sort_order',{ascending:true}).order('site_name',{ascending:true});if(error){showError('Could not load the site list: '+error.message);$('loading').hidden=true;return;}cachedSites=data||[];populateManagementSites();renderSites(cachedSites);refreshDashboardBugBadge();}
+async function loadSites(){clearError();$('loading').hidden=false;$('grid').hidden=true;const {data,error}=await supabaseClient.from('sites').select('site_id,site_name,address,active,sort_order,photo_bucket').order('sort_order',{ascending:true}).order('site_name',{ascending:true});if(error){showError('Could not load the site list: '+error.message);$('loading').hidden=true;return;}cachedSites=data||[];populateManagementSites();renderSites(cachedSites);refreshDashboardBugBadge();}
 let cachedSites=[];
 async function updateAuthUI(){const {data}=await supabaseClient.auth.getSession();currentSession=data.session||null;$('userLabel').textContent='';$('addBtn').classList.toggle('hidden',!isAdmin());$('settingsBtn').classList.toggle('hidden',!currentSession);$('headerLogin').classList.toggle('hidden',!!currentSession);$('settingsLogout').classList.toggle('hidden',!currentSession);if(cachedSites.length){renderSites(cachedSites);populateManagementSites();}if(!currentSession){closeDashboardDataManagement();$('managementBugReportsModal').classList.remove('show');$('managementBugDetailModal').classList.remove('show');}refreshDashboardBugBadge();}
 async function refresh(){await loadSites();}
@@ -511,197 +527,6 @@ async function deleteManagementBugReport(){
   await openManagementBugReports();
 }
 
-const DEFAULT_FIRST_FIX_KEYWORDS=['First Fix','1st Fix'];
-let firstFixKeywords=[];
-let firstFixTitleKeywords=[];
-
-// Generates practical spelling/format variations for any keyword or phrase.
-// The canonical keyword remains the only value stored in Supabase; the site
-// register generates the same variants when it performs the First-Fix check.
-const COMMON_COMPOUND_WORD_PARTS = new Set(`
-under floor over head fire stop stopping proof proving water tight weather board plaster dry lining line block brick ground roof wall ceiling concrete screed
-insulation electrical mechanical heating cooling ventilation pipework ductwork drainage carpentry joinery flooring tiling painting decorating render rendering
-seal sealing silicone mastic fireproof waterproof damp proofing cavity tray traywork steel metal timber door window frame framework skirting architrave
-kitchen bathroom bedroom staircase handrail balustrade cable containment containmentwork cabletray cabletraywork
-air conditioning conditioningwork underlay groundwork earthwork groundwork first second fix back fill
-`.trim().toLowerCase().split(/\\s+/));
-
-function normaliseFirstFixKeywords(values){
-  const list=Array.isArray(values)?values:[];
-  const seen=new Set();
-  return list.map(v=>String(v??'').trim()).filter(Boolean).filter(v=>{
-    const key=v.toLowerCase();
-    if(seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-}
-
-function splitCamelAndSeparators(value){
-  return String(value||'')
-    .replace(/([a-z0-9])([A-Z])/g,'$1 $2')
-    .replace(/[\\-_]+/g,' ')
-    .replace(/\\s+/g,' ')
-    .trim();
-}
-
-function possibleCompoundSplits(word){
-  const clean=String(word||'').toLowerCase().replace(/[^a-z0-9]/g,'');
-  if(clean.length<5) return [];
-  const results=[];
-  for(let i=2;i<=clean.length-2;i++){
-    const left=clean.slice(0,i),right=clean.slice(i);
-    if(COMMON_COMPOUND_WORD_PARTS.has(left) && COMMON_COMPOUND_WORD_PARTS.has(right)){
-      results.push(`${left} ${right}`);
-    }
-  }
-  return results;
-}
-
-function generateFirstFixVariants(value){
-  const raw=String(value||'').trim();
-  if(!raw) return [];
-  const base=splitCamelAndSeparators(raw);
-  const words=base.split(' ').filter(Boolean);
-  const variants=new Set();
-  const add=v=>{const x=String(v||'').trim();if(x)variants.add(x);};
-
-  add(raw);
-  add(base);
-  add(words.join(' '));
-  add(words.join(''));
-  add(words.join('-'));
-  add(words.join('_'));
-  if(words.length>1){
-    add(words.map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(''));
-    add(words.map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join('-'));
-    add(words.map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '));
-  }
-
-  // If a phrase contains a compound word such as "underfloor", generate
-  // recognised word-boundary versions such as "under floor heating".
-  const splitOptions=words.map(word=>[word,...possibleCompoundSplits(word)]);
-  function combine(index,current){
-    if(index>=splitOptions.length){
-      const parts=current.join(' ').split(' ').filter(Boolean);
-      add(parts.join(' '));
-      add(parts.join('-'));
-      add(parts.join(''));
-      return;
-    }
-    splitOptions[index].forEach(option=>combine(index+1,current.concat(option.split(' '))));
-  }
-  if(words.length) combine(0,[]);
-
-  return [...variants].filter(v=>v.toLowerCase()!==raw.toLowerCase());
-}
-
-function getDashboardFirstFixKeywords(){
-  const all=[];
-  cachedSites.forEach(site=>{ all.push(...(Array.isArray(site.first_fix_keywords)?site.first_fix_keywords:[])); });
-  const merged=normaliseFirstFixKeywords(all);
-  return merged.length?merged:[...DEFAULT_FIRST_FIX_KEYWORDS];
-}
-
-function renderFirstFixKeywords(){
-  const list=$('firstFixKeywordsList');
-  if(!list) return;
-  firstFixKeywords=normaliseFirstFixKeywords(firstFixKeywords);
-  firstFixTitleKeywords=normaliseFirstFixKeywords(firstFixTitleKeywords);
-  if(!firstFixKeywords.length){list.innerHTML='<div class="settings-account">No additional keywords have been added.</div>';return;}
-  list.innerHTML=firstFixKeywords.map((keyword,index)=>{
-    const variants=generateFirstFixVariants(keyword);
-    const useInTitle=firstFixTitleKeywords.some(x=>x.toLowerCase()===keyword.toLowerCase());
-    return `<div class="first-fix-keyword-row"><div class="first-fix-keyword-head"><div><span class="first-fix-keyword-text">${escapeHtml(keyword)}</span>${useInTitle?'<span class="first-fix-keyword-title-badge">Field title</span>':''}</div><div class="first-fix-keyword-actions"><button class="btn secondary first-fix-keyword-other" data-index="${index}">Other versions</button><button class="first-fix-keyword-remove" data-index="${index}">Remove</button></div></div><div class="first-fix-keyword-variants" data-variants-index="${index}"><div class="first-fix-keyword-variants-title">Automatically recognised versions</div>${variants.length?variants.map(v=>`<div class="first-fix-keyword-variant">✓ ${escapeHtml(v)}</div>`).join(''):'<div class="first-fix-keyword-variant">No additional versions needed.</div>'}</div></div>`;
-  }).join('');
-  list.querySelectorAll('.first-fix-keyword-remove').forEach(btn=>btn.onclick=()=>removeFirstFixKeyword(Number(btn.dataset.index)));
-  list.querySelectorAll('.first-fix-keyword-other').forEach(btn=>btn.onclick=()=>{
-    const panel=list.querySelector(`[data-variants-index="${btn.dataset.index}"]`);
-    if(panel) panel.classList.toggle('show');
-    btn.textContent=panel?.classList.contains('show')?'Hide versions':'Other versions';
-  });
-}
-
-async function saveFirstFixKeywords(){
-  if(!isAdmin()) return false;
-  const keywords=normaliseFirstFixKeywords(firstFixKeywords);
-  const titleKeywords=normaliseFirstFixKeywords(firstFixTitleKeywords).filter(keyword=>keywords.some(x=>x.toLowerCase()===keyword.toLowerCase()));
-  const sites=cachedSites.length?cachedSites:[{site_id:'SITE1'}];
-  try{
-    for(const site of sites){
-      const {error}=await supabaseClient.from('sites').update({first_fix_keywords:keywords,first_fix_title_keywords:titleKeywords}).eq('site_id',site.site_id);
-      if(error) throw error;
-    }
-    cachedSites=cachedSites.map(site=>({...site,first_fix_keywords:[...keywords],first_fix_title_keywords:[...titleKeywords]}));
-    firstFixTitleKeywords=[...titleKeywords];
-    return true;
-  }catch(error){
-    console.error('First-Fix keyword save error:',error);
-    $('firstFixKeywordError').textContent='Unable to save the keyword list: '+error.message;
-    return false;
-  }
-}
-
-function openFirstFixKeywords(){
-  if(!currentSession) return;
-  $('firstFixKeywordError').textContent='';
-  $('firstFixKeywordInput').value='';
-  $('firstFixKeywordOtherVersions').checked=false;
-  $('firstFixKeywordUseInTitle').checked=false;
-  firstFixKeywords=getDashboardFirstFixKeywords();
-  firstFixTitleKeywords=normaliseFirstFixKeywords(cachedSites.flatMap(site=>Array.isArray(site.first_fix_title_keywords)?site.first_fix_title_keywords:[]));
-  renderFirstFixKeywords();
-  $('firstFixKeywordsModal').classList.add('show');
-}
-
-async function addFirstFixKeyword(){
-  if(!isAdmin()) return;
-  const input=$('firstFixKeywordInput');
-  const value=input.value.trim();
-  const withVersions=$('firstFixKeywordOtherVersions').checked;
-  const useInTitle=$('firstFixKeywordUseInTitle').checked;
-  $('firstFixKeywordError').textContent='';
-  if(!value){$('firstFixKeywordError').textContent='Enter a keyword or phrase.';return;}
-  if(firstFixKeywords.some(x=>x.toLowerCase()===value.toLowerCase())){$('firstFixKeywordError').textContent='That keyword is already in the list.';return;}
-  firstFixKeywords.push(value);
-  if(useInTitle) firstFixTitleKeywords.push(value);
-  if(await saveFirstFixKeywords()){
-    input.value='';
-    $('firstFixKeywordOtherVersions').checked=false;
-    $('firstFixKeywordUseInTitle').checked=false;
-    renderFirstFixKeywords();
-    if(withVersions){
-      const index=firstFixKeywords.findIndex(x=>x.toLowerCase()===value.toLowerCase());
-      const panel=$('firstFixKeywordsList').querySelector(`[data-variants-index="${index}"]`);
-      const button=$('firstFixKeywordsList').querySelector(`.first-fix-keyword-other[data-index="${index}"]`);
-      if(panel) panel.classList.add('show');
-      if(button) button.textContent='Hide versions';
-    }
-  }else{
-    firstFixKeywords=firstFixKeywords.filter(x=>x.toLowerCase()!==value.toLowerCase());
-    firstFixTitleKeywords=firstFixTitleKeywords.filter(x=>x.toLowerCase()!==value.toLowerCase());
-  }
-}
-
-async function removeFirstFixKeyword(index){
-  if(!isAdmin()) return;
-  const keyword=firstFixKeywords[index];
-  if(!keyword) return;
-  if(!confirm(`Remove "${keyword}" from the First-Fix keyword list?`)) return;
-  const previous=[...firstFixKeywords];
-  const previousTitle=[...firstFixTitleKeywords];
-  firstFixKeywords.splice(index,1);
-  firstFixTitleKeywords=firstFixTitleKeywords.filter(x=>x.toLowerCase()!==keyword.toLowerCase());
-  if(!(await saveFirstFixKeywords())){ firstFixKeywords=previous; firstFixTitleKeywords=previousTitle; }
-  renderFirstFixKeywords();
-}
-
-$('settingsFirstFixKeywords').onclick=()=>{closeDashboardDataManagement();openFirstFixKeywords()};
-$('firstFixKeywordsClose').onclick=()=>{$('firstFixKeywordsModal').classList.remove('show')};
-$('firstFixKeywordAdd').onclick=addFirstFixKeyword;
-$('firstFixKeywordInput').addEventListener('keydown',e=>{if(e.key==='Enter')addFirstFixKeyword()});
-$('firstFixKeywordsModal').addEventListener('click',e=>{if(e.target===$('firstFixKeywordsModal'))$('firstFixKeywordsModal').classList.remove('show')});
-
 $('settingsDataManagement').onclick=()=>{closeDashboardDataManagement();openDashboardDataManagement()};
 $('managementClose').onclick=closeDashboardDataManagement;
 $('managementSiteSelect').onchange=e=>{managementSiteId=e.target.value;refreshDashboardBugBadge();};
@@ -731,6 +556,21 @@ function updateGeneratedFields(siteId){
   $('generatedSiteUrl').querySelector('span').textContent=siteId?appUrl(siteId):'—';
   $('generatedPhotoBucket').querySelector('span').textContent=siteId?photoBucketFor(siteId):'—';
 }
+function clearPasswordMatchState(inputId){
+  $(inputId).classList.remove('password-mismatch');
+}
+function updatePasswordMatchState(){
+  const password=$('sitePassword').value;
+  const confirmPassword=$('sitePasswordConfirm').value;
+  const shouldMark=true;
+  $('sitePasswordConfirm').classList.toggle('password-mismatch',shouldMark && password!==confirmPassword);
+}
+function updateChangePasswordMatchState(){
+  const password=$('changePasswordNew').value;
+  const confirmPassword=$('changePasswordConfirm').value;
+  const shouldMark=true;
+  $('changePasswordConfirm').classList.toggle('password-mismatch',shouldMark && password!==confirmPassword);
+}
 function openAdd(){
   editingSiteId=null;
   const siteId=nextSiteId();
@@ -739,11 +579,9 @@ function openAdd(){
   $('siteAddress').value='';
   $('sitePassword').value='';
   $('sitePasswordConfirm').value='';
+  clearPasswordMatchState('sitePasswordConfirm');
   $('sitePasswordFields').style.display='';
-  $('sitePasswordLabel').textContent='Site password';
-  $('sitePasswordConfirmLabel').textContent='Confirm site password';
-  $('sitePassword').placeholder='Create a password for this site';
-  $('sitePasswordConfirm').placeholder='Re-enter the site password';
+  $('changePasswordBtn').classList.add('hidden');
   $('siteError').textContent='';
   $('siteSave').textContent='Create Site';
   updateGeneratedFields(siteId);
@@ -758,11 +596,8 @@ function openEdit(site){
   $('siteAddress').value=site.address||'';
   $('sitePassword').value='';
   $('sitePasswordConfirm').value='';
-  $('sitePasswordFields').style.display='';
-  $('sitePasswordLabel').textContent='New site password (optional)';
-  $('sitePasswordConfirmLabel').textContent='Confirm new site password';
-  $('sitePassword').placeholder='Leave blank to keep the current password';
-  $('sitePasswordConfirm').placeholder='Re-enter the new password';
+  $('sitePasswordFields').style.display='none';
+  $('changePasswordBtn').classList.remove('hidden');
   $('siteError').textContent='';
   $('siteSave').textContent='Save Changes';
   updateGeneratedFields(site.site_id);
@@ -771,11 +606,53 @@ function openEdit(site){
 }
 $('addBtn').onclick=openAdd;
 $('siteCancel').onclick=()=>$('siteModal').classList.remove('show');
+$('changePasswordBtn').onclick=()=>{
+  if(!editingSiteId)return;
+  $('changePasswordNew').value='';
+  $('changePasswordConfirm').value='';
+  clearPasswordMatchState('changePasswordConfirm');
+  $('changePasswordError').textContent='';
+  $('changePasswordModal').classList.add('show');
+  $('changePasswordNew').focus();
+};
+$('changePasswordCancel').onclick=()=>$('changePasswordModal').classList.remove('show');
+$('changePasswordModal').addEventListener('click',e=>{if(e.target===$('changePasswordModal'))$('changePasswordModal').classList.remove('show');});
+$('sitePassword').addEventListener('input',updatePasswordMatchState);
+$('sitePasswordConfirm').addEventListener('input',updatePasswordMatchState);
+$('changePasswordNew').addEventListener('input',updateChangePasswordMatchState);
+$('changePasswordConfirm').addEventListener('input',updateChangePasswordMatchState);
 $('urlClose').onclick=()=>$('urlModal').classList.remove('show');
 $('copySiteUrl').onclick=copySiteUrl;
 $('urlModal').addEventListener('click',e=>{if(e.target===$('urlModal'))$('urlModal').classList.remove('show');});
 $('settingsModal').addEventListener('click',e=>{if(e.target===$('settingsModal'))$('settingsModal').classList.remove('show');});
 $('siteModal').addEventListener('click',e=>{if(e.target===$('siteModal'))$('siteModal').classList.remove('show');});
+
+async function saveSiteAuth(siteId, password){
+  const session = currentSession || (await supabaseClient.auth.getSession()).data.session;
+  if(!session?.access_token) throw new Error('Your dashboard session has expired. Please log in again.');
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/site-auth`, {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'Authorization':`Bearer ${session.access_token}`,
+      'apikey':SUPABASE_KEY
+    },
+    body:JSON.stringify({action:'upsert',site_id:siteId,password})
+  });
+  const body = await response.json().catch(()=>({}));
+  if(!response.ok || !body.ok) throw new Error(body.error || 'Could not save the site password.');
+  return body;
+}
+
+async function deleteSiteAuth(siteId){
+  const session = currentSession || (await supabaseClient.auth.getSession()).data.session;
+  if(!session?.access_token) return;
+  await fetch(`${SUPABASE_URL}/functions/v1/site-auth`, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`,'apikey':SUPABASE_KEY},
+    body:JSON.stringify({action:'delete',site_id:siteId})
+  });
+}
 
 async function createPhotoBucket(bucket){
   const {data:existing,error:listError}=await supabaseClient.storage.listBuckets();
@@ -787,6 +664,31 @@ async function createPhotoBucket(bucket){
   }
   return {created:true,exists:false};
 }
+
+$('changePasswordSave').onclick=async()=>{
+  if(!isAdmin() || !editingSiteId)return;
+  $('changePasswordError').textContent='';
+  const password=$('changePasswordNew').value;
+  const confirmPassword=$('changePasswordConfirm').value;
+  if(!password){$('changePasswordError').textContent='A new site password is required.';return;}
+  if(password.length < 8){$('changePasswordError').textContent='The site password must be at least 8 characters.';return;}
+  if(!confirmPassword){$('changePasswordError').textContent='Please confirm the new site password.';$('changePasswordConfirm').classList.add('password-mismatch');return;}
+  if(password!==confirmPassword){$('changePasswordError').textContent='The new passwords do not match.';$('changePasswordConfirm').classList.add('password-mismatch');return;}
+  $('changePasswordSave').disabled=true;
+  $('changePasswordSave').textContent='Changing…';
+  try{
+    await saveSiteAuth(editingSiteId,password);
+    $('changePasswordModal').classList.remove('show');
+    $('changePasswordNew').value='';
+    $('changePasswordConfirm').value='';
+    clearPasswordMatchState('changePasswordConfirm');
+  }catch(error){
+    $('changePasswordError').textContent='Could not change password: '+error.message;
+  }finally{
+    $('changePasswordSave').disabled=false;
+    $('changePasswordSave').textContent='Change Password';
+  }
+};
 
 $('siteSave').onclick=async()=>{
   if(!isAdmin())return;
@@ -801,10 +703,8 @@ $('siteSave').onclick=async()=>{
   if(!editingSiteId){
     if(!sitePassword){$('siteError').textContent='A site password is required.';return;}
     if(sitePassword.length < 8){$('siteError').textContent='The site password must be at least 8 characters.';return;}
-    if(sitePassword !== sitePasswordConfirm){$('siteError').textContent='The site passwords do not match.';return;}
-  } else if(sitePassword || sitePasswordConfirm){
-    if(sitePassword.length < 8){$('siteError').textContent='The new site password must be at least 8 characters.';return;}
-    if(sitePassword !== sitePasswordConfirm){$('siteError').textContent='The new site passwords do not match.';return;}
+    if(!sitePasswordConfirm){$('siteError').textContent='Please confirm the site password.';$('sitePasswordConfirm').classList.add('password-mismatch');return;}
+    if(sitePassword !== sitePasswordConfirm){$('siteError').textContent='The site passwords do not match.';$('sitePasswordConfirm').classList.add('password-mismatch');return;}
   }
   $('siteSave').disabled=true;
   $('siteSave').textContent=editingSiteId?'Saving…':'Creating site…';
@@ -812,23 +712,21 @@ $('siteSave').onclick=async()=>{
     if(editingSiteId){
       const result=await supabaseClient.from('sites').update({site_name:siteName,address:address||null}).eq('site_id',editingSiteId);
       if(result.error)throw result.error;
-      if(sitePassword){
-        const passwordResult=await supabaseClient.rpc('set_site_password',{p_site_id:editingSiteId,p_password:sitePassword});
-        if(passwordResult.error)throw passwordResult.error;
-      }
+      if(sitePassword) await saveSiteAuth(editingSiteId, sitePassword);
     }else{
       const bucketResult=await createPhotoBucket(photoBucket);
       const max=Math.max(0,...cachedSites.map(s=>Number(s.sort_order)||0));
-      const result=await supabaseClient.from('sites').insert({site_id:siteId,site_name:siteName,address:address||null,photo_bucket:photoBucket,first_fix_keywords:[...DEFAULT_FIRST_FIX_KEYWORDS],first_fix_title_keywords:[],active:true,sort_order:max+1});
+      const result=await supabaseClient.from('sites').insert({site_id:siteId,site_name:siteName,address:address||null,photo_bucket:photoBucket,active:true,sort_order:max+1});
       if(result.error){
-        if(bucketResult.created){try{await supabaseClient.storage.deleteBucket(photoBucket)}catch(_){}}
+        if(bucketResult.created){try{await supabaseClient.storage.deleteBucket(photoBucket)}catch(_){} }
         throw result.error;
       }
-      const passwordResult=await supabaseClient.rpc('set_site_password',{p_site_id:siteId,p_password:sitePassword});
-      if(passwordResult.error){
+      try{
+        await saveSiteAuth(siteId, sitePassword);
+      }catch(authError){
         try{await supabaseClient.from('sites').delete().eq('site_id',siteId);}catch(_){}
         if(bucketResult.created){try{await supabaseClient.storage.deleteBucket(photoBucket)}catch(_){} }
-        throw passwordResult.error;
+        throw authError;
       }
     }
     $('siteModal').classList.remove('show');
