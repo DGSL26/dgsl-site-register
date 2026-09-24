@@ -92,7 +92,7 @@
   border-radius:50%!important;
 }
 
-.first-fix-keywords-box{max-width:520px}.first-fix-keywords-list{display:grid;gap:8px;margin:14px 0;max-height:320px;overflow:auto}.first-fix-keyword-row{display:flex;align-items:center;justify-content:space-between;gap:10px;border:1px solid #d6dde3;border-radius:8px;padding:10px 12px;background:#fff}.first-fix-keyword-text{font-weight:600;overflow-wrap:anywhere}.first-fix-keyword-remove{flex:none;border:1px solid #c62828;background:#fff;color:#c62828;border-radius:6px;padding:6px 10px;cursor:pointer}.first-fix-keyword-remove:hover{background:#fff3f3}.first-fix-keyword-add{margin-top:6px}.first-fix-keyword-add .copy-row{display:flex;gap:8px;align-items:center}.first-fix-keyword-add input{flex:1;min-width:0}.first-fix-keyword-add .error{min-height:20px;margin-top:6px}
+.first-fix-keywords-box{max-width:620px}.first-fix-keywords-list{display:grid;gap:8px;margin:14px 0;max-height:360px;overflow:auto}.first-fix-keyword-row{border:1px solid #d6dde3;border-radius:8px;padding:10px 12px;background:#fff}.first-fix-keyword-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.first-fix-keyword-text{font-weight:600;overflow-wrap:anywhere}.first-fix-keyword-actions{display:flex;align-items:center;gap:7px;flex:none}.first-fix-keyword-remove{flex:none;border:1px solid #c62828;background:#fff;color:#c62828;border-radius:6px;padding:6px 10px;cursor:pointer}.first-fix-keyword-remove:hover{background:#fff3f3}.first-fix-keyword-variants{display:none;margin:10px 0 0;padding:9px 11px;border-radius:7px;background:#f7f9fb;border:1px solid #e3e8ed}.first-fix-keyword-variants.show{display:block}.first-fix-keyword-variants-title{font-size:12px;font-weight:700;color:#68737d;margin-bottom:6px}.first-fix-keyword-variant{font-size:13px;padding:2px 0;overflow-wrap:anywhere}.first-fix-keyword-add{margin-top:6px}.first-fix-keyword-add .copy-row{display:flex;gap:8px;align-items:center}.first-fix-keyword-add input{flex:1;min-width:0}.first-fix-keyword-add .error{min-height:20px;margin-top:6px}.first-fix-keyword-options{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;color:#34404b}.first-fix-keyword-options input{width:auto}.first-fix-keyword-hint{font-size:12px;color:#68737d;line-height:1.4;margin-top:5px}
 </style>
 </head>
 <body>
@@ -167,7 +167,9 @@
   <div id="firstFixKeywordsList" class="first-fix-keywords-list"></div>
   <div class="first-fix-keyword-add">
     <label for="firstFixKeywordInput">Add keyword or phrase</label>
-    <div class="copy-row"><input id="firstFixKeywordInput" type="text" placeholder="e.g. First Fix Plumbing"><button class="btn primary" id="firstFixKeywordAdd">Add</button></div>
+    <div class="copy-row"><input id="firstFixKeywordInput" type="text" placeholder="e.g. Underfloor heating"><button class="btn primary" id="firstFixKeywordAdd">Add</button></div>
+    <label class="first-fix-keyword-options"><input id="firstFixKeywordOtherVersions" type="checkbox"> Generate other versions automatically</label>
+    <div class="first-fix-keyword-hint">This recognises spacing, joined, hyphenated, underscore and capitalisation variations automatically. Compound-word split options are also generated where possible.</div>
     <div class="error" id="firstFixKeywordError"></div>
   </div>
   <div class="actions"><button class="btn secondary" id="firstFixKeywordsClose">Close</button></div>
@@ -511,6 +513,17 @@ async function deleteManagementBugReport(){
 const DEFAULT_FIRST_FIX_KEYWORDS=['First Fix','1st Fix'];
 let firstFixKeywords=[];
 
+// Generates practical spelling/format variations for any keyword or phrase.
+// The canonical keyword remains the only value stored in Supabase; the site
+// register generates the same variants when it performs the First-Fix check.
+const COMMON_COMPOUND_WORD_PARTS = new Set(`
+under floor over head fire stop stopping proof proving water tight weather board plaster dry lining line block brick ground roof wall ceiling concrete screed
+insulation electrical mechanical heating cooling ventilation pipework ductwork drainage carpentry joinery flooring tiling painting decorating render rendering
+seal sealing silicone mastic fireproof waterproof damp proofing cavity tray traywork steel metal timber door window frame framework skirting architrave
+kitchen bathroom bedroom staircase handrail balustrade cable containment containmentwork cabletray cabletraywork
+air conditioning conditioningwork underlay groundwork earthwork groundwork first second fix back fill
+`.trim().toLowerCase().split(/\\s+/));
+
 function normaliseFirstFixKeywords(values){
   const list=Array.isArray(values)?values:[];
   const seen=new Set();
@@ -520,6 +533,65 @@ function normaliseFirstFixKeywords(values){
     seen.add(key);
     return true;
   });
+}
+
+function splitCamelAndSeparators(value){
+  return String(value||'')
+    .replace(/([a-z0-9])([A-Z])/g,'$1 $2')
+    .replace(/[\\-_]+/g,' ')
+    .replace(/\\s+/g,' ')
+    .trim();
+}
+
+function possibleCompoundSplits(word){
+  const clean=String(word||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(clean.length<5) return [];
+  const results=[];
+  for(let i=2;i<=clean.length-2;i++){
+    const left=clean.slice(0,i),right=clean.slice(i);
+    if(COMMON_COMPOUND_WORD_PARTS.has(left) && COMMON_COMPOUND_WORD_PARTS.has(right)){
+      results.push(`${left} ${right}`);
+    }
+  }
+  return results;
+}
+
+function generateFirstFixVariants(value){
+  const raw=String(value||'').trim();
+  if(!raw) return [];
+  const base=splitCamelAndSeparators(raw);
+  const words=base.split(' ').filter(Boolean);
+  const variants=new Set();
+  const add=v=>{const x=String(v||'').trim();if(x)variants.add(x);};
+
+  add(raw);
+  add(base);
+  add(words.join(' '));
+  add(words.join(''));
+  add(words.join('-'));
+  add(words.join('_'));
+  if(words.length>1){
+    add(words.map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(''));
+    add(words.map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join('-'));
+    add(words.map(w=>w.charAt(0).toUpperCase()+w.slice(1).toLowerCase()).join(' '));
+  }
+
+  // If a phrase contains a compound word such as "underfloor", generate
+  // recognised word-boundary versions such as "under floor heating".
+  const splitOptions=words.map(word=>[word,...possibleCompoundSplits(word)]);
+  function combine(index,current){
+    if(index>=splitOptions.length){
+      const parts=current.join(' ').split(' ').filter(Boolean);
+      add(parts.join(' '));
+      add(parts.join('-'));
+      add(parts.join(''));
+      return;
+    }
+    splitOptions[index].forEach(option=>combine(index+1,current.concat(option.split(' '))));
+  }
+  if(words.length) combine(0,[]);
+
+  return [...variants].filter(v=>v.toLowerCase()!==raw.toLowerCase());
 }
 
 function getDashboardFirstFixKeywords(){
@@ -534,9 +606,15 @@ function renderFirstFixKeywords(){
   if(!list) return;
   firstFixKeywords=normaliseFirstFixKeywords(firstFixKeywords);
   if(!firstFixKeywords.length){list.innerHTML='<div class="settings-account">No additional keywords have been added.</div>';return;}
-  list.innerHTML=firstFixKeywords.map((keyword,index)=>`<div class="first-fix-keyword-row"><span class="first-fix-keyword-text">${escapeHtml(keyword)}</span><button class="first-fix-keyword-remove" data-index="${index}">Remove</button></div>`).join('');
-  list.querySelectorAll('.first-fix-keyword-remove').forEach(btn=>{
-    btn.onclick=()=>removeFirstFixKeyword(Number(btn.dataset.index));
+  list.innerHTML=firstFixKeywords.map((keyword,index)=>{
+    const variants=generateFirstFixVariants(keyword);
+    return `<div class="first-fix-keyword-row"><div class="first-fix-keyword-head"><span class="first-fix-keyword-text">${escapeHtml(keyword)}</span><div class="first-fix-keyword-actions"><button class="btn secondary first-fix-keyword-other" data-index="${index}">Other versions</button><button class="first-fix-keyword-remove" data-index="${index}">Remove</button></div></div><div class="first-fix-keyword-variants" data-variants-index="${index}"><div class="first-fix-keyword-variants-title">Automatically recognised versions</div>${variants.length?variants.map(v=>`<div class="first-fix-keyword-variant">✓ ${escapeHtml(v)}</div>`).join(''):'<div class="first-fix-keyword-variant">No additional versions needed.</div>'}</div></div>`;
+  }).join('');
+  list.querySelectorAll('.first-fix-keyword-remove').forEach(btn=>btn.onclick=()=>removeFirstFixKeyword(Number(btn.dataset.index)));
+  list.querySelectorAll('.first-fix-keyword-other').forEach(btn=>btn.onclick=()=>{
+    const panel=list.querySelector(`[data-variants-index="${btn.dataset.index}"]`);
+    if(panel) panel.classList.toggle('show');
+    btn.textContent=panel?.classList.contains('show')?'Hide versions':'Other versions';
   });
 }
 
@@ -546,10 +624,7 @@ async function saveFirstFixKeywords(){
   const sites=cachedSites.length?cachedSites:[{site_id:'SITE1'}];
   try{
     for(const site of sites){
-      const {error}=await supabaseClient
-        .from('sites')
-        .update({first_fix_keywords:keywords})
-        .eq('site_id',site.site_id);
+      const {error}=await supabaseClient.from('sites').update({first_fix_keywords:keywords}).eq('site_id',site.site_id);
       if(error) throw error;
     }
     cachedSites=cachedSites.map(site=>({...site,first_fix_keywords:[...keywords]}));
@@ -565,6 +640,7 @@ function openFirstFixKeywords(){
   if(!currentSession) return;
   $('firstFixKeywordError').textContent='';
   $('firstFixKeywordInput').value='';
+  $('firstFixKeywordOtherVersions').checked=false;
   firstFixKeywords=getDashboardFirstFixKeywords();
   renderFirstFixKeywords();
   $('firstFixKeywordsModal').classList.add('show');
@@ -576,10 +652,23 @@ async function addFirstFixKeyword(){
   const value=input.value.trim();
   $('firstFixKeywordError').textContent='';
   if(!value){$('firstFixKeywordError').textContent='Enter a keyword or phrase.';return;}
-  if(firstFixKeywords.some(x=>x.toLowerCase()===value.toLowerCase())){ $('firstFixKeywordError').textContent='That keyword is already in the list.'; return; }
+  if(firstFixKeywords.some(x=>x.toLowerCase()===value.toLowerCase())){$('firstFixKeywordError').textContent='That keyword is already in the list.';return;}
   firstFixKeywords.push(value);
-  if(await saveFirstFixKeywords()){input.value='';renderFirstFixKeywords();}
-  else {firstFixKeywords=firstFixKeywords.filter(x=>x!==value);}
+  if(await saveFirstFixKeywords()){
+    input.value='';
+    const withVersions=$('firstFixKeywordOtherVersions').checked;
+    $('firstFixKeywordOtherVersions').checked=false;
+    renderFirstFixKeywords();
+    if(withVersions){
+      const index=firstFixKeywords.findIndex(x=>x.toLowerCase()===value.toLowerCase());
+      const panel=$('firstFixKeywordsList').querySelector(`[data-variants-index="${index}"]`);
+      const button=$('firstFixKeywordsList').querySelector(`.first-fix-keyword-other[data-index="${index}"]`);
+      if(panel) panel.classList.add('show');
+      if(button) button.textContent='Hide versions';
+    }
+  }else{
+    firstFixKeywords=firstFixKeywords.filter(x=>x.toLowerCase()!==value.toLowerCase());
+  }
 }
 
 async function removeFirstFixKeyword(index){
