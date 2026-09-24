@@ -543,14 +543,22 @@ function renderFirstFixKeywords(){
 async function saveFirstFixKeywords(){
   if(!isAdmin()) return false;
   const keywords=normaliseFirstFixKeywords(firstFixKeywords);
-  const {error}=await supabaseClient.from('sites').update({first_fix_keywords:keywords});
-  if(error){
+  const sites=cachedSites.length?cachedSites:[{site_id:'SITE1'}];
+  try{
+    for(const site of sites){
+      const {error}=await supabaseClient
+        .from('sites')
+        .update({first_fix_keywords:keywords})
+        .eq('site_id',site.site_id);
+      if(error) throw error;
+    }
+    cachedSites=cachedSites.map(site=>({...site,first_fix_keywords:[...keywords]}));
+    return true;
+  }catch(error){
     console.error('First-Fix keyword save error:',error);
     $('firstFixKeywordError').textContent='Unable to save the keyword list: '+error.message;
     return false;
   }
-  cachedSites=cachedSites.map(site=>({...site,first_fix_keywords:[...keywords]}));
-  return true;
 }
 
 function openFirstFixKeywords(){
