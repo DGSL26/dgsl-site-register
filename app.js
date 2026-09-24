@@ -996,10 +996,20 @@ async function loadSupabase() {
 
   }
 
+  const siteStorageKey = `dgsl-site-register-auth-${requestedSite.toLowerCase()}`;
+
   supabaseClient =
     window.supabase.createClient(
       SUPABASE_URL,
-      SUPABASE_KEY
+      SUPABASE_KEY,
+      {
+        auth: {
+          storageKey: siteStorageKey,
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: false
+        }
+      }
     );
 
 }
