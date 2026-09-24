@@ -89,7 +89,7 @@ let records = [];
 let editing = null;
 let filter = 'All';
 
-const SITE_VERSION = '1.3.3';
+const SITE_VERSION = '1.3.4';
 let NOTIFICATIONS_TABLE = SITE.notificationsTable;
 
 // Single source of truth for the website version.
