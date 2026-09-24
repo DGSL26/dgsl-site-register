@@ -1317,99 +1317,77 @@ function showAuthDialog() {
     authDialog.id = 'dgslAuthDialog';
     authDialog.style.padding = '0';
     authDialog.style.border = '0';
-    authDialog.style.borderRadius = '16px';
-    authDialog.style.maxWidth = '620px';
+    authDialog.style.borderRadius = '14px';
+    authDialog.style.maxWidth = '500px';
     authDialog.style.width = 'calc(100% - 32px)';
-    authDialog.style.overflow = 'hidden';
-    authDialog.style.boxShadow = '0 24px 70px rgba(0,0,0,.28)';
+    authDialog.style.boxShadow = '0 20px 50px rgba(0,0,0,0.25)';
 
     authDialog.innerHTML = `
-      <div style="background:#fff;color:#243447;">
-        <div style="padding:24px 30px 20px;text-align:center;">
+      <div style="background:#fff;overflow:hidden;">
+
+        <div style="padding:24px 28px 20px;text-align:center;">
           <img
             src="${LOGO_FILE}"
             alt="DGSL Building Ltd"
-            style="display:block;width:205px;max-width:70%;height:auto;margin:0 auto;"
+            style="display:block;width:170px;max-width:65%;height:auto;margin:0 auto 16px;"
           >
-        </div>
-
-        <div style="background:#1f4e78;color:#fff;padding:22px 30px;display:flex;align-items:center;gap:18px;">
-          <div style="flex:0 0 48px;height:48px;display:flex;align-items:center;justify-content:center;">
-            <svg viewBox="0 0 24 24" aria-hidden="true" style="width:42px;height:42px;fill:none;stroke:#fff;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;">
-              <path d="M20 10.2c0 5.1-8 11.2-8 11.2S4 15.3 4 10.2a8 8 0 1 1 16 0Z"></path>
-              <circle cx="12" cy="10" r="2.5"></circle>
-            </svg>
-          </div>
-          <div style="min-width:0;">
-            <div style="font-size:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:.82;margin-bottom:4px;">
-              Site Register
-            </div>
-            <div style="font-size:27px;font-weight:700;line-height:1.15;word-break:break-word;">
-              ${String(SITE.name || SITE.id).replace(/</g,'&lt;').replace(/>/g,'&gt;')}
-            </div>
+          <div style="font-size:21px;font-weight:700;color:#111;">
+            DGSL Site Register Login
           </div>
         </div>
 
-        <div style="padding:28px 30px 26px;">
-          <label for="dgslLoginPassword" style="display:block;margin:0 0 9px;font-size:18px;font-weight:700;color:#243447;">
+        <div style="background:#1f4e78;color:#fff;padding:14px 24px;">
+          <div style="font-size:12px;font-weight:700;letter-spacing:.7px;opacity:.9;margin-bottom:3px;">
+            SITE REGISTER
+          </div>
+          <div style="font-size:21px;font-weight:700;line-height:1.2;">
+            ${String(SITE.name || SITE.id).replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+          </div>
+        </div>
+
+        <div style="padding:26px 28px 24px;">
+          <label
+            for="dgslLoginPassword"
+            style="display:block;margin-bottom:8px;font-size:18px;font-weight:700;color:#111;"
+          >
             Password
           </label>
 
-          <div style="position:relative;">
-            <div aria-hidden="true" style="position:absolute;left:16px;top:50%;transform:translateY(-50%);width:25px;height:25px;display:flex;align-items:center;justify-content:center;">
-              <svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:#60758a;">
-                <path d="M17 8h-1V6a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-9a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4V6Zm5 9.7V18h-6v-2.3a2.8 2.8 0 1 1 6 0Z"></path>
-              </svg>
-            </div>
-            <input
-              id="dgslLoginPassword"
-              type="password"
-              autocomplete="current-password"
-              style="width:100%;height:58px;box-sizing:border-box;margin:0;padding:0 16px 0 54px;border:1.5px solid #7aa5d6;border-radius:9px;background:#eef5fd;color:#243447;font-size:18px;outline:none;"
-            >
-          </div>
+          <input
+            id="dgslLoginPassword"
+            type="password"
+            autocomplete="current-password"
+            style="width:100%;box-sizing:border-box;height:48px;padding:10px 13px;font-size:17px;border:1px solid #9aa9b8;border-radius:7px;background:#f8fbff;"
+          >
 
-          <div id="dgslAuthStatus" style="min-height:20px;margin:9px 2px 0;font-size:14px;color:#b42318;"></div>
+          <div
+            id="dgslAuthStatus"
+            style="min-height:20px;margin:9px 0 16px;font-size:14px;"
+          ></div>
 
-          <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:18px;">
+          <div style="display:flex;gap:10px;justify-content:flex-end;">
             <button
               type="button"
               id="dgslLoginCancel"
               class="settings-cancel"
-              style="min-width:100px;height:48px;padding:0 18px;border:1.5px solid #d92d20;border-radius:8px;background:#fff;color:#d92d20;font-size:16px;font-weight:600;"
             >
               Cancel
             </button>
+
             <button
               type="button"
               id="dgslLoginSubmit"
-              style="min-width:105px;height:48px;padding:0 20px;border:1.5px solid #008e39;border-radius:8px;background:#008e39;color:#fff;font-size:16px;font-weight:600;"
+              style="background:#008e39;color:#fff;border-color:#008e39;font-weight:600;"
             >
               Login
             </button>
           </div>
         </div>
+
       </div>
     `;
 
     document.body.appendChild(authDialog);
-
-    const adjustAuthDialogForSmallScreens = () => {
-      if (window.innerWidth <= 520) {
-        authDialog.style.maxWidth = '430px';
-        const siteBand = authDialog.querySelector('[style*="background:#1f4e78"]');
-        if (siteBand) siteBand.style.padding = '18px 20px';
-        const content = authDialog.querySelector('[style*="padding:28px 30px 26px"]');
-        if (content) content.style.padding = '22px 20px 20px';
-        const logoWrap = authDialog.querySelector('[style*="padding:24px 30px 20px"]');
-        if (logoWrap) logoWrap.style.padding = '20px 20px 16px';
-      } else {
-        authDialog.style.maxWidth = '620px';
-      }
-    };
-
-    window.addEventListener('resize', adjustAuthDialogForSmallScreens);
-    adjustAuthDialogForSmallScreens();
 
     authDialog.querySelector('#dgslLoginCancel').onclick = () => authDialog.close();
 
