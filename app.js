@@ -573,7 +573,7 @@ async function finishPermitEmailAfterRedirect() {
     const sender = profile.mail || profile.userPrincipalName || dgslMailRedirectResult.account.username;
     if (!sender) throw new Error('Microsoft did not return an email address for the selected sender.');
 
-    const { data, error } = await supabaseClient.functions.invoke('send-open-permit-summary', {
+    const { data, error } = await supabaseClient.functions.invoke('clever-api', {
       body: {
         siteId: pending.siteId,
         contractor: pending.contractor,
