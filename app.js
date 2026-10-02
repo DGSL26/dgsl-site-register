@@ -112,6 +112,24 @@ let currentUser = null;
 let authDialog = null;
 let notificationPollTimer = null;
 let sitePasswordVerified = false;
+let dgslMsalClientPromise = null;
+
+function initializeMicrosoftMailClient(clientId) {
+  if (!dgslMsalClientPromise) {
+    const client = new window.msal.PublicClientApplication({
+      auth: {
+        clientId,
+        authority: 'https://login.microsoftonline.com/organizations',
+        redirectUri: `${window.location.origin}${window.location.pathname}`
+      },
+      cache: { cacheLocation: 'sessionStorage' }
+    });
+    dgslMsalClientPromise = Promise.resolve(
+      typeof client.initialize === 'function' ? client.initialize() : undefined
+    ).then(() => client);
+  }
+  return dgslMsalClientPromise;
+}
 
 function sitePasswordStorageKey() {
   return `dgsl-site-password:${SITE.id}`;
@@ -308,6 +326,10 @@ function openSettingsDialog() {
 
 function openWorkPermitOverviewDialog() {
   if (!currentUser) return;
+  const mailClientId = String(window.DGSL_MAIL_CONFIG?.clientId || '').trim();
+  if (mailClientId && window.msal?.PublicClientApplication) {
+    initializeMicrosoftMailClient(mailClientId).catch(error => console.warn('Microsoft mail setup could not initialise:', error));
+  }
 
   let dialog = document.getElementById('dgslWorkPermitOverviewDialog');
   if (!dialog) {
@@ -335,7 +357,9 @@ function openWorkPermitOverviewDialog() {
 
         <div class="overview-actions">
           <button type="button" id="overviewDownloadPdf" class="primary overview-primary">Download PDF</button>
+          <button type="button" id="overviewEmailPdf" class="settings-option overview-secondary">Email PDF to recipients</button>
           <button type="button" id="overviewDownloadExcel" class="settings-option overview-secondary">Download Excel</button>
+          <p id="overviewEmailStatus" class="overview-help" role="status" aria-live="polite"></p>
         </div>
       </div>
     `;
@@ -344,6 +368,7 @@ function openWorkPermitOverviewDialog() {
     dialog.querySelector('#closeWorkPermitOverview').onclick = () => dialog.close();
     dialog.querySelector('#overviewContractor').addEventListener('change', updateWorkPermitOverviewDialog);
     dialog.querySelector('#overviewDownloadPdf').onclick = () => downloadWorkPermitOverview('pdf');
+    dialog.querySelector('#overviewEmailPdf').onclick = () => emailWorkPermitOverview();
     dialog.querySelector('#overviewDownloadExcel').onclick = () => downloadWorkPermitOverview('excel');
   }
 
@@ -395,6 +420,7 @@ function updateWorkPermitOverviewDialog() {
   const select = dialog.querySelector('#overviewContractor');
   const pdfButton = dialog.querySelector('#overviewDownloadPdf');
   const excelButton = dialog.querySelector('#overviewDownloadExcel');
+  const emailButton = dialog.querySelector('#overviewEmailPdf');
   const count = dialog.querySelector('#overviewCount');
   const contractor = select?.value || '';
   const permits = contractor ? getOpenWorkPermitsForContractor(contractor) : [];
@@ -407,6 +433,7 @@ function updateWorkPermitOverviewDialog() {
 
   pdfButton.disabled = !contractor || permits.length === 0;
   excelButton.disabled = !contractor || permits.length === 0;
+  emailButton.disabled = !contractor || permits.length === 0;
 }
 
 function overviewSafeFilePart(value) {
@@ -425,6 +452,77 @@ function overviewStatusClass(status) {
   if (status === 'Work Permit Open') return 'status-open';
   if (status === 'Work Permit on Hold') return 'status-hold';
   return '';
+}
+
+async function getMicrosoftMailToken() {
+  const clientId = String(window.DGSL_MAIL_CONFIG?.clientId || '').trim();
+  if (!clientId || !window.msal?.PublicClientApplication) {
+    throw new Error('Outlook sending is not configured yet. Add the Microsoft Entra client ID to mail-config.js.');
+  }
+  const msalApp = await initializeMicrosoftMailClient(clientId);
+  const login = await msalApp.loginPopup({
+    scopes: ['User.Read', 'Mail.Send'],
+    prompt: 'select_account'
+  });
+  let token;
+  try {
+    token = await msalApp.acquireTokenSilent({
+      scopes: ['User.Read', 'Mail.Send'],
+      account: login.account
+    });
+  } catch (error) {
+    if (error?.name !== 'InteractionRequiredAuthError') throw error;
+    token = await msalApp.acquireTokenPopup({
+      scopes: ['User.Read', 'Mail.Send'],
+      account: login.account
+    });
+  }
+  const profileResponse = await fetch('https://graph.microsoft.com/v1.0/me?$select=displayName,mail,userPrincipalName', {
+    headers: { Authorization: `Bearer ${token.accessToken}` }
+  });
+  if (!profileResponse.ok) throw new Error('Microsoft could not confirm the selected sender account.');
+  const profile = await profileResponse.json();
+  const sender = profile.mail || profile.userPrincipalName || login.account?.username;
+  if (!sender) throw new Error('Microsoft did not return an email address for the selected sender.');
+  return { accessToken: token.accessToken, sender };
+}
+
+async function emailWorkPermitOverview() {
+  const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
+  const status = dialog?.querySelector('#overviewEmailStatus');
+  const button = dialog?.querySelector('#overviewEmailPdf');
+  const contractor = dialog?.querySelector('#overviewContractor')?.value || '';
+  if (!dialog || !currentUser || !contractor || !button) return;
+  const permits = getOpenWorkPermitsForContractor(contractor);
+  if (!permits.length) return;
+
+  button.disabled = true;
+  status.textContent = 'Choose the Outlook account to send from…';
+  try {
+    // Start Microsoft sign-in directly from the button click so the browser permits its popup.
+    const senderPromise = getMicrosoftMailToken();
+    const pdf = await generateWorkPermitOverviewPdf(contractor, permits);
+    const sender = await senderPromise;
+    const dataUri = pdf.output('datauristring');
+    const pdfBase64 = dataUri.slice(dataUri.indexOf(',') + 1);
+    const fileName = `DGSL-${overviewSafeFilePart(SITE.name || SITE.id)}-${overviewSafeFilePart(contractor)}-Open-Work-Permits-${today()}.pdf`;
+    status.textContent = `Sending the ${SITE.name || SITE.id} summary as ${sender.sender}…`;
+    const { data, error } = await supabaseClient.functions.invoke('send-open-permit-summary', {
+      body: { siteId: SITE.id, contractor, fileName, pdfBase64, requestId: crypto.randomUUID() },
+      headers: { 'x-ms-graph-token': sender.accessToken }
+    });
+    if (error) throw new Error(error.message || 'The email could not be sent.');
+    if (!data?.sentCount && data?.failedCount) throw new Error(`Email sending failed for ${data.failedCount} recipient${data.failedCount === 1 ? '' : 's'}. Check that your Microsoft account has Mail.Send permission.`);
+    if (!data?.sentCount) throw new Error(data?.message || 'No active recipients are configured for this site and sub-contractor.');
+    status.textContent = data.failedCount
+      ? `Sent to ${data.sentCount}; ${data.failedCount} recipient${data.failedCount === 1 ? '' : 's'} could not be emailed. Check the send log in Supabase.`
+      : `Outlook accepted the ${SITE.name || SITE.id} summary for ${data.sentCount} recipient${data.sentCount === 1 ? '' : 's'} from ${sender.sender}.`;
+  } catch (error) {
+    console.error('Open permit summary email error:', error);
+    status.textContent = error.message || 'Unable to send the email. Please try again.';
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function generateWorkPermitOverviewPdf(contractor, permits) {

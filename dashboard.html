@@ -94,6 +94,8 @@
 
 
 .first-fix-keywords-box{max-width:620px}.first-fix-keywords-list{display:grid;gap:8px;margin:14px 0;max-height:360px;overflow:auto}.first-fix-keyword-row{border:1px solid #d6dde3;border-radius:8px;padding:10px 12px;background:#fff}.first-fix-keyword-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.first-fix-keyword-text{font-weight:600;overflow-wrap:anywhere}.first-fix-keyword-title-badge{display:inline-block;margin-left:7px;padding:3px 7px;border-radius:999px;background:#e7f6ed;color:#16733b;font-size:11px;font-weight:700;vertical-align:middle}.first-fix-keyword-actions{display:flex;align-items:center;gap:7px;flex:none}.first-fix-keyword-remove{flex:none;border:1px solid #c62828;background:#fff;color:#c62828;border-radius:6px;padding:6px 10px;cursor:pointer}.first-fix-keyword-remove:hover{background:#fff3f3}.first-fix-keyword-variants{display:none;margin:10px 0 0;padding:9px 11px;border-radius:7px;background:#f7f9fb;border:1px solid #e3e8ed}.first-fix-keyword-variants.show{display:block}.first-fix-keyword-variants-title{font-size:12px;font-weight:700;color:#68737d;margin-bottom:6px}.first-fix-keyword-variant{font-size:13px;padding:2px 0;overflow-wrap:anywhere}.first-fix-keyword-add{margin-top:6px}.first-fix-keyword-add .copy-row{display:flex;gap:8px;align-items:center}.first-fix-keyword-add input{flex:1;min-width:0}.first-fix-keyword-add .error{min-height:20px;margin-top:6px}.first-fix-keyword-options{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;color:#34404b}.first-fix-keyword-options input{width:auto}.first-fix-keyword-hint{font-size:12px;color:#68737d;line-height:1.4;margin-top:5px}
+.permit-recipient-box{max-width:780px}.permit-recipient-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.permit-recipient-form .wide{grid-column:1/-1}.permit-recipient-rows{display:grid;gap:8px;margin-top:16px;max-height:45vh;overflow:auto}.permit-recipient-row{display:grid;grid-template-columns:minmax(130px,1.2fr) minmax(130px,1fr) minmax(150px,1.3fr) auto;gap:10px;align-items:center;border:1px solid #d6dde3;border-radius:8px;padding:10px 12px;background:#fff}.permit-recipient-row span{overflow-wrap:anywhere}.permit-recipient-empty{color:#68737d;padding:12px 0}.permit-recipient-row button{padding:7px 10px}.permit-recipient-row .recipient-disabled{color:#68737d;font-size:12px}.permit-recipient-form select,.permit-recipient-form input{width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid #ccd3d8;border-radius:6px;font-size:15px;background:#fff}.permit-recipient-hint{font-size:13px;color:#68737d;line-height:1.45;margin:0 0 14px}.permit-recipient-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+@media(max-width:650px){.permit-recipient-form{grid-template-columns:1fr}.permit-recipient-form .wide{grid-column:auto}.permit-recipient-row{grid-template-columns:1fr auto}.permit-recipient-row span:nth-child(2),.permit-recipient-row span:nth-child(3){grid-column:1}.permit-recipient-row button{grid-column:2;grid-row:1/4}}
 </style>
 </head>
 <body>
@@ -129,6 +131,7 @@
   <h2>Settings</h2>
   <div class="settings-menu">
     <button class="settings-menu-btn" id="settingsDataManagement">Data Management <span id="dashboardBugBadge" class="dashboard-badge hidden"></span></button>
+    <button class="settings-menu-btn hidden" id="settingsPermitRecipients">Open Permit Email Recipients</button>
     <button class="settings-menu-btn" id="settingsFirstFixKeywords">Keywords</button>
   </div>
   <div class="actions">
@@ -160,6 +163,20 @@
   <div class="management-modal-head"><h2>Bug Report</h2><button class="modal-x" id="managementBugDetailClose" aria-label="Close">×</button></div>
   <div id="managementBugDetailContent"></div>
   <div class="actions"><button class="btn danger-btn" id="managementBugDelete">Delete Bug Report</button></div>
+</div></div>
+
+<div class="modal" id="permitRecipientsModal"><div class="box permit-recipient-box">
+  <div class="management-modal-head"><h2>Open Permit Email Recipients</h2><button class="modal-x" id="permitRecipientsClose" aria-label="Close">×</button></div>
+  <p class="permit-recipient-hint">Each row routes one summary to one email address. Choose the site and sub-contractor that the recipient should receive. Manage this list here; no email field is added to the register.</p>
+  <div class="permit-recipient-form">
+    <div><label for="recipientSite">Site</label><select id="recipientSite"></select></div>
+    <div><label for="recipientContractor">Sub-contractor</label><select id="recipientContractor"></select></div>
+    <div class="wide"><label for="recipientEmail">Recipient email</label><input id="recipientEmail" type="email" autocomplete="email" placeholder="name@example.ie"></div>
+  </div>
+  <div class="permit-recipient-actions"><button class="btn primary" id="recipientAdd">Add recipient</button></div>
+  <div class="permit-recipient-status" id="recipientStatus" role="status" aria-live="polite"></div>
+  <div id="recipientRows" class="permit-recipient-rows">Loading recipients…</div>
+  <div class="actions"><button class="btn secondary" id="permitRecipientsDone">Close</button></div>
 </div></div>
 
 <div class="modal" id="firstFixKeywordsModal"><div class="box first-fix-keywords-box">
@@ -363,7 +380,8 @@ function renderSites(sites){
 }
 async function loadSites(){clearError();$('loading').hidden=false;$('grid').hidden=true;const {data,error}=await supabaseClient.from('sites').select('site_id,site_name,address,active,sort_order,photo_bucket,first_fix_keywords,first_fix_title_keywords').order('sort_order',{ascending:true}).order('site_name',{ascending:true});if(error){showError('Could not load the site list: '+error.message);$('loading').hidden=true;return;}cachedSites=data||[];populateManagementSites();renderSites(cachedSites);refreshDashboardBugBadge();}
 let cachedSites=[];
-async function updateAuthUI(){const {data}=await supabaseClient.auth.getSession();currentSession=data.session||null;$('userLabel').textContent='';$('addBtn').classList.toggle('hidden',!isAdmin());$('settingsBtn').classList.toggle('hidden',!currentSession);$('headerLogin').classList.toggle('hidden',!!currentSession);$('settingsLogout').classList.toggle('hidden',!currentSession);if(cachedSites.length){renderSites(cachedSites);populateManagementSites();}if(!currentSession){closeDashboardDataManagement();$('managementBugReportsModal').classList.remove('show');$('managementBugDetailModal').classList.remove('show');}refreshDashboardBugBadge();}
+let permitRecipientRows=[];
+async function updateAuthUI(){const {data}=await supabaseClient.auth.getSession();currentSession=data.session||null;$('userLabel').textContent='';$('addBtn').classList.toggle('hidden',!isAdmin());$('settingsPermitRecipients').classList.toggle('hidden',!isAdmin());$('settingsBtn').classList.toggle('hidden',!currentSession);$('headerLogin').classList.toggle('hidden',!!currentSession);$('settingsLogout').classList.toggle('hidden',!currentSession);if(cachedSites.length){renderSites(cachedSites);populateManagementSites();}if(!currentSession){closeDashboardDataManagement();$('managementBugReportsModal').classList.remove('show');$('managementBugDetailModal').classList.remove('show');$('permitRecipientsModal').classList.remove('show');}refreshDashboardBugBadge();}
 async function refresh(){await loadSites();}
 $('settingsBtn').onclick=()=>{$('settingsModal').classList.add('show')};
 $('headerLogin').onclick=()=>{$('loginModal').classList.add('show');setTimeout(()=>$('password').focus(),50)};
@@ -462,6 +480,69 @@ function openDashboardDataManagement(){
 
 function closeDashboardDataManagement(){
   $('dataManagementModal').classList.remove('show');
+}
+
+function setRecipientStatus(message){$('recipientStatus').textContent=message||'';}
+function populateRecipientSites(){
+  const select=$('recipientSite');
+  if(!select)return;
+  select.innerHTML=cachedSites.map(site=>`<option value="${escapeHtml(site.site_id)}">${escapeHtml(site.site_name)} (${escapeHtml(site.site_id)})</option>`).join('');
+  if(!cachedSites.length)select.innerHTML='<option value="">No sites available</option>';
+}
+async function populateRecipientContractors(){
+  const select=$('recipientContractor');
+  const siteId=$('recipientSite').value;
+  if(!select)return;
+  select.innerHTML='<option value="">Loading sub-contractors…</option>';
+  if(!siteId){select.innerHTML='<option value="">Select a site first</option>';return;}
+  const {data,error}=await supabaseClient.from('handovers').select('contractor').eq('site_id',siteId);
+  if(error){select.innerHTML='<option value="">Unable to load sub-contractors</option>';setRecipientStatus('Could not load this site’s sub-contractors: '+error.message);return;}
+  const names=[...new Set((data||[]).map(row=>String(row.contractor||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:'base'}));
+  select.innerHTML=names.length?names.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join(''):'<option value="">No sub-contractors found in this site’s register</option>';
+}
+function renderPermitRecipientRows(){
+  const target=$('recipientRows');
+  if(!permitRecipientRows.length){target.innerHTML='<div class="permit-recipient-empty">No recipients have been added yet.</div>';return;}
+  target.innerHTML=permitRecipientRows.map(row=>{
+    const site=cachedSites.find(item=>item.site_id===row.site_id);
+    return `<div class="permit-recipient-row"><span>${escapeHtml(row.email)}</span><span>${escapeHtml(site?.site_name||row.site_id)}</span><span>${escapeHtml(row.contractor)}</span><button class="btn secondary" data-recipient-remove="${escapeHtml(row.id)}">Remove</button></div>`;
+  }).join('');
+  target.querySelectorAll('[data-recipient-remove]').forEach(button=>button.onclick=()=>removePermitRecipient(button.dataset.recipientRemove));
+}
+async function loadPermitRecipients(){
+  $('recipientRows').textContent='Loading recipients…';
+  setRecipientStatus('');
+  const {data,error}=await supabaseClient.from('permit_summary_recipients').select('id,site_id,contractor,email,is_active').order('site_id').order('contractor').order('email');
+  if(error){permitRecipientRows=[];$('recipientRows').textContent='The recipient table is not ready. Apply the supplied database setup script first.';setRecipientStatus(error.message);return;}
+  permitRecipientRows=(data||[]).filter(row=>row.is_active!==false);
+  renderPermitRecipientRows();
+}
+async function openPermitRecipients(){
+  if(!isAdmin())return;
+  populateRecipientSites();
+  $('permitRecipientsModal').classList.add('show');
+  await Promise.all([populateRecipientContractors(),loadPermitRecipients()]);
+}
+async function addPermitRecipient(){
+  if(!isAdmin())return;
+  const siteId=$('recipientSite').value;
+  const contractor=$('recipientContractor').value;
+  const email=$('recipientEmail').value.trim().toLowerCase();
+  if(!siteId||!contractor){setRecipientStatus('Choose a site and sub-contractor first.');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setRecipientStatus('Enter a valid email address.');return;}
+  setRecipientStatus('Adding recipient…');
+  const {error}=await supabaseClient.from('permit_summary_recipients').insert({site_id:siteId,contractor,email,is_active:true});
+  if(error){setRecipientStatus(error.code==='23505'?'That recipient is already mapped to this site and sub-contractor.':error.message);return;}
+  $('recipientEmail').value='';
+  setRecipientStatus('Recipient added.');
+  await loadPermitRecipients();
+}
+async function removePermitRecipient(id){
+  if(!isAdmin()||!confirm('Remove this recipient from the open permit summary email list?'))return;
+  const {error}=await supabaseClient.from('permit_summary_recipients').delete().eq('id',id);
+  if(error){setRecipientStatus('Could not remove recipient: '+error.message);return;}
+  setRecipientStatus('Recipient removed.');
+  await loadPermitRecipients();
 }
 
 function backupRecordFromDatabase(x){
@@ -782,6 +863,13 @@ $('firstFixKeywordInput').addEventListener('keydown',e=>{if(e.key==='Enter')addF
 $('firstFixKeywordsModal').addEventListener('click',e=>{if(e.target===$('firstFixKeywordsModal'))$('firstFixKeywordsModal').classList.remove('show')});
 
 $('settingsDataManagement').onclick=()=>{closeDashboardDataManagement();openDashboardDataManagement()};
+$('settingsPermitRecipients').onclick=()=>{$('settingsModal').classList.remove('show');openPermitRecipients()};
+$('permitRecipientsClose').onclick=()=>$('permitRecipientsModal').classList.remove('show');
+$('permitRecipientsDone').onclick=()=>$('permitRecipientsModal').classList.remove('show');
+$('recipientSite').onchange=populateRecipientContractors;
+$('recipientAdd').onclick=addPermitRecipient;
+$('recipientEmail').addEventListener('keydown',event=>{if(event.key==='Enter')addPermitRecipient()});
+$('permitRecipientsModal').addEventListener('click',event=>{if(event.target===$('permitRecipientsModal'))$('permitRecipientsModal').classList.remove('show')});
 $('managementClose').onclick=closeDashboardDataManagement;
 $('managementSiteSelect').onchange=e=>{managementSiteId=e.target.value;refreshDashboardBugBadge();};
 $('managementBugReports').onclick=openManagementBugReports;
