@@ -34,9 +34,24 @@ let PHOTO_BUCKET = SITE.photoBucket;
 let FIRST_FIX_KEYWORDS = [...DEFAULT_FIRST_FIX_KEYWORDS];
 let FIRST_FIX_TITLE_KEYWORDS = [...DEFAULT_FIRST_FIX_TITLE_KEYWORDS];
 
+const DGSL_PENDING_EMAIL_KEY = 'dgsl-open-permit-email-pending';
+const DGSL_MAIL_SCOPES = ['User.Read', 'Mail.Send'];
+
+function readPendingPermitEmail() {
+  try {
+    return JSON.parse(sessionStorage.getItem(DGSL_PENDING_EMAIL_KEY) || 'null');
+  } catch (_) {
+    return null;
+  }
+}
+
+const pendingPermitEmailAtStart = readPendingPermitEmail();
 const requestedSite =
   new URLSearchParams(window.location.search).get('site')?.trim().toUpperCase() ||
-  'SITE1';
+  String(pendingPermitEmailAtStart?.siteId || 'SITE1').trim().toUpperCase();
+
+let dgslMailRedirectResult = null;
+let dgslMailRedirectError = null;
 
 async function loadSiteConfiguration() {
   if (!supabaseClient) return;
@@ -120,7 +135,7 @@ function initializeMicrosoftMailClient(clientId) {
       auth: {
         clientId,
         authority: 'https://login.microsoftonline.com/organizations',
-        redirectUri: new URL('auth-popup.html', window.location.href).href
+        redirectUri: new URL('.', window.location.href).href
       },
       cache: { cacheLocation: 'sessionStorage' }
     });
@@ -455,39 +470,6 @@ function overviewStatusClass(status) {
   return '';
 }
 
-async function getMicrosoftMailToken() {
-  const clientId = String(window.DGSL_MAIL_CONFIG?.clientId || '').trim();
-  if (!clientId || !window.msal?.PublicClientApplication) {
-    throw new Error('Outlook sending is not configured yet. Add the Microsoft Entra client ID to mail-config.js.');
-  }
-  const msalApp = initializeMicrosoftMailClient(clientId);
-  const login = await msalApp.loginPopup({
-    scopes: ['User.Read', 'Mail.Send'],
-    prompt: 'select_account'
-  });
-  let token;
-  try {
-    token = await msalApp.acquireTokenSilent({
-      scopes: ['User.Read', 'Mail.Send'],
-      account: login.account
-    });
-  } catch (error) {
-    if (error?.name !== 'InteractionRequiredAuthError') throw error;
-    token = await msalApp.acquireTokenPopup({
-      scopes: ['User.Read', 'Mail.Send'],
-      account: login.account
-    });
-  }
-  const profileResponse = await fetch('https://graph.microsoft.com/v1.0/me?$select=displayName,mail,userPrincipalName', {
-    headers: { Authorization: `Bearer ${token.accessToken}` }
-  });
-  if (!profileResponse.ok) throw new Error('Microsoft could not confirm the selected sender account.');
-  const profile = await profileResponse.json();
-  const sender = profile.mail || profile.userPrincipalName || login.account?.username;
-  if (!sender) throw new Error('Microsoft did not return an email address for the selected sender.');
-  return { accessToken: token.accessToken, sender };
-}
-
 async function emailWorkPermitOverview() {
   const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
   const status = dialog?.querySelector('#overviewEmailStatus');
@@ -498,31 +480,124 @@ async function emailWorkPermitOverview() {
   if (!permits.length) return;
 
   button.disabled = true;
-  status.textContent = 'Choose the Outlook account to send from…';
+  status.textContent = 'Preparing the summary…';
   try {
-    // Start Microsoft sign-in directly from the button click so the browser permits its popup.
-    const senderPromise = getMicrosoftMailToken();
+    if (!window.DGSL_MAIL_CONFIG?.clientId || !window.msal?.PublicClientApplication) {
+      throw new Error('Outlook sending is not configured yet.');
+    }
     const pdf = await generateWorkPermitOverviewPdf(contractor, permits);
-    const sender = await senderPromise;
     const dataUri = pdf.output('datauristring');
     const pdfBase64 = dataUri.slice(dataUri.indexOf(',') + 1);
-    const fileName = `DGSL-${overviewSafeFilePart(SITE.name || SITE.id)}-${overviewSafeFilePart(contractor)}-Open-Work-Permits-${today()}.pdf`;
-    status.textContent = `Sending the ${SITE.name || SITE.id} summary as ${sender.sender}…`;
+    const pending = {
+      siteId: SITE.id,
+      contractor,
+      fileName: `DGSL-${overviewSafeFilePart(SITE.name || SITE.id)}-${overviewSafeFilePart(contractor)}-Open-Work-Permits-${today()}.pdf`,
+      pdfBase64,
+      requestId: crypto.randomUUID()
+    };
+    sessionStorage.setItem(DGSL_PENDING_EMAIL_KEY, JSON.stringify(pending));
+    status.textContent = 'Opening Microsoft sign-in in this tab…';
+    const msalApp = initializeMicrosoftMailClient(String(window.DGSL_MAIL_CONFIG.clientId).trim());
+    await msalApp.loginRedirect({
+      scopes: DGSL_MAIL_SCOPES,
+      prompt: 'select_account',
+      redirectUri: new URL('.', window.location.href).href
+    });
+  } catch (error) {
+    sessionStorage.removeItem(DGSL_PENDING_EMAIL_KEY);
+    console.error('Open permit summary email sign-in error:', error);
+    status.textContent = error.message || 'Unable to start Microsoft sign-in. Please try again.';
+    button.disabled = false;
+  }
+}
+
+function showPermitEmailResult(pending, message) {
+  if (!currentUser) {
+    alert(message);
+    return;
+  }
+  openWorkPermitOverviewDialog();
+  const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
+  const select = dialog?.querySelector('#overviewContractor');
+  if (select) {
+    select.value = pending.contractor;
+    updateWorkPermitOverviewDialog();
+  }
+  const status = dialog?.querySelector('#overviewEmailStatus');
+  if (status) status.textContent = message;
+}
+
+async function finishPermitEmailAfterRedirect() {
+  const pending = readPendingPermitEmail();
+  if (!pending) return;
+
+  if (dgslMailRedirectError) {
+    sessionStorage.removeItem(DGSL_PENDING_EMAIL_KEY);
+    showPermitEmailResult(pending, `Microsoft sign-in did not complete: ${dgslMailRedirectError.message || 'please try again.'}`);
+    return;
+  }
+  if (!dgslMailRedirectResult?.account) {
+    sessionStorage.removeItem(DGSL_PENDING_EMAIL_KEY);
+    showPermitEmailResult(pending, 'Microsoft sign-in was cancelled. Click Email PDF to try again.');
+    return;
+  }
+  if (pending.siteId !== SITE.id) {
+    sessionStorage.removeItem(DGSL_PENDING_EMAIL_KEY);
+    showPermitEmailResult(pending, 'The site changed during sign-in. Please create the summary again and retry.');
+    return;
+  }
+
+  try {
+    if (!currentUser) throw new Error('Your register session has ended. Sign in to the register and try again.');
+    const msalApp = initializeMicrosoftMailClient(String(window.DGSL_MAIL_CONFIG.clientId).trim());
+    let tokenResponse = dgslMailRedirectResult;
+    if (!tokenResponse.accessToken) {
+      try {
+        tokenResponse = await msalApp.acquireTokenSilent({ scopes: DGSL_MAIL_SCOPES, account: dgslMailRedirectResult.account });
+      } catch (error) {
+        if (error?.name !== 'InteractionRequiredAuthError') throw error;
+        await msalApp.acquireTokenRedirect({
+          scopes: DGSL_MAIL_SCOPES,
+          account: dgslMailRedirectResult.account,
+          redirectUri: new URL('.', window.location.href).href
+        });
+        return;
+      }
+    }
+
+    const profileResponse = await fetch('https://graph.microsoft.com/v1.0/me?$select=displayName,mail,userPrincipalName', {
+      headers: { Authorization: `Bearer ${tokenResponse.accessToken}` }
+    });
+    if (!profileResponse.ok) throw new Error('Microsoft could not confirm the selected sender account.');
+    const profile = await profileResponse.json();
+    const sender = profile.mail || profile.userPrincipalName || dgslMailRedirectResult.account.username;
+    if (!sender) throw new Error('Microsoft did not return an email address for the selected sender.');
+
     const { data, error } = await supabaseClient.functions.invoke('send-open-permit-summary', {
-      body: { siteId: SITE.id, contractor, fileName, pdfBase64, requestId: crypto.randomUUID() },
-      headers: { 'x-ms-graph-token': sender.accessToken }
+      body: {
+        siteId: pending.siteId,
+        contractor: pending.contractor,
+        fileName: pending.fileName,
+        pdfBase64: pending.pdfBase64,
+        requestId: pending.requestId
+      },
+      headers: { 'x-ms-graph-token': tokenResponse.accessToken }
     });
     if (error) throw new Error(error.message || 'The email could not be sent.');
-    if (!data?.sentCount && data?.failedCount) throw new Error(`Email sending failed for ${data.failedCount} recipient${data.failedCount === 1 ? '' : 's'}. Check that your Microsoft account has Mail.Send permission.`);
+    if (!data?.sentCount && data?.failedCount) {
+      throw new Error(`Email sending failed for ${data.failedCount} recipient${data.failedCount === 1 ? '' : 's'}.`);
+    }
     if (!data?.sentCount) throw new Error(data?.message || 'No active recipients are configured for this site and sub-contractor.');
-    status.textContent = data.failedCount
-      ? `Sent to ${data.sentCount}; ${data.failedCount} recipient${data.failedCount === 1 ? '' : 's'} could not be emailed. Check the send log in Supabase.`
-      : `Outlook accepted the ${SITE.name || SITE.id} summary for ${data.sentCount} recipient${data.sentCount === 1 ? '' : 's'} from ${sender.sender}.`;
+
+    sessionStorage.removeItem(DGSL_PENDING_EMAIL_KEY);
+    const message = data.failedCount
+      ? `Sent to ${data.sentCount}; ${data.failedCount} recipient${data.failedCount === 1 ? '' : 's'} could not be emailed.`
+      : `Outlook accepted the ${SITE.name || SITE.id} summary for ${data.sentCount} recipient${data.sentCount === 1 ? '' : 's'} from ${sender}.`;
+    showPermitEmailResult(pending, message);
   } catch (error) {
     console.error('Open permit summary email error:', error);
-    status.textContent = error.message || 'Unable to send the email. Please try again.';
-  } finally {
-    button.disabled = false;
+    sessionStorage.removeItem(DGSL_PENDING_EMAIL_KEY);
+    showPermitEmailResult(pending, error.message || 'Unable to send the email. Please try again.');
   }
 }
 
@@ -5332,6 +5407,16 @@ async function startApp() {
 
   try {
 
+    const mailClientId = String(window.DGSL_MAIL_CONFIG?.clientId || '').trim();
+    if (mailClientId && window.msal?.PublicClientApplication) {
+      try {
+        dgslMailRedirectResult = await initializeMicrosoftMailClient(mailClientId).handleRedirectPromise();
+      } catch (error) {
+        dgslMailRedirectError = error;
+        console.error('Microsoft sign-in return error:', error);
+      }
+    }
+
     addLogoToForm();
 
     await loadSupabase();
@@ -5369,6 +5454,10 @@ async function startApp() {
       console.warn('Realtime setup failed:', realtimeError);
     }
     await refreshNotificationState();
+
+    if (pendingPermitEmailAtStart) {
+      await finishPermitEmailAfterRedirect();
+    }
 
   } catch (error) {
 
