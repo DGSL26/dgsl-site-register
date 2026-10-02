@@ -36,6 +36,7 @@ let FIRST_FIX_TITLE_KEYWORDS = [...DEFAULT_FIRST_FIX_TITLE_KEYWORDS];
 
 const DGSL_PENDING_EMAIL_KEY = 'dgsl-open-permit-email-pending';
 const DGSL_MAIL_SCOPES = ['User.Read', 'Mail.Send'];
+let overviewEmailOptionsLoading = false;
 
 function readPendingPermitEmail() {
   try {
@@ -367,13 +368,33 @@ function openWorkPermitOverviewDialog() {
           <select id="overviewContractor">
             <option value="">Select a sub-contractor</option>
           </select>
-          <p class="overview-help">Shows open and on-hold work permits only.</p>
+          <p class="overview-help">Shows open and on-hold work permits only. Choose a sub-contractor here to download one summary.</p>
           <p id="overviewCount" class="overview-count">Select a sub-contractor to continue.</p>
         </div>
 
+        <section class="overview-bulk-email" aria-label="Email recipients">
+          <div class="overview-list-heading">
+            <div><h3>To recipients</h3><p>Everyone starts selected. Each person gets the summary for their sub-contractor.</p></div>
+            <div class="overview-list-controls">
+              <button type="button" id="overviewToAll" class="overview-link-button">Select all</button>
+              <button type="button" id="overviewToNone" class="overview-link-button">Clear</button>
+            </div>
+          </div>
+          <div id="overviewEmailRecipients" class="overview-check-list">Loading recipients…</div>
+
+          <div class="overview-list-heading overview-cc-heading">
+            <div><h3>CC people</h3><p>Selected CC contacts will be copied on each email.</p></div>
+            <div class="overview-list-controls">
+              <button type="button" id="overviewCcAll" class="overview-link-button">Select all</button>
+              <button type="button" id="overviewCcNone" class="overview-link-button">Clear</button>
+            </div>
+          </div>
+          <div id="overviewEmailCc" class="overview-check-list">Loading CC contacts…</div>
+        </section>
+
         <div class="overview-actions">
           <button type="button" id="overviewDownloadPdf" class="primary overview-primary">Download PDF</button>
-          <button type="button" id="overviewEmailPdf" class="settings-option overview-secondary">Email PDF to recipients</button>
+          <button type="button" id="overviewEmailPdf" class="primary overview-primary">Send selected emails</button>
           <button type="button" id="overviewDownloadExcel" class="settings-option overview-secondary">Download Excel</button>
           <p id="overviewEmailStatus" class="overview-help" role="status" aria-live="polite"></p>
         </div>
@@ -386,11 +407,16 @@ function openWorkPermitOverviewDialog() {
     dialog.querySelector('#overviewDownloadPdf').onclick = () => downloadWorkPermitOverview('pdf');
     dialog.querySelector('#overviewEmailPdf').onclick = () => emailWorkPermitOverview();
     dialog.querySelector('#overviewDownloadExcel').onclick = () => downloadWorkPermitOverview('excel');
+    dialog.querySelector('#overviewToAll').onclick = () => setOverviewCheckboxes('.overview-to-choice', true);
+    dialog.querySelector('#overviewToNone').onclick = () => setOverviewCheckboxes('.overview-to-choice', false);
+    dialog.querySelector('#overviewCcAll').onclick = () => setOverviewCheckboxes('.overview-cc-choice', true);
+    dialog.querySelector('#overviewCcNone').onclick = () => setOverviewCheckboxes('.overview-cc-choice', false);
   }
 
   populateWorkPermitOverviewContractors(dialog.querySelector('#overviewContractor'));
   updateWorkPermitOverviewDialog();
   if (!dialog.open) dialog.showModal();
+  loadPermitEmailOptions();
 }
 
 function getOpenWorkPermitsForContractor(contractor) {
@@ -449,7 +475,7 @@ function updateWorkPermitOverviewDialog() {
 
   pdfButton.disabled = !contractor || permits.length === 0;
   excelButton.disabled = !contractor || permits.length === 0;
-  emailButton.disabled = !contractor || permits.length === 0;
+  updateOverviewEmailSendButton(emailButton);
 }
 
 function overviewSafeFilePart(value) {
@@ -470,33 +496,114 @@ function overviewStatusClass(status) {
   return '';
 }
 
+function setOverviewCheckboxes(selector, checked) {
+  const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
+  if (!dialog) return;
+  dialog.querySelectorAll(`${selector}:not(:disabled)`).forEach(input => { input.checked = checked; });
+  updateOverviewEmailSendButton();
+}
+
+function updateOverviewEmailSendButton(button) {
+  const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
+  const sendButton = button || dialog?.querySelector('#overviewEmailPdf');
+  if (!dialog || !sendButton) return;
+  const checkedCount = dialog.querySelectorAll('.overview-to-choice:checked:not(:disabled)').length;
+  sendButton.disabled = overviewEmailOptionsLoading || checkedCount === 0;
+  sendButton.textContent = checkedCount
+    ? `Send ${checkedCount} selected email${checkedCount === 1 ? '' : 's'}`
+    : 'Send selected emails';
+}
+
+function renderPermitEmailOptions(options) {
+  const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
+  if (!dialog) return;
+  const recipientsBox = dialog.querySelector('#overviewEmailRecipients');
+  const ccBox = dialog.querySelector('#overviewEmailCc');
+  const recipients = Array.isArray(options?.recipients) ? options.recipients : [];
+  const ccRecipients = Array.isArray(options?.ccRecipients) ? options.ccRecipients : [];
+
+  recipientsBox.innerHTML = recipients.length ? recipients.map(row => {
+    const hasOpenPermits = getOpenWorkPermitsForContractor(row.contractor).length > 0;
+    return `<label class="overview-check-row${hasOpenPermits ? '' : ' overview-check-disabled'}">
+      <input class="overview-to-choice" type="checkbox" value="${esc(row.id)}" ${hasOpenPermits ? 'checked' : 'disabled'}>
+      <span><strong>${esc(row.email)}</strong><small>${esc(row.contractor)}${hasOpenPermits ? '' : ' — no open permits'}</small></span>
+    </label>`;
+  }).join('') : '<p class="overview-list-empty">No active To recipients are set up for this site.</p>';
+
+  ccBox.innerHTML = ccRecipients.length ? ccRecipients.map(row => `<label class="overview-check-row">
+    <input class="overview-cc-choice" type="checkbox" value="${esc(row.id)}" checked>
+    <span><strong>${esc(row.displayName || row.email)}</strong><small>${esc(row.email)}</small></span>
+  </label>`).join('') : '<p class="overview-list-empty">No CC contacts are set up for this site.</p>';
+
+  dialog.querySelectorAll('.overview-to-choice,.overview-cc-choice').forEach(input => {
+    input.addEventListener('change', () => updateOverviewEmailSendButton());
+  });
+  updateOverviewEmailSendButton();
+}
+
+async function loadPermitEmailOptions() {
+  const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
+  if (!dialog || !currentUser || !supabaseClient) return;
+  const status = dialog.querySelector('#overviewEmailStatus');
+  const recipientsBox = dialog.querySelector('#overviewEmailRecipients');
+  const ccBox = dialog.querySelector('#overviewEmailCc');
+  overviewEmailOptionsLoading = true;
+  updateOverviewEmailSendButton();
+  recipientsBox.textContent = 'Loading recipients…';
+  ccBox.textContent = 'Loading CC contacts…';
+  status.textContent = '';
+  try {
+    const { data, error } = await supabaseClient.functions.invoke('clever-api', {
+      body: { action: 'options', siteId: SITE.id }
+    });
+    if (error) throw new Error(error.message || 'Could not load email recipients.');
+    window.dgslPermitEmailOptions = data || {};
+    renderPermitEmailOptions(data || {});
+  } catch (error) {
+    recipientsBox.textContent = 'Could not load the recipient list.';
+    ccBox.textContent = 'Could not load the CC list.';
+    status.textContent = error.message || 'Could not load the email lists.';
+  } finally {
+    overviewEmailOptionsLoading = false;
+    updateOverviewEmailSendButton();
+  }
+}
+
 async function emailWorkPermitOverview() {
   const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
   const status = dialog?.querySelector('#overviewEmailStatus');
   const button = dialog?.querySelector('#overviewEmailPdf');
-  const contractor = dialog?.querySelector('#overviewContractor')?.value || '';
-  if (!dialog || !currentUser || !contractor || !button) return;
-  const permits = getOpenWorkPermitsForContractor(contractor);
-  if (!permits.length) return;
+  if (!dialog || !currentUser || !button) return;
+  const chosenIds = [...dialog.querySelectorAll('.overview-to-choice:checked:not(:disabled)')].map(input => input.value);
+  const chosenCcIds = [...dialog.querySelectorAll('.overview-cc-choice:checked')].map(input => input.value);
+  const chosenRecipients = (window.dgslPermitEmailOptions?.recipients || [])
+    .filter(row => chosenIds.includes(row.id) && getOpenWorkPermitsForContractor(row.contractor).length);
+  if (!chosenRecipients.length) {
+    status.textContent = 'Select at least one recipient with open permits.';
+    return;
+  }
+  if (!window.DGSL_MAIL_CONFIG?.clientId || !window.msal?.PublicClientApplication) {
+    status.textContent = 'Outlook sending is not configured yet.';
+    return;
+  }
+
+  const grouped = new Map();
+  for (const recipient of chosenRecipients) {
+    const contractor = String(recipient.contractor || '').trim();
+    if (!grouped.has(contractor)) grouped.set(contractor, []);
+    grouped.get(contractor).push(recipient.id);
+  }
+  const groups = [...grouped.entries()].map(([contractor, recipientIds]) => ({
+    contractor,
+    recipientIds,
+    requestId: crypto.randomUUID()
+  }));
+  const pending = { siteId: SITE.id, groups, ccIds: chosenCcIds };
 
   button.disabled = true;
-  status.textContent = 'Preparing the summary…';
+  status.textContent = 'Saving your choices and opening Microsoft sign-in…';
   try {
-    if (!window.DGSL_MAIL_CONFIG?.clientId || !window.msal?.PublicClientApplication) {
-      throw new Error('Outlook sending is not configured yet.');
-    }
-    const pdf = await generateWorkPermitOverviewPdf(contractor, permits);
-    const dataUri = pdf.output('datauristring');
-    const pdfBase64 = dataUri.slice(dataUri.indexOf(',') + 1);
-    const pending = {
-      siteId: SITE.id,
-      contractor,
-      fileName: `DGSL-${overviewSafeFilePart(SITE.name || SITE.id)}-${overviewSafeFilePart(contractor)}-Open-Work-Permits-${today()}.pdf`,
-      pdfBase64,
-      requestId: crypto.randomUUID()
-    };
     sessionStorage.setItem(DGSL_PENDING_EMAIL_KEY, JSON.stringify(pending));
-    status.textContent = 'Opening Microsoft sign-in in this tab…';
     const msalApp = initializeMicrosoftMailClient(String(window.DGSL_MAIL_CONFIG.clientId).trim());
     await msalApp.loginRedirect({
       scopes: DGSL_MAIL_SCOPES,
@@ -518,9 +625,10 @@ function showPermitEmailResult(pending, message) {
   }
   openWorkPermitOverviewDialog();
   const dialog = document.getElementById('dgslWorkPermitOverviewDialog');
+  const firstContractor = pending?.groups?.[0]?.contractor;
   const select = dialog?.querySelector('#overviewContractor');
-  if (select) {
-    select.value = pending.contractor;
+  if (select && firstContractor) {
+    select.value = firstContractor;
     updateWorkPermitOverviewDialog();
   }
   const status = dialog?.querySelector('#overviewEmailStatus');
@@ -538,12 +646,12 @@ async function finishPermitEmailAfterRedirect() {
   }
   if (!dgslMailRedirectResult?.account) {
     sessionStorage.removeItem(DGSL_PENDING_EMAIL_KEY);
-    showPermitEmailResult(pending, 'Microsoft sign-in was cancelled. Click Email PDF to try again.');
+    showPermitEmailResult(pending, 'Microsoft sign-in was cancelled. Click Send selected emails to try again.');
     return;
   }
   if (pending.siteId !== SITE.id) {
     sessionStorage.removeItem(DGSL_PENDING_EMAIL_KEY);
-    showPermitEmailResult(pending, 'The site changed during sign-in. Please create the summary again and retry.');
+    showPermitEmailResult(pending, 'The site changed during sign-in. Please choose recipients again and retry.');
     return;
   }
 
@@ -573,31 +681,42 @@ async function finishPermitEmailAfterRedirect() {
     const sender = profile.mail || profile.userPrincipalName || dgslMailRedirectResult.account.username;
     if (!sender) throw new Error('Microsoft did not return an email address for the selected sender.');
 
+    const groupsWithPdfs = [];
+    for (let index = 0; index < pending.groups.length; index++) {
+      const group = pending.groups[index];
+      const permits = getOpenWorkPermitsForContractor(group.contractor);
+      if (!permits.length) continue;
+      const status = document.getElementById('dgslWorkPermitOverviewDialog')?.querySelector('#overviewEmailStatus');
+      if (status) status.textContent = `Preparing summary ${index + 1} of ${pending.groups.length}…`;
+      const pdf = await generateWorkPermitOverviewPdf(group.contractor, permits);
+      const dataUri = pdf.output('datauristring');
+      groupsWithPdfs.push({
+        ...group,
+        fileName: `DGSL-${overviewSafeFilePart(SITE.name || SITE.id)}-${overviewSafeFilePart(group.contractor)}-Open-Work-Permits-${today()}.pdf`,
+        pdfBase64: dataUri.slice(dataUri.indexOf(',') + 1)
+      });
+    }
+    if (!groupsWithPdfs.length) throw new Error('There are no open permits for the selected recipients.');
+
     const { data, error } = await supabaseClient.functions.invoke('clever-api', {
-      body: {
-        siteId: pending.siteId,
-        contractor: pending.contractor,
-        fileName: pending.fileName,
-        pdfBase64: pending.pdfBase64,
-        requestId: pending.requestId
-      },
+      body: { action: 'send', siteId: pending.siteId, groups: groupsWithPdfs, ccIds: pending.ccIds || [] },
       headers: { 'x-ms-graph-token': tokenResponse.accessToken }
     });
     if (error) throw new Error(error.message || 'The email could not be sent.');
     if (!data?.sentCount && data?.failedCount) {
       throw new Error(`Email sending failed for ${data.failedCount} recipient${data.failedCount === 1 ? '' : 's'}.`);
     }
-    if (!data?.sentCount) throw new Error(data?.message || 'No active recipients are configured for this site and sub-contractor.');
+    if (!data?.sentCount) throw new Error(data?.message || 'No selected recipients could be emailed.');
 
     sessionStorage.removeItem(DGSL_PENDING_EMAIL_KEY);
     const message = data.failedCount
       ? `Sent to ${data.sentCount}; ${data.failedCount} recipient${data.failedCount === 1 ? '' : 's'} could not be emailed.`
-      : `Outlook accepted the ${SITE.name || SITE.id} summary for ${data.sentCount} recipient${data.sentCount === 1 ? '' : 's'} from ${sender}.`;
+      : `Outlook accepted ${data.sentCount} email${data.sentCount === 1 ? '' : 's'} for ${SITE.name || SITE.id} from ${sender}.`;
     showPermitEmailResult(pending, message);
   } catch (error) {
     console.error('Open permit summary email error:', error);
     sessionStorage.removeItem(DGSL_PENDING_EMAIL_KEY);
-    showPermitEmailResult(pending, error.message || 'Unable to send the email. Please try again.');
+    showPermitEmailResult(pending, error.message || 'Unable to send the emails. Please try again.');
   }
 }
 

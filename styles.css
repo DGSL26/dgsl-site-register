@@ -2120,6 +2120,30 @@ body.change-log-open {
 .overview-primary { width:100%; min-height:44px; }
 .overview-secondary { text-align:center; }
 .overview-actions button:disabled { opacity:.5; cursor:not-allowed; }
+.work-permit-overview-dialog { width:min(760px, calc(100vw - 32px)) !important; max-width:760px !important; max-height:92vh; overflow:auto; }
+.overview-bulk-email { margin-top:18px; border-top:1px solid #e1e6ea; padding-top:15px; }
+.overview-list-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin:14px 0 8px; }
+.overview-list-heading h3 { margin:0; font-size:16px; }
+.overview-list-heading p,.overview-help { margin:4px 0 0; color:#68737d; font-size:12px; line-height:1.4; }
+.overview-list-controls { display:flex; gap:9px; flex:none; }
+.overview-link-button { border:0; background:none; color:#007a33; font-size:13px; font-weight:700; text-decoration:underline; padding:3px; }
+.overview-check-list { display:grid; gap:6px; max-height:170px; overflow:auto; border:1px solid #e0e5e9; border-radius:8px; padding:7px; }
+.overview-check-row { display:flex; align-items:center; gap:10px; padding:8px 9px; border-radius:6px; cursor:pointer; }
+.overview-check-row:hover { background:#f6f8f9; }
+.overview-check-row input { width:18px; height:18px; flex:none; accent-color:#008e39; }
+.overview-check-row span { display:grid; min-width:0; gap:2px; }
+.overview-check-row strong,.overview-check-row small { overflow-wrap:anywhere; }
+.overview-check-row small,.overview-list-empty { color:#68737d; font-size:12px; margin:0; }
+.overview-check-disabled { opacity:.55; cursor:not-allowed; }
+.overview-cc-heading { margin-top:18px; }
+.overview-actions { grid-template-columns:1fr 1fr; }
+.overview-actions #overviewDownloadExcel,.overview-actions #overviewEmailStatus { grid-column:1/-1; }
+@media(max-width:600px) {
+  .work-permit-overview-dialog { width:calc(100vw - 20px) !important; max-width:none !important; padding:16px; }
+  .overview-list-heading { flex-direction:column; gap:6px; }
+  .overview-actions { grid-template-columns:1fr; }
+  .overview-actions #overviewDownloadExcel,.overview-actions #overviewEmailStatus { grid-column:auto; }
+}
 
 /* First-Fix fields: title text is wrapped by app.js so the two controls can be aligned dynamically. */
 .first-fix-fields > label {
@@ -2137,3 +2161,4 @@ body.change-log-open {
     padding-top: 0 !important;
   }
 }
+
