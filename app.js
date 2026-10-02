@@ -120,7 +120,7 @@ function initializeMicrosoftMailClient(clientId) {
       auth: {
         clientId,
         authority: 'https://login.microsoftonline.com/organizations',
-        redirectUri: `${window.location.origin}${window.location.pathname}`
+        redirectUri: new URL('auth-popup.html', window.location.href).href
       },
       cache: { cacheLocation: 'sessionStorage' }
     });
