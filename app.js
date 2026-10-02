@@ -325,7 +325,11 @@ function openWorkPermitOverviewDialog() {
   if (!currentUser) return;
   const mailClientId = String(window.DGSL_MAIL_CONFIG?.clientId || '').trim();
   if (mailClientId && window.msal?.PublicClientApplication) {
-    initializeMicrosoftMailClient(mailClientId).catch(error => console.warn('Microsoft mail setup could not initialise:', error));
+    try {
+      initializeMicrosoftMailClient(mailClientId);
+    } catch (error) {
+      console.warn('Microsoft mail setup could not initialise:', error);
+    }
   }
 
   let dialog = document.getElementById('dgslWorkPermitOverviewDialog');
