@@ -112,11 +112,11 @@ let currentUser = null;
 let authDialog = null;
 let notificationPollTimer = null;
 let sitePasswordVerified = false;
-let dgslMsalClientPromise = null;
+let dgslMsalClient = null;
 
 function initializeMicrosoftMailClient(clientId) {
-  if (!dgslMsalClientPromise) {
-    const client = new window.msal.PublicClientApplication({
+  if (!dgslMsalClient) {
+    dgslMsalClient = new window.msal.PublicClientApplication({
       auth: {
         clientId,
         authority: 'https://login.microsoftonline.com/organizations',
@@ -124,11 +124,8 @@ function initializeMicrosoftMailClient(clientId) {
       },
       cache: { cacheLocation: 'sessionStorage' }
     });
-    dgslMsalClientPromise = Promise.resolve(
-      typeof client.initialize === 'function' ? client.initialize() : undefined
-    ).then(() => client);
   }
-  return dgslMsalClientPromise;
+  return dgslMsalClient;
 }
 
 function sitePasswordStorageKey() {
@@ -459,7 +456,7 @@ async function getMicrosoftMailToken() {
   if (!clientId || !window.msal?.PublicClientApplication) {
     throw new Error('Outlook sending is not configured yet. Add the Microsoft Entra client ID to mail-config.js.');
   }
-  const msalApp = await initializeMicrosoftMailClient(clientId);
+  const msalApp = initializeMicrosoftMailClient(clientId);
   const login = await msalApp.loginPopup({
     scopes: ['User.Read', 'Mail.Send'],
     prompt: 'select_account'
