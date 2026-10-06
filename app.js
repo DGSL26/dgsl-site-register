@@ -745,8 +745,14 @@ async function finishPermitEmailAfterRedirect() {
     }
     if (!groupsWithPdfs.length) throw new Error('There are no open permits for the selected recipients.');
 
+    const emailLogoData = await loadLogoForPdf();
+    if (!emailLogoData || !emailLogoData.includes(',')) {
+      throw new Error('The DGSL logo could not be loaded, so the emails were not sent.');
+    }
+    const emailLogoBase64 = emailLogoData.slice(emailLogoData.indexOf(',') + 1);
+
     const { data, error } = await supabaseClient.functions.invoke('clever-api', {
-      body: { action: 'send', siteId: pending.siteId, groups: groupsWithPdfs, ccIds: pending.ccIds || [] },
+      body: { action: 'send', siteId: pending.siteId, groups: groupsWithPdfs, ccIds: pending.ccIds || [], logoBase64: emailLogoBase64 },
       headers: { 'x-ms-graph-token': tokenResponse.accessToken }
     });
     if (error) throw new Error(error.message || 'The email could not be sent.');

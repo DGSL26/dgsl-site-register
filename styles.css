@@ -2147,8 +2147,13 @@ body.change-log-open {
 
 /* Keep the email dialog itself scrollable on touch screens and freeze the page behind it. */
 .header-settings-dialog.work-permit-overview-dialog {
-  max-height: calc(100vh - 24px) !important;
-  max-height: calc(100dvh - 24px) !important;
+  width: min(950px, 94vw) !important;
+  max-width: 950px !important;
+  height: 82vh !important;
+  height: 82dvh !important;
+  max-height: 82vh !important;
+  max-height: 82dvh !important;
+  padding: 0 !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
   overscroll-behavior: contain !important;
