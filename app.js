@@ -37,6 +37,45 @@ let FIRST_FIX_TITLE_KEYWORDS = [...DEFAULT_FIRST_FIX_TITLE_KEYWORDS];
 const DGSL_PENDING_EMAIL_KEY = 'dgsl-open-permit-email-pending';
 const DGSL_MAIL_SCOPES = ['User.Read', 'Mail.Send'];
 let overviewEmailOptionsLoading = false;
+let overviewEmailScrollLockY = null;
+let overviewEmailBodyStyleSnapshot = null;
+
+function lockOverviewEmailBackground() {
+  if (overviewEmailScrollLockY !== null) return;
+  const body = document.body;
+  overviewEmailScrollLockY = window.scrollY || window.pageYOffset || 0;
+  overviewEmailBodyStyleSnapshot = {
+    position: body.style.position,
+    top: body.style.top,
+    left: body.style.left,
+    right: body.style.right,
+    width: body.style.width
+  };
+  document.documentElement.classList.add('overview-email-scroll-locked');
+  body.classList.add('overview-email-scroll-locked');
+  body.style.position = 'fixed';
+  body.style.top = `-${overviewEmailScrollLockY}px`;
+  body.style.left = '0';
+  body.style.right = '0';
+  body.style.width = '100%';
+}
+
+function unlockOverviewEmailBackground() {
+  if (overviewEmailScrollLockY === null) return;
+  const body = document.body;
+  const scrollY = overviewEmailScrollLockY;
+  const saved = overviewEmailBodyStyleSnapshot || {};
+  document.documentElement.classList.remove('overview-email-scroll-locked');
+  body.classList.remove('overview-email-scroll-locked');
+  body.style.position = saved.position || '';
+  body.style.top = saved.top || '';
+  body.style.left = saved.left || '';
+  body.style.right = saved.right || '';
+  body.style.width = saved.width || '';
+  overviewEmailScrollLockY = null;
+  overviewEmailBodyStyleSnapshot = null;
+  window.scrollTo(0, scrollY);
+}
 
 function readPendingPermitEmail() {
   try {
@@ -411,11 +450,15 @@ function openWorkPermitOverviewDialog() {
     dialog.querySelector('#overviewToNone').onclick = () => setOverviewCheckboxes('.overview-to-choice', false);
     dialog.querySelector('#overviewCcAll').onclick = () => setOverviewCheckboxes('.overview-cc-choice', true);
     dialog.querySelector('#overviewCcNone').onclick = () => setOverviewCheckboxes('.overview-cc-choice', false);
+    dialog.addEventListener('close', unlockOverviewEmailBackground);
   }
 
   populateWorkPermitOverviewContractors(dialog.querySelector('#overviewContractor'));
   updateWorkPermitOverviewDialog();
-  if (!dialog.open) dialog.showModal();
+  if (!dialog.open) {
+    lockOverviewEmailBackground();
+    dialog.showModal();
+  }
   loadPermitEmailOptions();
 }
 
@@ -574,6 +617,10 @@ async function emailWorkPermitOverview() {
   const status = dialog?.querySelector('#overviewEmailStatus');
   const button = dialog?.querySelector('#overviewEmailPdf');
   if (!dialog || !currentUser || !button) return;
+  if (sessionStorage.getItem(DGSL_PENDING_EMAIL_KEY)) {
+    status.textContent = 'An email send is already in progress. Please wait for its confirmation before trying again.';
+    return;
+  }
   const chosenIds = [...dialog.querySelectorAll('.overview-to-choice:checked:not(:disabled)')].map(input => input.value);
   const chosenCcIds = [...dialog.querySelectorAll('.overview-cc-choice:checked')].map(input => input.value);
   const chosenRecipients = (window.dgslPermitEmailOptions?.recipients || [])
@@ -710,9 +757,10 @@ async function finishPermitEmailAfterRedirect() {
 
     sessionStorage.removeItem(DGSL_PENDING_EMAIL_KEY);
     const message = data.failedCount
-      ? `Sent to ${data.sentCount}; ${data.failedCount} recipient${data.failedCount === 1 ? '' : 's'} could not be emailed.`
-      : `Outlook accepted ${data.sentCount} email${data.sentCount === 1 ? '' : 's'} for ${SITE.name || SITE.id} from ${sender}.`;
+      ? `Sent ${data.sentCount} email${data.sentCount === 1 ? '' : 's'}; ${data.failedCount} recipient${data.failedCount === 1 ? '' : 's'} could not be emailed.`
+      : `Sent! Outlook accepted ${data.sentCount} email${data.sentCount === 1 ? '' : 's'} for ${SITE.name || SITE.id} from ${sender}.`;
     showPermitEmailResult(pending, message);
+    if (currentUser) alert(message);
   } catch (error) {
     console.error('Open permit summary email error:', error);
     sessionStorage.removeItem(DGSL_PENDING_EMAIL_KEY);

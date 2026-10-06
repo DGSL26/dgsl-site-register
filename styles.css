@@ -2142,7 +2142,23 @@ body.change-log-open {
   .work-permit-overview-dialog { width:calc(100vw - 20px) !important; max-width:none !important; padding:16px; }
   .overview-list-heading { flex-direction:column; gap:6px; }
   .overview-actions { grid-template-columns:1fr; }
-  .overview-actions #overviewDownloadExcel,.overview-actions #overviewEmailStatus { grid-column:auto; }
+.overview-actions #overviewDownloadExcel,.overview-actions #overviewEmailStatus { grid-column:auto; }
+}
+
+/* Keep the email dialog itself scrollable on touch screens and freeze the page behind it. */
+.header-settings-dialog.work-permit-overview-dialog {
+  max-height: calc(100vh - 24px) !important;
+  max-height: calc(100dvh - 24px) !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
+  touch-action: pan-y;
+}
+html.overview-email-scroll-locked,
+body.overview-email-scroll-locked {
+  overflow: hidden !important;
+  overscroll-behavior: none !important;
 }
 
 /* First-Fix fields: title text is wrapped by app.js so the two controls can be aligned dynamically. */
@@ -2161,4 +2177,3 @@ body.change-log-open {
     padding-top: 0 !important;
   }
 }
-
