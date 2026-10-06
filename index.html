@@ -171,7 +171,18 @@
     </div>
     <div class="changelog-list">
       <section class="changelog-entry current">
-        <div class="changelog-version">1.3.4 <span class="changelog-current">Current</span></div>
+        <div class="changelog-version">1.3.5 <span class="changelog-current">Current</span></div>
+        <ul>
+          <li>Added bulk email controls for open permit summaries, with selectable recipients and CC contacts. Each recipient receives the summary for their mapped sub-contractor.</li>
+          <li>Added a clear on-screen sent confirmation after Outlook accepts the emails, and prevented starting another send while one is already processing.</li>
+          <li>Added the DGSL logo and confidentiality and disclaimer text to the summary email footer.</li>
+          <li>Improved phone and tablet scrolling for the permit summary and recipient-management windows, keeping the page behind each window locked while it is open.</li>
+          <li>Adjusted the permit summary window to match the New Handover window size and renamed the dashboard recipient settings to “Manage Email Recipients”.</li>
+        </ul>
+      </section>
+
+      <section class="changelog-entry">
+        <div class="changelog-version">1.3.4</div>
         <ul>
           <li>Added the Open Permit Summary system, allowing a sub-contractor to be selected and a summary of their open and on-hold work permits to be downloaded as PDF or Excel.</li>
           <li>Added configurable First-Fix keywords, automatic keyword variants and the option to use a configured keyword in the First-Fix field titles.</li>
@@ -1220,7 +1231,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.40.0/js/msal-browser.min.js"></script>
 
 <script src="mail-config.js"></script>
 
