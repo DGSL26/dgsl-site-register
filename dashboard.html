@@ -94,8 +94,10 @@
 
 
 .first-fix-keywords-box{max-width:620px}.first-fix-keywords-list{display:grid;gap:8px;margin:14px 0;max-height:360px;overflow:auto}.first-fix-keyword-row{border:1px solid #d6dde3;border-radius:8px;padding:10px 12px;background:#fff}.first-fix-keyword-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.first-fix-keyword-text{font-weight:600;overflow-wrap:anywhere}.first-fix-keyword-title-badge{display:inline-block;margin-left:7px;padding:3px 7px;border-radius:999px;background:#e7f6ed;color:#16733b;font-size:11px;font-weight:700;vertical-align:middle}.first-fix-keyword-actions{display:flex;align-items:center;gap:7px;flex:none}.first-fix-keyword-remove{flex:none;border:1px solid #c62828;background:#fff;color:#c62828;border-radius:6px;padding:6px 10px;cursor:pointer}.first-fix-keyword-remove:hover{background:#fff3f3}.first-fix-keyword-variants{display:none;margin:10px 0 0;padding:9px 11px;border-radius:7px;background:#f7f9fb;border:1px solid #e3e8ed}.first-fix-keyword-variants.show{display:block}.first-fix-keyword-variants-title{font-size:12px;font-weight:700;color:#68737d;margin-bottom:6px}.first-fix-keyword-variant{font-size:13px;padding:2px 0;overflow-wrap:anywhere}.first-fix-keyword-add{margin-top:6px}.first-fix-keyword-add .copy-row{display:flex;gap:8px;align-items:center}.first-fix-keyword-add input{flex:1;min-width:0}.first-fix-keyword-add .error{min-height:20px;margin-top:6px}.first-fix-keyword-options{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;color:#34404b}.first-fix-keyword-options input{width:auto}.first-fix-keyword-hint{font-size:12px;color:#68737d;line-height:1.4;margin-top:5px}
-.permit-recipient-box{max-width:780px;max-height:90vh;overflow:auto}.permit-recipient-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.permit-recipient-form .wide{grid-column:1/-1}.permit-recipient-rows{display:grid;gap:8px;margin-top:16px;max-height:30vh;overflow:auto}.permit-recipient-row{display:grid;grid-template-columns:minmax(130px,1.2fr) minmax(130px,1fr) minmax(150px,1.3fr) auto;gap:10px;align-items:center;border:1px solid #d6dde3;border-radius:8px;padding:10px 12px;background:#fff}.permit-recipient-row span{overflow-wrap:anywhere}.permit-recipient-empty{color:#68737d;padding:12px 0}.permit-recipient-row button{padding:7px 10px}.permit-recipient-row .recipient-disabled{color:#68737d;font-size:12px}.permit-recipient-form select,.permit-recipient-form input{width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid #ccd3d8;border-radius:6px;font-size:15px;background:#fff}.permit-recipient-hint{font-size:13px;color:#68737d;line-height:1.45;margin:0 0 14px}.permit-recipient-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.permit-recipient-divider{border:0;border-top:1px solid #e3e8ed;margin:20px 0 16px}.permit-recipient-subtitle{margin:0 0 8px;font-size:17px}.permit-recipient-status{font-size:13px;color:#68737d;min-height:18px;margin-top:7px}
+.permit-recipient-box{max-width:780px;max-height:90vh;max-height:calc(100dvh - 28px);overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}.permit-recipient-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}.permit-recipient-form .wide{grid-column:1/-1}.permit-recipient-rows{display:grid;gap:8px;margin-top:16px;max-height:30vh;overflow:auto}.permit-recipient-row{display:grid;grid-template-columns:minmax(130px,1.2fr) minmax(130px,1fr) minmax(150px,1.3fr) auto;gap:10px;align-items:center;border:1px solid #d6dde3;border-radius:8px;padding:10px 12px;background:#fff}.permit-recipient-row span{overflow-wrap:anywhere}.permit-recipient-empty{color:#68737d;padding:12px 0}.permit-recipient-row button{padding:7px 10px}.permit-recipient-row .recipient-disabled{color:#68737d;font-size:12px}.permit-recipient-form select,.permit-recipient-form input{width:100%;box-sizing:border-box;padding:10px 11px;border:1px solid #ccd3d8;border-radius:6px;font-size:15px;background:#fff}.permit-recipient-hint{font-size:13px;color:#68737d;line-height:1.45;margin:0 0 14px}.permit-recipient-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}.permit-recipient-divider{border:0;border-top:1px solid #e3e8ed;margin:20px 0 16px}.permit-recipient-subtitle{margin:0 0 8px;font-size:17px}.permit-recipient-status{font-size:13px;color:#68737d;min-height:18px;margin-top:7px}
 @media(max-width:650px){.permit-recipient-form{grid-template-columns:1fr}.permit-recipient-form .wide{grid-column:auto}.permit-recipient-row{grid-template-columns:1fr auto}.permit-recipient-row span:nth-child(2),.permit-recipient-row span:nth-child(3){grid-column:1}.permit-recipient-row button{grid-column:2;grid-row:1/4}}
+html.permit-recipients-scroll-locked,body.permit-recipients-scroll-locked{overflow:hidden!important;overscroll-behavior:none!important}
+#permitRecipientsModal{overscroll-behavior:contain;}
 </style>
 </head>
 <body>
@@ -131,7 +133,7 @@
   <h2>Settings</h2>
   <div class="settings-menu">
     <button class="settings-menu-btn" id="settingsDataManagement">Data Management <span id="dashboardBugBadge" class="dashboard-badge hidden"></span></button>
-    <button class="settings-menu-btn hidden" id="settingsPermitRecipients">Open Permit Email Recipients</button>
+    <button class="settings-menu-btn hidden" id="settingsPermitRecipients">Manage Email Recipients</button>
     <button class="settings-menu-btn" id="settingsFirstFixKeywords">Keywords</button>
   </div>
   <div class="actions">
@@ -166,7 +168,7 @@
 </div></div>
 
 <div class="modal" id="permitRecipientsModal"><div class="box permit-recipient-box">
-  <div class="management-modal-head"><h2>Open Permit Email Recipients</h2><button class="modal-x" id="permitRecipientsClose" aria-label="Close">×</button></div>
+  <div class="management-modal-head"><h2>Manage Email Recipients</h2><button class="modal-x" id="permitRecipientsClose" aria-label="Close">×</button></div>
   <p class="permit-recipient-hint">Each row routes one summary to one email address. Choose the site and sub-contractor that the recipient should receive. Manage this list here; no email field is added to the register.</p>
   <div class="permit-recipient-form">
     <div><label for="recipientSite">Site</label><select id="recipientSite"></select></div>
@@ -393,7 +395,30 @@ async function loadSites(){clearError();$('loading').hidden=false;$('grid').hidd
 let cachedSites=[];
 let permitRecipientRows=[];
 let permitCcRows=[];
-async function updateAuthUI(){const {data}=await supabaseClient.auth.getSession();currentSession=data.session||null;$('userLabel').textContent='';$('addBtn').classList.toggle('hidden',!isAdmin());$('settingsPermitRecipients').classList.toggle('hidden',!isAdmin());$('settingsBtn').classList.toggle('hidden',!currentSession);$('headerLogin').classList.toggle('hidden',!!currentSession);$('settingsLogout').classList.toggle('hidden',!currentSession);if(cachedSites.length){renderSites(cachedSites);populateManagementSites();}if(!currentSession){closeDashboardDataManagement();$('managementBugReportsModal').classList.remove('show');$('managementBugDetailModal').classList.remove('show');$('permitRecipientsModal').classList.remove('show');}refreshDashboardBugBadge();}
+let permitRecipientsScrollY=null;
+let permitRecipientsSavedBodyStyles=null;
+function lockDashboardForPermitRecipients(){
+  if(permitRecipientsScrollY!==null)return;
+  const body=document.body;
+  permitRecipientsScrollY=window.scrollY||window.pageYOffset||0;
+  permitRecipientsSavedBodyStyles={position:body.style.position,top:body.style.top,left:body.style.left,right:body.style.right,width:body.style.width};
+  document.documentElement.classList.add('permit-recipients-scroll-locked');
+  body.classList.add('permit-recipients-scroll-locked');
+  body.style.position='fixed';body.style.top=`-${permitRecipientsScrollY}px`;body.style.left='0';body.style.right='0';body.style.width='100%';
+}
+function unlockDashboardForPermitRecipients(){
+  if(permitRecipientsScrollY===null)return;
+  const body=document.body,scrollY=permitRecipientsScrollY,saved=permitRecipientsSavedBodyStyles||{};
+  document.documentElement.classList.remove('permit-recipients-scroll-locked');
+  body.classList.remove('permit-recipients-scroll-locked');
+  body.style.position=saved.position||'';body.style.top=saved.top||'';body.style.left=saved.left||'';body.style.right=saved.right||'';body.style.width=saved.width||'';
+  permitRecipientsScrollY=null;permitRecipientsSavedBodyStyles=null;window.scrollTo(0,scrollY);
+}
+function closePermitRecipients(){
+  $('permitRecipientsModal').classList.remove('show');
+  unlockDashboardForPermitRecipients();
+}
+async function updateAuthUI(){const {data}=await supabaseClient.auth.getSession();currentSession=data.session||null;$('userLabel').textContent='';$('addBtn').classList.toggle('hidden',!isAdmin());$('settingsPermitRecipients').classList.toggle('hidden',!isAdmin());$('settingsBtn').classList.toggle('hidden',!currentSession);$('headerLogin').classList.toggle('hidden',!!currentSession);$('settingsLogout').classList.toggle('hidden',!currentSession);if(cachedSites.length){renderSites(cachedSites);populateManagementSites();}if(!currentSession){closeDashboardDataManagement();$('managementBugReportsModal').classList.remove('show');$('managementBugDetailModal').classList.remove('show');closePermitRecipients();}refreshDashboardBugBadge();}
 async function refresh(){await loadSites();}
 $('settingsBtn').onclick=()=>{$('settingsModal').classList.add('show')};
 $('headerLogin').onclick=()=>{$('loginModal').classList.add('show');setTimeout(()=>$('password').focus(),50)};
@@ -557,6 +582,7 @@ async function openPermitRecipients(){
   if(!isAdmin())return;
   populateRecipientSites();
   populateCcRecipientSites();
+  lockDashboardForPermitRecipients();
   $('permitRecipientsModal').classList.add('show');
   await Promise.all([populateRecipientContractors(),loadPermitRecipients(),loadPermitCcRecipients()]);
 }
@@ -922,14 +948,14 @@ $('firstFixKeywordsModal').addEventListener('click',e=>{if(e.target===$('firstFi
 
 $('settingsDataManagement').onclick=()=>{closeDashboardDataManagement();openDashboardDataManagement()};
 $('settingsPermitRecipients').onclick=()=>{$('settingsModal').classList.remove('show');openPermitRecipients()};
-$('permitRecipientsClose').onclick=()=>$('permitRecipientsModal').classList.remove('show');
-$('permitRecipientsDone').onclick=()=>$('permitRecipientsModal').classList.remove('show');
+$('permitRecipientsClose').onclick=closePermitRecipients;
+$('permitRecipientsDone').onclick=closePermitRecipients;
 $('recipientSite').onchange=populateRecipientContractors;
 $('recipientAdd').onclick=addPermitRecipient;
 $('recipientEmail').addEventListener('keydown',event=>{if(event.key==='Enter')addPermitRecipient()});
 $('ccRecipientAdd').onclick=addPermitCcRecipient;
 $('ccRecipientEmail').addEventListener('keydown',event=>{if(event.key==='Enter')addPermitCcRecipient()});
-$('permitRecipientsModal').addEventListener('click',event=>{if(event.target===$('permitRecipientsModal'))$('permitRecipientsModal').classList.remove('show')});
+$('permitRecipientsModal').addEventListener('click',event=>{if(event.target===$('permitRecipientsModal'))closePermitRecipients()});
 $('managementClose').onclick=closeDashboardDataManagement;
 $('managementSiteSelect').onchange=e=>{managementSiteId=e.target.value;refreshDashboardBugBadge();};
 $('managementBugReports').onclick=openManagementBugReports;
