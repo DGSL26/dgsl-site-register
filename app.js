@@ -778,9 +778,40 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
   if (!window.jspdf?.jsPDF) throw new Error('PDF tools are not available.');
 
   const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
   const margin = 14;
-  const pageWidth = pdf.internal.pageSize.getWidth();
+  const pageWidth = 297;
+  const contentWidth = pageWidth - margin * 2;
+  const descWidth = 91;
+  const noteWidth = contentWidth - 12;
+  const measurePdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const layoutRows = permits.map(record => {
+    measurePdf.setFont('helvetica', 'normal');
+    measurePdf.setFontSize(9);
+    const description = measurePdf.splitTextToSize(String(record.description || '—'), descWidth);
+    const rowHeight = Math.max(9, description.length * 4.5 + 4);
+    const overdue = record.status === 'Work Permit Open' && isHandoverOlderThanOneWeek(record.handoverDate);
+    let noteLines = [];
+    let noteBoxHeight = 0;
+
+    if (overdue) {
+      const savedNotes = record.takeBackChecklist?.handoverNotes;
+      const noteText = String(savedNotes || '').trim() || 'No outstanding items have been recorded for this handover.';
+      measurePdf.setFont('helvetica', 'normal');
+      measurePdf.setFontSize(8);
+      noteLines = measurePdf.splitTextToSize(noteText, noteWidth);
+      noteBoxHeight = Math.max(13, 10 + noteLines.length * 3.8);
+    }
+
+    return { record, description, rowHeight, overdue, noteLines, noteBoxHeight };
+  });
+  let layoutY = 66;
+  layoutRows.forEach(row => {
+    layoutY += row.rowHeight;
+    if (row.overdue) layoutY += 1.5 + row.noteBoxHeight + 2;
+  });
+  const pageHeight = Math.max(210, layoutY + 8 + 14);
+  const orientation = pageHeight > pageWidth ? 'portrait' : 'landscape';
+  const pdf = new jsPDF({ orientation, unit: 'mm', format: [pageWidth, pageHeight] });
   let y = 18;
 
   // Use the same DGSL logo and proportions as the standard handover/work permit PDFs.
@@ -824,33 +855,13 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
   const descX = margin + 43;
   const dateX = pageWidth - 73;
   const statusX = pageWidth - margin - 30;
-  const descWidth = 91;
-
-  permits.forEach((record, index) => {
-    const description = pdf.splitTextToSize(String(record.description || '—'), descWidth);
-    const rowHeight = Math.max(9, description.length * 4.5 + 4);
-    if (y + rowHeight > 188) {
-      pdf.addPage();
-      y = 18;
-      pdf.setFillColor(31, 78, 120);
-      pdf.rect(margin, y, pageWidth - margin * 2, 9, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Zone / Area', margin + 3, y + 6);
-      pdf.text('Work Description', margin + 43, y + 6);
-      pdf.text('Handover Date', pageWidth - 73, y + 6);
-      pdf.text('Status', pageWidth - margin - 30, y + 6);
-      y += 9;
-      pdf.setTextColor(0, 0, 0);
-      pdf.setFont('helvetica', 'normal');
-    }
+  layoutRows.forEach((row, index) => {
+    const { record, description, rowHeight, overdue } = row;
 
     if (index % 2 === 0) {
       pdf.setFillColor(247, 249, 251);
       pdf.rect(margin, y, pageWidth - margin * 2, rowHeight, 'F');
     }
-
-    const overdue = record.status === 'Work Permit Open' && isHandoverOlderThanOneWeek(record.handoverDate);
 
     pdf.setFontSize(9);
     if (overdue) pdf.setTextColor(198, 40, 40);
@@ -871,13 +882,31 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
     pdf.text(status === 'Work Permit on Hold' ? 'On Hold' : 'Open', statusX + pillWidth / 2, y + 5.9, { align: 'center' });
     pdf.setFont('helvetica', 'normal');
     y += rowHeight;
+
+    if (overdue) {
+      y += 1.5;
+      pdf.setFillColor(255, 247, 247);
+      pdf.setDrawColor(198, 40, 40);
+      pdf.setLineWidth(0.45);
+      pdf.roundedRect(margin, y, contentWidth, row.noteBoxHeight, 1.5, 1.5, 'FD');
+      pdf.setFillColor(198, 40, 40);
+      pdf.roundedRect(margin, y, 2.2, row.noteBoxHeight, 1, 1, 'F');
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(7);
+      pdf.setTextColor(198, 40, 40);
+      pdf.text('OUTSTANDING ITEMS', margin + 6, y + 4.5);
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(8);
+      pdf.setTextColor(48, 48, 48);
+      pdf.text(row.noteLines, margin + 6, y + 9);
+      pdf.setTextColor(0, 0, 0);
+      y += row.noteBoxHeight + 2;
+    }
   });
 
-  y += 8;
-  if (y > 190) {
-    pdf.addPage();
-    y = 18;
-  }
+  y += 6;
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(11);
   pdf.text(`Total outstanding: ${permits.length}`, margin, y);
