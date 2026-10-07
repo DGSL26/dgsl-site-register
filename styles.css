@@ -1285,23 +1285,13 @@ tr.copied-handover-row td {
   background: #ffd6d6 !important;
 }
 
-/* Outline handovers more than seven days old without changing their row fill. */
-tr.overdue-handover-row td {
-  border-top: 2px solid #c62828;
-  border-bottom: 2px solid #c62828;
-}
-
-tr.overdue-handover-row td:first-child {
-  border-left: 2px solid #c62828;
-}
-
-tr.overdue-handover-row td:last-child {
-  border-right: 2px solid #c62828;
-}
-
-td.overdue-handover-date {
+/* Mark only old open permits with red text, keeping Status and action columns unchanged. */
+tr.overdue-open-handover-row td:nth-child(1),
+tr.overdue-open-handover-row td:nth-child(2),
+tr.overdue-open-handover-row td:nth-child(3),
+tr.overdue-open-handover-row td:nth-child(5),
+tr.overdue-open-handover-row td:nth-child(6) {
   color: #c62828;
-  font-weight: 700;
 }
 
 

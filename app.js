@@ -850,23 +850,14 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
       pdf.rect(margin, y, pageWidth - margin * 2, rowHeight, 'F');
     }
 
-    const overdue = isHandoverOlderThanOneWeek(record.handoverDate);
-    if (overdue) {
-      pdf.setDrawColor(198, 40, 40);
-      pdf.setLineWidth(0.6);
-      pdf.rect(margin, y, pageWidth - margin * 2, rowHeight, 'S');
-    }
+    const overdue = record.status === 'Work Permit Open' && isHandoverOlderThanOneWeek(record.handoverDate);
 
     pdf.setFontSize(9);
+    if (overdue) pdf.setTextColor(198, 40, 40);
     pdf.text(String(record.zone || '—'), zoneX, y + 6);
     pdf.text(description, descX, y + 5.5);
-    if (overdue) {
-      pdf.setTextColor(198, 40, 40);
-      pdf.setFont('helvetica', 'bold');
-    }
     pdf.text(overviewDate(record.handoverDate), dateX, y + 6);
     pdf.setTextColor(0, 0, 0);
-    pdf.setFont('helvetica', 'normal');
 
     const status = String(record.status || '');
     const pillClass = overviewStatusClass(status);
@@ -2535,7 +2526,7 @@ function render() {
       .map(
         x => `
 
-        <tr class="${x.handover === 'COPY' ? 'copied-handover-row ' : ''}${isHandoverOlderThanOneWeek(x.handoverDate) ? 'overdue-handover-row ' : ''}${x.status === 'Work Permit Open' ? 'row-status-open' : x.status === 'Work Permit Closed' ? 'row-status-closed' : x.status === 'Work Permit on Hold' ? 'row-status-hold' : ''}" data-row-id="${esc(x.id)}">
+        <tr class="${x.handover === 'COPY' ? 'copied-handover-row ' : ''}${x.status === 'Work Permit Open' && isHandoverOlderThanOneWeek(x.handoverDate) ? 'overdue-open-handover-row ' : ''}${x.status === 'Work Permit Open' ? 'row-status-open' : x.status === 'Work Permit Closed' ? 'row-status-closed' : x.status === 'Work Permit on Hold' ? 'row-status-hold' : ''}" data-row-id="${esc(x.id)}">
 
           <td>
             <b>
@@ -2569,7 +2560,7 @@ function render() {
 
 </td>
 
-          <td class="table-date ${isHandoverOlderThanOneWeek(x.handoverDate) ? 'overdue-handover-date' : ''}">
+          <td class="table-date">
   ${esc(formatTableDate(x.handoverDate))}
 </td>
 
