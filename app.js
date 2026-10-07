@@ -835,7 +835,7 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
   pdf.text(`Sub-Contractor: ${contractor}`, margin, y);
   y += 5;
   pdf.text(`Generated: ${formatTableDate(today())}`, margin, y);
-  y += 5;
+  y += 9;
 
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(8);
@@ -847,7 +847,7 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
   pdf.text('RED', redWordX, y);
   const explanationTailX = redWordX + pdf.getTextWidth('RED');
   pdf.setTextColor(0, 0, 0);
-  pdf.text(' HAVE BEEN OPEN FOR MORE THAN 1 WEEK AND MUST BE CLOSED OUT IN ORDER TO CLAIM', explanationTailX, y);
+  pdf.text(' HAVE BEEN OPEN FOR MORE THAN 1 WEEK AND MUST BE CLOSED OUT IN ORDER TO CLAIM.', explanationTailX, y);
   y += 9;
 
   pdf.setFillColor(31, 78, 120);
