@@ -2228,6 +2228,10 @@ body.overview-email-scroll-locked {
   justify-content: center;
 }
 
+.handover-notes-save-wrap {
+  justify-content: center;
+}
+
 @media (max-width: 600px) {
   .handover-notes-actions {
     width: 100%;
