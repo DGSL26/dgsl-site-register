@@ -2195,7 +2195,7 @@ body.overview-email-scroll-locked {
 /* Outstanding handover notes field and its save actions. */
 .handover-notes-field > span {
   display: block;
-  color: #c62828;
+  color: red;
 }
 
 .handover-notes-field textarea {
@@ -2205,12 +2205,12 @@ body.overview-email-scroll-locked {
   box-sizing: border-box;
   overflow-y: hidden;
   resize: none;
-  border: 1px solid #c62828;
+  border: 1px solid red;
 }
 
 .handover-notes-field textarea:focus {
-  border-color: #c62828;
-  box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.14);
+  border-color: red;
+  box-shadow: 0 0 0 2px rgba(255, 0, 0, 0.14);
 }
 
 .handover-notes-actions {
@@ -2222,6 +2222,10 @@ body.overview-email-scroll-locked {
 
 .handover-notes-actions[hidden] {
   display: none !important;
+}
+
+.handover-update-wrap {
+  justify-content: center;
 }
 
 @media (max-width: 600px) {
