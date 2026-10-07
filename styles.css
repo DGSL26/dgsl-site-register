@@ -2191,3 +2191,45 @@ body.overview-email-scroll-locked {
     padding-top: 0 !important;
   }
 }
+
+/* Outstanding handover notes field and its save actions. */
+.handover-notes-field > span {
+  display: block;
+  color: #c62828;
+}
+
+.handover-notes-field textarea {
+  width: 100%;
+  min-height: 96px;
+  height: 96px;
+  box-sizing: border-box;
+  overflow-y: hidden;
+  resize: none;
+  border: 1px solid #c62828;
+}
+
+.handover-notes-field textarea:focus {
+  border-color: #c62828;
+  box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.14);
+}
+
+.handover-notes-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+.handover-notes-actions[hidden] {
+  display: none !important;
+}
+
+@media (max-width: 600px) {
+  .handover-notes-actions {
+    width: 100%;
+  }
+
+  .handover-notes-actions button {
+    width: 100%;
+  }
+}

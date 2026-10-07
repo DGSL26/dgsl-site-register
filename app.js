@@ -163,6 +163,16 @@ const rows = $('#rows');
 const dlg = $('#formDialog');
 const form = $('#handoverForm');
 
+function resizeHandoverNotesField() {
+  const field = form.elements.handoverNotes;
+  if (!field) return;
+
+  field.style.height = 'auto';
+  field.style.height = `${Math.max(96, field.scrollHeight + 2)}px`;
+}
+
+form.elements.handoverNotes?.addEventListener('input', resizeHandoverNotesField);
+
 let currentUser = null;
 let authDialog = null;
 let notificationPollTimer = null;
@@ -3801,6 +3811,11 @@ function open(x, showDialog = true) {
 
   form.reset();
 
+  const updateHandoverWrap = $('#updateHandoverWrap');
+  if (updateHandoverWrap) {
+    updateHandoverWrap.hidden = !x;
+  }
+
 // Reset all dropdowns to their normal state
 document.querySelectorAll('select').forEach(
   select => {
@@ -4037,6 +4052,8 @@ otherField.style.display =
     dlg.showModal();
   }
 
+  requestAnimationFrame(resizeHandoverNotesField);
+
 }
 
 
@@ -4176,6 +4193,7 @@ form.onsubmit =
       (e.submitter && e.submitter.matches('button[value="default"]'))
         ? e.submitter
         : form.querySelector('button[value="default"]');
+    const saveButtonLabel = saveButton?.textContent.trim() || 'Save handover';
 
 
     try {
@@ -4440,7 +4458,7 @@ for (
           false;
 
         saveButton.textContent =
-          'Save handover';
+          saveButtonLabel;
 
       }
 
