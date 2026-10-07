@@ -1285,6 +1285,25 @@ tr.copied-handover-row td {
   background: #ffd6d6 !important;
 }
 
+/* Outline handovers more than seven days old without changing their row fill. */
+tr.overdue-handover-row td {
+  border-top: 2px solid #c62828;
+  border-bottom: 2px solid #c62828;
+}
+
+tr.overdue-handover-row td:first-child {
+  border-left: 2px solid #c62828;
+}
+
+tr.overdue-handover-row td:last-child {
+  border-right: 2px solid #c62828;
+}
+
+td.overdue-handover-date {
+  color: #c62828;
+  font-weight: 700;
+}
+
 
 /* ============================================================
    PDF VIEWER — SAME COMPACT SIZE AS HANDOVER FORM

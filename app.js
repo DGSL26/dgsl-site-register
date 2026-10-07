@@ -850,10 +850,23 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
       pdf.rect(margin, y, pageWidth - margin * 2, rowHeight, 'F');
     }
 
+    const overdue = isHandoverOlderThanOneWeek(record.handoverDate);
+    if (overdue) {
+      pdf.setDrawColor(198, 40, 40);
+      pdf.setLineWidth(0.6);
+      pdf.rect(margin, y, pageWidth - margin * 2, rowHeight, 'S');
+    }
+
     pdf.setFontSize(9);
     pdf.text(String(record.zone || '—'), zoneX, y + 6);
     pdf.text(description, descX, y + 5.5);
+    if (overdue) {
+      pdf.setTextColor(198, 40, 40);
+      pdf.setFont('helvetica', 'bold');
+    }
     pdf.text(overviewDate(record.handoverDate), dateX, y + 6);
+    pdf.setTextColor(0, 0, 0);
+    pdf.setFont('helvetica', 'normal');
 
     const status = String(record.status || '');
     const pillClass = overviewStatusClass(status);
@@ -2265,6 +2278,20 @@ function formatTableDate(value) {
 }
 
 
+function isHandoverOlderThanOneWeek(value) {
+  const text = String(value || '').slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return false;
+
+  const handoverDate = new Date(`${text}T00:00:00`);
+  if (Number.isNaN(handoverDate.getTime())) return false;
+
+  const cutoff = new Date();
+  cutoff.setHours(0, 0, 0, 0);
+  cutoff.setDate(cutoff.getDate() - 7);
+  return handoverDate < cutoff;
+}
+
+
 function formatDate(value) {
   if (!value) return '';
 
@@ -2508,7 +2535,7 @@ function render() {
       .map(
         x => `
 
-        <tr class="${x.handover === 'COPY' ? 'copied-handover-row ' : ''}${x.status === 'Work Permit Open' ? 'row-status-open' : x.status === 'Work Permit Closed' ? 'row-status-closed' : x.status === 'Work Permit on Hold' ? 'row-status-hold' : ''}" data-row-id="${esc(x.id)}">
+        <tr class="${x.handover === 'COPY' ? 'copied-handover-row ' : ''}${isHandoverOlderThanOneWeek(x.handoverDate) ? 'overdue-handover-row ' : ''}${x.status === 'Work Permit Open' ? 'row-status-open' : x.status === 'Work Permit Closed' ? 'row-status-closed' : x.status === 'Work Permit on Hold' ? 'row-status-hold' : ''}" data-row-id="${esc(x.id)}">
 
           <td>
             <b>
@@ -2542,7 +2569,7 @@ function render() {
 
 </td>
 
-          <td class="table-date">
+          <td class="table-date ${isHandoverOlderThanOneWeek(x.handoverDate) ? 'overdue-handover-date' : ''}">
   ${esc(formatTableDate(x.handoverDate))}
 </td>
 
@@ -3308,6 +3335,9 @@ function getTakeBackChecklist() {
 
   const result = {};
 
+  result.handoverNotes =
+    form.elements.handoverNotes?.value || '';
+
   document
     .querySelectorAll(
       '.takeback-check'
@@ -3939,6 +3969,11 @@ otherField.style.display =
     if (form.elements.firstFixRecordsLocation) {
       form.elements.firstFixRecordsLocation.value =
         checklist.firstFixRecordsLocation || '';
+    }
+
+    if (form.elements.handoverNotes) {
+      form.elements.handoverNotes.value =
+        checklist.handoverNotes || '';
     }
 
     drawSavedSignature(
@@ -5801,6 +5836,7 @@ healthSafetyScaffolding:
     ? document.getElementById('statusOther').value || 'Other'
     : form.elements.status?.value || '',
   handoverDate: form.elements.handoverDate?.value || '',
+  handoverNotes: form.elements.handoverNotes?.value || '',
   takeBackDate: form.elements.takeBackDate?.value || '',
   takeBackCompleteDrawings:
   form.elements.takeBackCompleteDrawings?.value === 'Other'
@@ -6270,6 +6306,18 @@ healthSafetyScaffolding:
 
       }
     );
+
+
+    if (data.handoverNotes.trim()) {
+      if (y > 270) {
+        pdf.addPage();
+        y = 20;
+        if (logoData) {
+          pdf.addImage(logoData, 'PNG', 140, 10, 55, 11.1);
+        }
+      }
+      addField('Handover Notes / Outstanding Items', data.handoverNotes);
+    }
 
 
     // --------------------------------------------------------
