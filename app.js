@@ -779,11 +779,11 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
 
   const { jsPDF } = window.jspdf;
   const margin = 14;
-  const pageWidth = 297;
+  const pageWidth = 210;
   const contentWidth = pageWidth - margin * 2;
-  const descWidth = 91;
+  const descWidth = 72;
   const noteWidth = contentWidth - 12;
-  const measurePdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  const measurePdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const layoutRows = permits.map(record => {
     measurePdf.setFont('helvetica', 'normal');
     measurePdf.setFontSize(9);
@@ -804,14 +804,13 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
 
     return { record, description, rowHeight, overdue, noteLines, noteBoxHeight };
   });
-  let layoutY = 66;
+  let layoutY = 71;
   layoutRows.forEach(row => {
     layoutY += row.rowHeight;
     if (row.overdue) layoutY += 1.5 + row.noteBoxHeight + 2;
   });
-  const pageHeight = Math.max(210, layoutY + 8 + 14);
-  const orientation = pageHeight > pageWidth ? 'portrait' : 'landscape';
-  const pdf = new jsPDF({ orientation, unit: 'mm', format: [pageWidth, pageHeight] });
+  const pageHeight = Math.max(297, layoutY + 8 + 14);
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pageWidth, pageHeight] });
   let y = 18;
 
   // Use the same DGSL logo and proportions as the standard handover/work permit PDFs.
@@ -836,6 +835,19 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
   pdf.text(`Sub-Contractor: ${contractor}`, margin, y);
   y += 5;
   pdf.text(`Generated: ${formatTableDate(today())}`, margin, y);
+  y += 5;
+
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(8);
+  const explanationLead = 'PERMITS IN ';
+  pdf.setTextColor(0, 0, 0);
+  pdf.text(explanationLead, margin, y);
+  const redWordX = margin + pdf.getTextWidth(explanationLead);
+  pdf.setTextColor(198, 40, 40);
+  pdf.text('RED', redWordX, y);
+  const explanationTailX = redWordX + pdf.getTextWidth('RED');
+  pdf.setTextColor(0, 0, 0);
+  pdf.text(' HAVE BEEN OPEN FOR MORE THAN 1 WEEK', explanationTailX, y);
   y += 9;
 
   pdf.setFillColor(31, 78, 120);
@@ -844,17 +856,17 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(9);
   pdf.text('Zone / Area', margin + 3, y + 6);
-  pdf.text('Work Description', margin + 43, y + 6);
-  pdf.text('Handover Date', pageWidth - 73, y + 6);
-  pdf.text('Status', pageWidth - margin - 30, y + 6);
+  pdf.text('Work Description', margin + 40, y + 6);
+  pdf.text('Handover Date', pageWidth - 77, y + 6);
+  pdf.text('Status', pageWidth - margin - 31, y + 6);
   y += 9;
   pdf.setTextColor(0, 0, 0);
   pdf.setFont('helvetica', 'normal');
 
   const zoneX = margin + 3;
-  const descX = margin + 43;
-  const dateX = pageWidth - 73;
-  const statusX = pageWidth - margin - 30;
+  const descX = margin + 40;
+  const dateX = pageWidth - 77;
+  const statusX = pageWidth - margin - 31;
   layoutRows.forEach((row, index) => {
     const { record, description, rowHeight, overdue } = row;
 
