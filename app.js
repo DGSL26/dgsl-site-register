@@ -800,10 +800,11 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
     const description = measurePdf.splitTextToSize(String(record.description || '—'), descWidth);
     const rowHeight = Math.max(9, description.length * 4.5 + 4);
     const overdue = record.status === 'Work Permit Open' && isHandoverOlderThanOneWeek(record.handoverDate);
+    const showOutstandingCallout = overdue || record.status === 'Work Permit on Hold';
     let noteLines = [];
     let noteBoxHeight = 0;
 
-    if (overdue) {
+    if (showOutstandingCallout) {
       const savedNotes = record.takeBackChecklist?.handoverNotes;
       const noteText = String(savedNotes || '').trim() || 'No outstanding items have been recorded for this handover.';
       measurePdf.setFont('helvetica', 'normal');
@@ -812,12 +813,12 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
       noteBoxHeight = Math.max(13, 10 + noteLines.length * 3.8);
     }
 
-    return { record, description, rowHeight, overdue, noteLines, noteBoxHeight };
+    return { record, description, rowHeight, overdue, showOutstandingCallout, noteLines, noteBoxHeight };
   });
   let layoutY = 71;
   layoutRows.forEach(row => {
     layoutY += row.rowHeight;
-    if (row.overdue) layoutY += 1.5 + row.noteBoxHeight + 2;
+    if (row.showOutstandingCallout) layoutY += 1.5 + row.noteBoxHeight + 2;
   });
   const pageHeight = Math.max(297, layoutY + 8 + 14);
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pageWidth, pageHeight] });
@@ -878,7 +879,7 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
   const dateX = pageWidth - 77;
   const statusX = pageWidth - margin - 31;
   layoutRows.forEach((row, index) => {
-    const { record, description, rowHeight, overdue } = row;
+    const { record, description, rowHeight, overdue, showOutstandingCallout } = row;
 
     if (index % 2 === 0) {
       pdf.setFillColor(247, 249, 251);
@@ -905,7 +906,7 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
     pdf.setFont('helvetica', 'normal');
     y += rowHeight;
 
-    if (overdue) {
+    if (showOutstandingCallout) {
       y += 1.5;
       pdf.setFillColor(255, 247, 247);
       pdf.setDrawColor(198, 40, 40);
