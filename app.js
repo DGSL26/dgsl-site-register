@@ -158,7 +158,7 @@ async function loadSiteConfiguration() {
   if (builtInFirstFix && hasSavedFirstFixField) {
     FIRST_FIX_KEYWORDS = builtInFirstFix.keywords.length ? [...builtInFirstFix.keywords] : [...DEFAULT_FIRST_FIX_KEYWORDS];
     FIRST_FIX_TITLE_KEYWORDS = [...builtInFirstFix.titleKeywords];
-    FIRST_FIX_GENERATE_VARIANTS = builtInFirstFix.generateVariants;
+    FIRST_FIX_GENERATE_VARIANTS = true;
   }
 
   PHOTO_BUCKET = SITE.photoBucket;
@@ -3390,7 +3390,7 @@ function normaliseConditionalFields(value) {
       type: kind === 'first_fix' ? 'first_fix' : ([...Object.keys(CONDITIONAL_ANSWER_OPTIONS), 'custom_select', 'text', 'notes'].includes(field?.type) ? field.type : 'yes_no'),
       keywords,
       placements,
-      generateVariants: field?.generateVariants !== false,
+      generateVariants: true,
       titleKeywords: Array.isArray(field?.titleKeywords) ? field.titleKeywords.map(item => String(item || '').trim()).filter(Boolean) : [],
       customOptions: Array.isArray(field?.customOptions) ? field.customOptions.map(item => String(item || '').trim()).filter(Boolean) : [],
       includeOther: field?.includeOther !== false
@@ -5973,6 +5973,8 @@ async function startApp() {
     }
     await refreshNotificationState();
 
+    await launchConditionalFieldPreviewFromUrl();
+
     if (pendingPermitEmailAtStart) {
       await finishPermitEmailAfterRedirect();
     }
@@ -5999,6 +6001,131 @@ startApp();
 
 
 
+
+function readConditionalFieldPreviewRequest() {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get('conditionalPreview');
+  if (!raw) return null;
+  try {
+    return {
+      mode: params.get('conditionalPreviewMode') === 'pdf' ? 'pdf' : 'form',
+      payload: JSON.parse(raw)
+    };
+  } catch (error) {
+    console.warn('Could not read conditional field preview details.', error);
+    return null;
+  }
+}
+
+async function launchConditionalFieldPreviewFromUrl() {
+  const request = readConditionalFieldPreviewRequest();
+  const field = request?.payload?.field;
+  if (!field || !Array.isArray(field.keywords)) return;
+
+  const previewField = {
+    ...field,
+    id: String(field.id || 'conditional_preview_field'),
+    keywords: field.keywords.map(value => String(value || '').trim()).filter(Boolean),
+    placements: Array.isArray(field.placements) ? field.placements : [],
+    generateVariants: true
+  };
+  if (!previewField.keywords.length) previewField.keywords = ['DGSL conditional preview'];
+
+  if (previewField.kind === 'first_fix') {
+    CONDITIONAL_FIELDS = normaliseConditionalFields([
+      ...CONDITIONAL_FIELDS.filter(item => item.kind !== 'first_fix'),
+      previewField
+    ]);
+    FIRST_FIX_KEYWORDS = [...previewField.keywords];
+    FIRST_FIX_TITLE_KEYWORDS = Array.isArray(previewField.titleKeywords) ? previewField.titleKeywords : [];
+    FIRST_FIX_GENERATE_VARIANTS = true;
+  } else {
+    const existingIndex = CONDITIONAL_FIELDS.findIndex(item => item.id === previewField.id);
+    if (existingIndex >= 0) CONDITIONAL_FIELDS[existingIndex] = previewField;
+    else CONDITIONAL_FIELDS.push(previewField);
+  }
+
+  const description = `Preview only — ${previewField.keywords[0]}`;
+  open(null, true);
+  const descriptionInput = form.elements.description;
+  if (descriptionInput) {
+    descriptionInput.value = description;
+    descriptionInput.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+
+  let notice = document.getElementById('conditionalFieldPreviewNotice');
+  if (!notice) {
+    notice = document.createElement('div');
+    notice.id = 'conditionalFieldPreviewNotice';
+    notice.setAttribute('role', 'status');
+    notice.textContent = 'Preview only — this handover will not be saved.';
+    Object.assign(notice.style, {
+      margin: '12px 20px', padding: '10px 12px', borderRadius: '7px',
+      background: '#fff8e1', border: '1px solid #e9c46a', color: '#614b00',
+      fontWeight: '700', fontSize: '14px'
+    });
+    form.insertBefore(notice, form.querySelector('.form-grid'));
+  }
+  form.querySelectorAll('button[type="submit"],button:not([type])').forEach(button => { button.disabled = true; });
+  const deleteButton = document.getElementById('delete');
+  if (deleteButton) deleteButton.hidden = true;
+  if (!form.dataset.conditionalPreviewSubmitGuard) {
+    form.addEventListener('submit', event => {
+      if (form.dataset.conditionalPreviewOnly !== 'true') return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }, true);
+    form.dataset.conditionalPreviewSubmitGuard = 'true';
+  }
+  form.dataset.conditionalPreviewOnly = 'true';
+
+  await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  const placement = String(request.payload.placement || previewField.placements[0] || 'handover_after_description');
+  const target = previewField.kind === 'first_fix'
+    ? document.getElementById('firstFixFields')
+    : document.getElementById(`conditionalFields-${placement}`);
+  (target || descriptionInput)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  if (request.mode === 'pdf') {
+    try {
+      const blob = await generatePdf(true);
+      if (blob instanceof Blob) await showGeneratedPdfInViewer(blob);
+    } catch (error) {
+      console.error('Conditional field PDF preview failed:', error);
+      alert(`Unable to open the PDF preview. ${error.message || ''}`);
+    }
+  }
+}
+
+async function showGeneratedPdfInViewer(blob) {
+  const pdfjsLib = await loadPdfJs();
+  const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
+  const viewer = $('#pdfViewer');
+  viewer.innerHTML = '';
+  for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+    const page = await pdf.getPage(pageNumber);
+    const viewport = page.getViewport({ scale: 1.25 });
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    Object.assign(canvas.style, { display: 'block', width: '100%', height: 'auto', marginBottom: '12px', background: '#fff' });
+    viewer.appendChild(canvas);
+    await page.render({ canvasContext: context, viewport }).promise;
+  }
+
+  const pdfDialog = $('#pdfDialog');
+  const pdfInner = pdfDialog.querySelector(':scope > div');
+  Object.assign(pdfDialog.style, {
+    width: 'min(950px, 94vw)', maxWidth: '950px', height: '82vh', maxHeight: '82vh',
+    minHeight: '0', padding: '0', overflow: 'hidden', boxSizing: 'border-box'
+  });
+  if (pdfInner) Object.assign(pdfInner.style, { height: '100%', maxHeight: 'none', minHeight: '0', overflow: 'hidden', boxSizing: 'border-box' });
+  Object.assign(viewer.style, { height: 'auto', minHeight: '0', overflowY: 'auto', overflowX: 'hidden', overscrollBehavior: 'contain', touchAction: 'pan-y' });
+  lockPdfDialogBackground();
+  document.documentElement.classList.add('pdf-dialog-open');
+  if (!pdfDialog.open) pdfDialog.showModal();
+}
 
 async function generatePdf(viewOnly = false) {
 
