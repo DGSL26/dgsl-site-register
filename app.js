@@ -23,7 +23,17 @@ const DEFAULT_CONDITIONAL_FIELDS = [{
   label: 'Has the plumbing pressure gauge been checked and verified?',
   type: 'yes_no',
   keywords: [],
+  generateVariants: true,
   placements: ['handover_after_description', 'takeback_after_snag']
+}, {
+  id: 'builtin_first_fix',
+  kind: 'first_fix',
+  label: 'First-Fix records fields',
+  type: 'first_fix',
+  keywords: [...DEFAULT_FIRST_FIX_KEYWORDS],
+  generateVariants: true,
+  titleKeywords: [],
+  placements: ['takeback_after_snag']
 }];
 
 const DEFAULT_SITE = {
@@ -40,6 +50,7 @@ let SITE = { ...DEFAULT_SITE };
 let PHOTO_BUCKET = SITE.photoBucket;
 let FIRST_FIX_KEYWORDS = [...DEFAULT_FIRST_FIX_KEYWORDS];
 let FIRST_FIX_TITLE_KEYWORDS = [...DEFAULT_FIRST_FIX_TITLE_KEYWORDS];
+let FIRST_FIX_GENERATE_VARIANTS = true;
 let CONDITIONAL_FIELDS = DEFAULT_CONDITIONAL_FIELDS.map(field => ({ ...field }));
 let conditionalFieldAnswersDraft = {};
 
@@ -142,6 +153,13 @@ async function loadSiteConfiguration() {
     try { configuredFields = JSON.parse(configuredFields); } catch (_) { configuredFields = null; }
   }
   CONDITIONAL_FIELDS = normaliseConditionalFields(configuredFields);
+  const builtInFirstFix = CONDITIONAL_FIELDS.find(field => field.kind === 'first_fix');
+  const hasSavedFirstFixField = Array.isArray(configuredFields) && configuredFields.some(field => field?.kind === 'first_fix' || field?.id === 'builtin_first_fix');
+  if (builtInFirstFix && hasSavedFirstFixField) {
+    FIRST_FIX_KEYWORDS = builtInFirstFix.keywords.length ? [...builtInFirstFix.keywords] : [...DEFAULT_FIRST_FIX_KEYWORDS];
+    FIRST_FIX_TITLE_KEYWORDS = [...builtInFirstFix.titleKeywords];
+    FIRST_FIX_GENERATE_VARIANTS = builtInFirstFix.generateVariants;
+  }
 
   PHOTO_BUCKET = SITE.photoBucket;
 
@@ -3295,7 +3313,9 @@ function findFirstFixKeywordMatch(value) {
   FIRST_FIX_KEYWORDS.forEach(keyword => {
     const cleanKeyword = String(keyword || '').trim();
     if (!cleanKeyword) return;
-    const variants = [cleanKeyword, ...generateFirstFixVariants(cleanKeyword)];
+    const variants = FIRST_FIX_GENERATE_VARIANTS
+      ? [cleanKeyword, ...generateFirstFixVariants(cleanKeyword)]
+      : [cleanKeyword];
     if (variants.some(variant => {
       const term = String(variant || '').trim().toLocaleLowerCase();
       return term && lowerText.includes(term);
@@ -3334,6 +3354,19 @@ function getFirstFixTitleForDescription(value) {
   return useCustomTitle ? matchedKeyword : 'First-Fix';
 }
 
+const CONDITIONAL_ANSWER_OPTIONS = {
+  yes_no: ['To be completed', 'Yes', 'No', 'N/A'],
+  yes_no_other: ['To be completed', 'Yes', 'No', 'N/A', 'Other'],
+  ok_bad: ['OK', 'Bad', 'N/A', 'Other'],
+  good_bad: ['Good', 'Bad', 'N/A', 'Other'],
+  complete_outstanding: ['Complete', 'Outstanding', 'N/A', 'Other'],
+  takeback_complete: ['To be completed', 'Yes', 'No', 'N/A', 'Other'],
+  takeback_housekeeping: ['To be completed', 'Good', 'Bad', '80%', '90%', 'N/A', 'Other'],
+  takeback_snag: ['To be completed', 'Complete', 'Final snag to be done', 'N/A', 'Other'],
+  firstfix_status: ['To be completed', 'Yes', 'No', 'Outstanding', 'Other'],
+  work_permit_status: ['Work Permit Open', 'Work Permit on Hold', 'Work Permit Closed', 'Other']
+};
+
 function normaliseConditionalFields(value) {
   const parsed = Array.isArray(value) ? value : DEFAULT_CONDITIONAL_FIELDS;
   const validPlacements = new Set([
@@ -3344,27 +3377,34 @@ function normaliseConditionalFields(value) {
     'takeback_after_housekeeping', 'takeback_after_snag', 'takeback_after_first_fix'
   ]);
   return parsed.map((field, index) => {
+    const kind = field?.kind === 'first_fix' || field?.id === 'builtin_first_fix' ? 'first_fix' : 'custom';
     const legacyPlacements = Array.isArray(field?.sections)
       ? field.sections.map(section => section === 'handover' ? 'handover_after_description' : section === 'takeback' ? 'takeback_after_snag' : '')
       : [];
     const placements = [...new Set((Array.isArray(field?.placements) ? field.placements : legacyPlacements).filter(placement => validPlacements.has(placement)))];
     const keywords = Array.isArray(field?.keywords) ? field.keywords.map(item => String(item || '').trim()).filter(Boolean) : [];
     return {
-      id: String(field?.id || `conditional_field_${index + 1}`),
-      label: String(field?.label || '').trim(),
-      type: ['yes_no', 'text', 'notes'].includes(field?.type) ? field.type : 'yes_no',
+      id: String(field?.id || (kind === 'first_fix' ? 'builtin_first_fix' : `conditional_field_${index + 1}`)),
+      kind,
+      label: String(field?.label || (kind === 'first_fix' ? 'First-Fix records fields' : '')).trim(),
+      type: kind === 'first_fix' ? 'first_fix' : ([...Object.keys(CONDITIONAL_ANSWER_OPTIONS), 'custom_select', 'text', 'notes'].includes(field?.type) ? field.type : 'yes_no'),
       keywords,
-      placements
+      placements,
+      generateVariants: field?.generateVariants !== false,
+      titleKeywords: Array.isArray(field?.titleKeywords) ? field.titleKeywords.map(item => String(item || '').trim()).filter(Boolean) : [],
+      customOptions: Array.isArray(field?.customOptions) ? field.customOptions.map(item => String(item || '').trim()).filter(Boolean) : [],
+      includeOther: field?.includeOther !== false
     };
-  }).filter(field => field.label && field.placements.length);
+  }).filter(field => field.label && (field.kind === 'first_fix' || field.placements.length));
 }
 
 function conditionalFieldMatches(field, description) {
   const text = String(description || '').toLocaleLowerCase();
-  return text && field.keywords.some(keyword => {
+  return field.kind !== 'first_fix' && text && field.keywords.some(keyword => {
     const clean = String(keyword || '').trim();
     if (!clean) return false;
-    return [clean, ...generateFirstFixVariants(clean)].some(variant => {
+    const variants = field.generateVariants ? [clean, ...generateFirstFixVariants(clean)] : [clean];
+    return variants.some(variant => {
       const term = String(variant || '').trim().toLocaleLowerCase();
       return term && text.includes(term);
     });
@@ -3375,13 +3415,18 @@ function readConditionalFieldAnswersFromForm() {
   document.querySelectorAll('[data-conditional-field-id]').forEach(control => {
     const { conditionalFieldId: id, conditionalFieldSection: section } = control.dataset;
     if (!conditionalFieldAnswersDraft[id]) conditionalFieldAnswersDraft[id] = {};
-    conditionalFieldAnswersDraft[id][section] = control.value || '';
+    if (control.tagName === 'SELECT' && control.value === 'Other') {
+      const otherInput = control.closest('.conditional-field-label')?.querySelector('[data-conditional-other-id]');
+      conditionalFieldAnswersDraft[id][section] = { value: 'Other', other: otherInput?.value || '' };
+    } else {
+      conditionalFieldAnswersDraft[id][section] = control.value || '';
+    }
   });
 }
 
 function renderConditionalFields(container, placement, description) {
   const section = placement.startsWith('handover_') ? 'handover' : 'takeback';
-  const matches = CONDITIONAL_FIELDS.filter(field => field.placements.includes(placement) && conditionalFieldMatches(field, description));
+  const matches = CONDITIONAL_FIELDS.filter(field => field.kind !== 'first_fix' && field.placements.includes(placement) && conditionalFieldMatches(field, description));
   container.replaceChildren();
   container.classList.toggle('hidden', !matches.length);
 
@@ -3389,16 +3434,23 @@ function renderConditionalFields(container, placement, description) {
     const label = document.createElement('label');
     label.className = 'conditional-field-label';
     label.textContent = field.label;
-    const answer = conditionalFieldAnswersDraft[field.id]?.[section] || '';
+    const savedAnswer = conditionalFieldAnswersDraft[field.id]?.[section] || '';
+    const answer = typeof savedAnswer === 'object' ? savedAnswer.value || '' : savedAnswer;
+    const otherAnswer = typeof savedAnswer === 'object' ? savedAnswer.other || '' : '';
     let control;
-    if (field.type === 'yes_no') {
+    const answerOptions = field.type === 'custom_select'
+      ? [...field.customOptions, ...(field.includeOther && !field.customOptions.some(option => option.toLowerCase() === 'other') ? ['Other'] : [])]
+      : CONDITIONAL_ANSWER_OPTIONS[field.type];
+    if (answerOptions) {
       control = document.createElement('select');
-      [['', 'To be completed'], ['Yes', 'Yes'], ['No', 'No'], ['N/A', 'N/A']].forEach(([value, text]) => {
+      answerOptions.forEach(value => {
         const option = document.createElement('option');
         option.value = value;
-        option.textContent = text;
+        option.textContent = value;
         control.appendChild(option);
       });
+      if (answer && answerOptions.includes(answer)) control.value = answer;
+      else control.selectedIndex = 0;
     } else if (field.type === 'notes') {
       control = document.createElement('textarea');
       control.rows = 3;
@@ -3410,10 +3462,26 @@ function renderConditionalFields(container, placement, description) {
     }
     control.dataset.conditionalFieldId = field.id;
     control.dataset.conditionalFieldSection = section;
-    control.value = answer;
+    if (control.tagName !== 'SELECT') control.value = answer;
     control.addEventListener('input', readConditionalFieldAnswersFromForm);
-    control.addEventListener('change', readConditionalFieldAnswersFromForm);
+    control.addEventListener('change', () => {
+      if (control.tagName === 'SELECT') {
+        const otherInput = label.querySelector('[data-conditional-other-id]');
+        if (otherInput) otherInput.classList.toggle('hidden', control.value !== 'Other');
+      }
+      readConditionalFieldAnswersFromForm();
+    });
     label.appendChild(control);
+    if (control.tagName === 'SELECT' && answerOptions.includes('Other')) {
+      const otherInput = document.createElement('input');
+      otherInput.type = 'text';
+      otherInput.placeholder = 'Enter your own answer';
+      otherInput.dataset.conditionalOtherId = field.id;
+      otherInput.value = otherAnswer;
+      otherInput.classList.toggle('hidden', control.value !== 'Other');
+      otherInput.addEventListener('input', readConditionalFieldAnswersFromForm);
+      label.appendChild(otherInput);
+    }
     container.appendChild(label);
   });
 }
@@ -3435,12 +3503,18 @@ function getConditionalFieldAnswers() {
 function getConditionalFieldPdfEntries(description, answers, section) {
   const saved = answers && typeof answers === 'object' ? answers : {};
   return CONDITIONAL_FIELDS
-    .filter(field => field.placements.some(placement => placement.startsWith(`${section}_`)) && conditionalFieldMatches(field, description))
-    .map(field => ({
+    .filter(field => field.kind !== 'first_fix' && field.placements.some(placement => placement.startsWith(`${section}_`)) && conditionalFieldMatches(field, description))
+    .map(field => {
+      const answer = saved[field.id]?.[section];
+      const answerText = answer && typeof answer === 'object'
+        ? (answer.value === 'Other' && answer.other ? `Other: ${answer.other}` : answer.value || '')
+        : String(answer || '');
+      return {
       label: field.label,
-      value: String(saved[field.id]?.[section] || '').trim() || 'To be completed',
+      value: answerText.trim() || 'To be completed',
       placement: field.placements.find(placement => placement.startsWith(`${section}_`))
-    }));
+      };
+    });
 }
 
 function updateFirstFixFieldsVisibility() {
