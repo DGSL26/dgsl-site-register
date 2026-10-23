@@ -98,6 +98,8 @@
 @media(max-width:650px){.permit-recipient-form{grid-template-columns:1fr}.permit-recipient-form .wide{grid-column:auto}.permit-recipient-row{grid-template-columns:1fr auto}.permit-recipient-row span:nth-child(2),.permit-recipient-row span:nth-child(3){grid-column:1}.permit-recipient-row button{grid-column:2;grid-row:1/4}}
 html.permit-recipients-scroll-locked,body.permit-recipients-scroll-locked{overflow:hidden!important;overscroll-behavior:none!important}
 #permitRecipientsModal{overscroll-behavior:contain;}
+.conditional-fields-box{max-width:760px;max-height:calc(100dvh - 28px);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}.conditional-fields-list{display:grid;gap:9px;margin:14px 0;max-height:30vh;overflow:auto}.conditional-field-row{border:1px solid #d6dde3;border-radius:8px;padding:11px 12px;background:#fff}.conditional-field-row-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.conditional-field-row-title{font-weight:700;overflow-wrap:anywhere}.conditional-field-row-meta{font-size:12px;color:#68737d;line-height:1.45;margin-top:5px;overflow-wrap:anywhere}.conditional-field-row-actions{display:flex;gap:7px;flex:none}.conditional-field-editor{border-top:1px solid #e3e8ed;padding-top:12px}.conditional-field-editor>label{display:block;font-size:14px;font-weight:700;margin-top:10px}.conditional-field-editor input,.conditional-field-editor textarea,.conditional-field-editor select{display:block;width:100%;padding:10px 11px;margin:6px 0 8px;border:1px solid #ccd3d8;border-radius:6px;background:#fff;font-size:16px}.conditional-field-options{display:grid;grid-template-columns:1fr 1fr;gap:14px}.conditional-field-options>div>label{display:block;font-size:14px;font-weight:700;margin:5px 0}.conditional-field-options fieldset{border:1px solid #d6dde3;border-radius:7px;padding:7px 10px}.conditional-field-options legend{font-size:13px;font-weight:700}.conditional-field-options fieldset label{display:inline-flex;align-items:center;gap:5px;margin:3px 12px 3px 0;font-size:14px}.conditional-field-options input[type=checkbox]{width:auto;margin:0}.conditional-field-editor-actions{display:flex;gap:8px;margin-top:10px}
+@media(max-width:650px){.conditional-field-options{grid-template-columns:1fr}.conditional-field-row-head{display:block}.conditional-field-row-actions{margin-top:9px}.conditional-fields-list{max-height:25vh}}
 </style>
 </head>
 <body>
@@ -134,7 +136,8 @@ html.permit-recipients-scroll-locked,body.permit-recipients-scroll-locked{overfl
   <div class="settings-menu">
     <button class="settings-menu-btn" id="settingsDataManagement">Data Management <span id="dashboardBugBadge" class="dashboard-badge hidden"></span></button>
     <button class="settings-menu-btn hidden" id="settingsPermitRecipients">Manage Email Recipients</button>
-    <button class="settings-menu-btn" id="settingsFirstFixKeywords">Keywords</button>
+    <button class="settings-menu-btn" id="settingsFirstFixKeywords">First-Fix Keywords</button>
+    <button class="settings-menu-btn hidden" id="settingsConditionalFields">Conditional Fields</button>
   </div>
   <div class="actions">
     <button class="btn secondary" id="settingsClose">Close</button>
@@ -205,6 +208,26 @@ html.permit-recipients-scroll-locked,body.permit-recipients-scroll-locked{overfl
     <div class="error" id="firstFixKeywordError"></div>
   </div>
   <div class="actions"><button class="btn secondary" id="firstFixKeywordsClose">Close</button></div>
+</div></div>
+
+<div class="modal" id="conditionalFieldsModal"><div class="box conditional-fields-box">
+  <div class="management-modal-head"><h2>Conditional Fields</h2><button class="modal-x" id="conditionalFieldsClose" aria-label="Close">×</button></div>
+  <p class="settings-account">A field appears when its keyword or phrase is found in Work Description. Enter one or more phrases, then choose the exact position for the field in Handover, Take Back, or both. Leave a position set to “Do not show” if the field should not appear in that section.</p>
+  <div id="conditionalFieldsList" class="conditional-fields-list"></div>
+  <div class="conditional-field-editor">
+    <label for="conditionalFieldLabel">Field title</label>
+    <input id="conditionalFieldLabel" type="text" placeholder="e.g. Has the plumbing pressure gauge been checked and verified?">
+    <label for="conditionalFieldKeywords">Keywords or phrases</label>
+    <textarea id="conditionalFieldKeywords" rows="3" placeholder="Enter one phrase per line, for example:\nclose up walls\nslabbing up"></textarea>
+    <div class="conditional-field-options">
+      <div><label for="conditionalFieldType">Answer type</label><select id="conditionalFieldType"><option value="yes_no">To be completed / Yes / No / N/A</option><option value="text">Short text</option><option value="notes">Long text</option></select></div>
+      <div><label for="conditionalFieldHandoverPosition">Handover position</label><select id="conditionalFieldHandoverPosition"><option value="">Do not show in Handover</option><option value="handover_after_contractor">After Sub Contractor / Company Name</option><option value="handover_after_drawing">After Drawing / reference</option><option value="handover_after_zone">After Zone / Area</option><option value="handover_after_safety_documents">After Safety Documents</option><option value="handover_after_housekeeping">After Housekeeping at time of Handover</option><option value="handover_after_materials">After Materials Checks</option><option value="handover_after_health_safety">After Health &amp; Safety - Scaffolding / Handrails</option><option value="handover_after_description">After Work description</option><option value="handover_after_handover_date">After Handover date</option><option value="handover_after_checklist">After the Handover checklist</option></select></div>
+      <div><label for="conditionalFieldTakeBackPosition">Take Back position</label><select id="conditionalFieldTakeBackPosition"><option value="">Do not show in Take Back</option><option value="takeback_after_complete_drawings">After All works complete to drawings</option><option value="takeback_after_date">After Take Back Date</option><option value="takeback_after_housekeeping">After Housekeeping at time of Take Back</option><option value="takeback_after_snag">After DG to Snag completed works</option><option value="takeback_after_first_fix">After the First-Fix fields</option></select></div>
+    </div>
+    <div class="conditional-field-editor-actions"><button class="btn primary" id="conditionalFieldSave">Add field</button><button class="btn secondary hidden" id="conditionalFieldCancelEdit">Cancel edit</button></div>
+    <div class="error" id="conditionalFieldError" role="status" aria-live="polite"></div>
+  </div>
+  <div class="actions"><button class="btn secondary" id="conditionalFieldsDone">Close</button></div>
 </div></div>
 
 <div class="modal" id="loginModal"><div class="box" style="padding:0;overflow:hidden;max-width:500px;border-radius:14px;">
@@ -391,7 +414,7 @@ function renderSites(sites){
     });
   });
 }
-async function loadSites(){clearError();$('loading').hidden=false;$('grid').hidden=true;const {data,error}=await supabaseClient.from('sites').select('site_id,site_name,address,active,sort_order,photo_bucket,first_fix_keywords,first_fix_title_keywords').order('sort_order',{ascending:true}).order('site_name',{ascending:true});if(error){showError('Could not load the site list: '+error.message);$('loading').hidden=true;return;}cachedSites=data||[];populateManagementSites();renderSites(cachedSites);refreshDashboardBugBadge();}
+async function loadSites(){clearError();$('loading').hidden=false;$('grid').hidden=true;const {data,error}=await supabaseClient.from('sites').select('site_id,site_name,address,active,sort_order,photo_bucket,first_fix_keywords,first_fix_title_keywords,conditional_fields').order('sort_order',{ascending:true}).order('site_name',{ascending:true});if(error){showError('Could not load the site list: '+error.message);$('loading').hidden=true;return;}cachedSites=data||[];populateManagementSites();renderSites(cachedSites);refreshDashboardBugBadge();}
 let cachedSites=[];
 let permitRecipientRows=[];
 let permitCcRows=[];
@@ -418,7 +441,7 @@ function closePermitRecipients(){
   $('permitRecipientsModal').classList.remove('show');
   unlockDashboardForPermitRecipients();
 }
-async function updateAuthUI(){const {data}=await supabaseClient.auth.getSession();currentSession=data.session||null;$('userLabel').textContent='';$('addBtn').classList.toggle('hidden',!isAdmin());$('settingsPermitRecipients').classList.toggle('hidden',!isAdmin());$('settingsBtn').classList.toggle('hidden',!currentSession);$('headerLogin').classList.toggle('hidden',!!currentSession);$('settingsLogout').classList.toggle('hidden',!currentSession);if(cachedSites.length){renderSites(cachedSites);populateManagementSites();}if(!currentSession){closeDashboardDataManagement();$('managementBugReportsModal').classList.remove('show');$('managementBugDetailModal').classList.remove('show');closePermitRecipients();}refreshDashboardBugBadge();}
+async function updateAuthUI(){const {data}=await supabaseClient.auth.getSession();currentSession=data.session||null;$('userLabel').textContent='';$('addBtn').classList.toggle('hidden',!isAdmin());$('settingsPermitRecipients').classList.toggle('hidden',!isAdmin());$('settingsConditionalFields').classList.toggle('hidden',!isAdmin());$('settingsBtn').classList.toggle('hidden',!currentSession);$('headerLogin').classList.toggle('hidden',!!currentSession);$('settingsLogout').classList.toggle('hidden',!currentSession);if(cachedSites.length){renderSites(cachedSites);populateManagementSites();}if(!currentSession){closeDashboardDataManagement();$('managementBugReportsModal').classList.remove('show');$('managementBugDetailModal').classList.remove('show');closePermitRecipients();$('conditionalFieldsModal').classList.remove('show');}refreshDashboardBugBadge();}
 async function refresh(){await loadSites();}
 $('settingsBtn').onclick=()=>{$('settingsModal').classList.add('show')};
 $('headerLogin').onclick=()=>{$('loginModal').classList.add('show');setTimeout(()=>$('password').focus(),50)};
@@ -756,8 +779,144 @@ async function deleteManagementBugReport(){
 }
 
 const DEFAULT_FIRST_FIX_KEYWORDS=['First Fix','1st Fix'];
+const DEFAULT_CONDITIONAL_FIELDS=[{id:'pressure_gauge_check',label:'Has the plumbing pressure gauge been checked and verified?',type:'yes_no',keywords:[],placements:['handover_after_description','takeback_after_snag']}];
 let firstFixKeywords=[];
 let firstFixTitleKeywords=[];
+let conditionalFields=[];
+let editingConditionalFieldId=null;
+const CONDITIONAL_PLACEMENT_LABELS={
+  handover_after_contractor:'Handover: after Sub Contractor / Company Name',
+  handover_after_drawing:'Handover: after Drawing / reference',
+  handover_after_zone:'Handover: after Zone / Area',
+  handover_after_safety_documents:'Handover: after Safety Documents',
+  handover_after_housekeeping:'Handover: after Housekeeping at time of Handover',
+  handover_after_materials:'Handover: after Materials Checks',
+  handover_after_health_safety:'Handover: after Health & Safety - Scaffolding / Handrails',
+  handover_after_description:'Handover: after Work description',
+  handover_after_handover_date:'Handover: after Handover date',
+  handover_after_checklist:'Handover: after the checklist',
+  takeback_after_complete_drawings:'Take Back: after All works complete to drawings',
+  takeback_after_date:'Take Back: after Take Back Date',
+  takeback_after_housekeeping:'Take Back: after Housekeeping at time of Take Back',
+  takeback_after_snag:'Take Back: after DG to Snag completed works',
+  takeback_after_first_fix:'Take Back: after the First-Fix fields'
+};
+
+function normaliseConditionalFields(values){
+  let list=values;
+  if(typeof list==='string'){try{list=JSON.parse(list)}catch(_){list=null}}
+  if(!Array.isArray(list)) list=DEFAULT_CONDITIONAL_FIELDS;
+  const seen=new Set();
+  return list.map((field,index)=>({
+    id:String(field?.id||`conditional_field_${index+1}`),
+    label:String(field?.label||'').trim(),
+    type:['yes_no','text','notes'].includes(field?.type)?field.type:'yes_no',
+    keywords:[...new Set((Array.isArray(field?.keywords)?field.keywords:[]).map(x=>String(x||'').trim()).filter(Boolean))],
+    placements:[...new Set((Array.isArray(field?.placements)?field.placements:(Array.isArray(field?.sections)?field.sections.map(section=>section==='handover'?'handover_after_description':section==='takeback'?'takeback_after_snag':''):[])).filter(x=>Object.prototype.hasOwnProperty.call(CONDITIONAL_PLACEMENT_LABELS,x)))]
+  })).filter(field=>field.label&&field.placements.length).filter(field=>{if(seen.has(field.id))return false;seen.add(field.id);return true});
+}
+
+function getDashboardConditionalFields(){
+  const site=cachedSites.find(row=>row.conditional_fields!=null);
+  return normaliseConditionalFields(site?.conditional_fields);
+}
+
+async function saveConditionalFields(){
+  if(!isAdmin())return false;
+  const sites=cachedSites.length?cachedSites:[{site_id:'SITE1'}];
+  try{
+    for(const site of sites){
+      const {error}=await supabaseClient.from('sites').update({conditional_fields:conditionalFields}).eq('site_id',site.site_id);
+      if(error)throw error;
+    }
+    cachedSites=cachedSites.map(site=>({...site,conditional_fields:JSON.parse(JSON.stringify(conditionalFields))}));
+    return true;
+  }catch(error){
+    console.error('Conditional field save error:',error);
+    $('conditionalFieldError').textContent='Unable to save conditional fields: '+error.message;
+    return false;
+  }
+}
+
+function resetConditionalFieldEditor(){
+  editingConditionalFieldId=null;
+  $('conditionalFieldLabel').value='';
+  $('conditionalFieldKeywords').value='';
+  $('conditionalFieldType').value='yes_no';
+  $('conditionalFieldHandoverPosition').value='';
+  $('conditionalFieldTakeBackPosition').value='';
+  $('conditionalFieldSave').textContent='Add field';
+  $('conditionalFieldCancelEdit').classList.add('hidden');
+}
+
+function renderConditionalFields(){
+  const list=$('conditionalFieldsList');
+  conditionalFields=normaliseConditionalFields(conditionalFields);
+  if(!conditionalFields.length){list.innerHTML='<div class="settings-account">No conditional fields have been added.</div>';return;}
+  list.innerHTML=conditionalFields.map((field,index)=>{
+    const where=field.placements.map(placement=>CONDITIONAL_PLACEMENT_LABELS[placement]).join(' · ');
+    const words=field.keywords.length?field.keywords.join(', '):'No trigger phrases yet';
+    const type=field.type==='yes_no'?'To be completed / Yes / No / N/A':field.type==='notes'?'Long text':'Short text';
+    return `<div class="conditional-field-row"><div class="conditional-field-row-head"><div><div class="conditional-field-row-title">${escapeHtml(field.label)}</div><div class="conditional-field-row-meta">${escapeHtml(where)} · ${escapeHtml(type)}<br>Keywords: ${escapeHtml(words)}</div></div><div class="conditional-field-row-actions"><button class="btn secondary" data-conditional-edit="${index}">Edit</button><button class="btn danger" data-conditional-remove="${index}">Remove</button></div></div></div>`;
+  }).join('');
+  list.querySelectorAll('[data-conditional-edit]').forEach(button=>button.onclick=()=>editConditionalField(Number(button.dataset.conditionalEdit)));
+  list.querySelectorAll('[data-conditional-remove]').forEach(button=>button.onclick=()=>removeConditionalField(Number(button.dataset.conditionalRemove)));
+}
+
+function editConditionalField(index){
+  const field=conditionalFields[index];if(!field)return;
+  editingConditionalFieldId=field.id;
+  $('conditionalFieldLabel').value=field.label;
+  $('conditionalFieldKeywords').value=field.keywords.join('\n');
+  $('conditionalFieldType').value=field.type;
+  $('conditionalFieldHandoverPosition').value=field.placements.find(placement=>placement.startsWith('handover_'))||'';
+  $('conditionalFieldTakeBackPosition').value=field.placements.find(placement=>placement.startsWith('takeback_'))||'';
+  $('conditionalFieldSave').textContent='Save field';
+  $('conditionalFieldCancelEdit').classList.remove('hidden');
+  $('conditionalFieldLabel').focus();
+}
+
+async function saveConditionalFieldFromEditor(){
+  if(!isAdmin())return;
+  $('conditionalFieldError').textContent='';
+  const label=$('conditionalFieldLabel').value.trim();
+  const keywords=[...new Set($('conditionalFieldKeywords').value.split(/[\r\n,;]+/).map(x=>x.trim()).filter(Boolean))];
+  const placements=[$('conditionalFieldHandoverPosition').value,$('conditionalFieldTakeBackPosition').value].filter(Boolean);
+  if(!label){$('conditionalFieldError').textContent='Enter a title for the field.';return;}
+  if(!keywords.length){$('conditionalFieldError').textContent='Add at least one keyword or phrase so the field can appear.';return;}
+  if(!placements.length){$('conditionalFieldError').textContent='Choose a position in Handover, Take Back, or both.';return;}
+  const editing=editingConditionalFieldId;
+  const slug=label.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'').slice(0,35)||'field';
+  const field={id:editing||`${slug}_${Date.now().toString(36)}`,label,type:$('conditionalFieldType').value,keywords,placements};
+  const previous=JSON.parse(JSON.stringify(conditionalFields));
+  if(editing){const index=conditionalFields.findIndex(item=>item.id===editing);if(index>=0)conditionalFields[index]=field;}else conditionalFields.push(field);
+  if(await saveConditionalFields()){
+    resetConditionalFieldEditor();
+    renderConditionalFields();
+  }else{
+    conditionalFields=previous;
+    renderConditionalFields();
+  }
+}
+
+async function removeConditionalField(index){
+  if(!isAdmin())return;
+  const field=conditionalFields[index];if(!field)return;
+  if(!confirm(`Remove the conditional field “${field.label}”?`))return;
+  const previous=JSON.parse(JSON.stringify(conditionalFields));
+  conditionalFields.splice(index,1);
+  if(await saveConditionalFields())renderConditionalFields();else{conditionalFields=previous;renderConditionalFields();}
+}
+
+function openConditionalFields(){
+  if(!isAdmin())return;
+  $('conditionalFieldError').textContent='';
+  resetConditionalFieldEditor();
+  conditionalFields=getDashboardConditionalFields();
+  renderConditionalFields();
+  $('settingsModal').classList.remove('show');
+  $('conditionalFieldsModal').classList.add('show');
+}
 
 // Generates practical spelling/format variations for any keyword or phrase.
 // The canonical keyword remains the only value stored in Supabase; the site
@@ -941,6 +1100,11 @@ async function removeFirstFixKeyword(index){
 }
 
 $('settingsFirstFixKeywords').onclick=()=>{closeDashboardDataManagement();openFirstFixKeywords()};
+$('settingsConditionalFields').onclick=openConditionalFields;
+$('conditionalFieldsClose').onclick=$('conditionalFieldsDone').onclick=()=>$('conditionalFieldsModal').classList.remove('show');
+$('conditionalFieldSave').onclick=saveConditionalFieldFromEditor;
+$('conditionalFieldCancelEdit').onclick=()=>{resetConditionalFieldEditor();$('conditionalFieldError').textContent='';};
+$('conditionalFieldsModal').addEventListener('click',event=>{if(event.target===$('conditionalFieldsModal'))$('conditionalFieldsModal').classList.remove('show');});
 $('firstFixKeywordsClose').onclick=()=>{$('firstFixKeywordsModal').classList.remove('show')};
 $('firstFixKeywordAdd').onclick=addFirstFixKeyword;
 $('firstFixKeywordInput').addEventListener('keydown',e=>{if(e.key==='Enter')addFirstFixKeyword()});

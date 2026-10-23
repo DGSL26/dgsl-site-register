@@ -18,6 +18,13 @@ const SUPABASE_KEY =
 // from sites.
 const DEFAULT_FIRST_FIX_KEYWORDS = ['First Fix', '1st Fix'];
 const DEFAULT_FIRST_FIX_TITLE_KEYWORDS = [];
+const DEFAULT_CONDITIONAL_FIELDS = [{
+  id: 'pressure_gauge_check',
+  label: 'Has the plumbing pressure gauge been checked and verified?',
+  type: 'yes_no',
+  keywords: [],
+  placements: ['handover_after_description', 'takeback_after_snag']
+}];
 
 const DEFAULT_SITE = {
   id: 'SITE1',
@@ -33,6 +40,8 @@ let SITE = { ...DEFAULT_SITE };
 let PHOTO_BUCKET = SITE.photoBucket;
 let FIRST_FIX_KEYWORDS = [...DEFAULT_FIRST_FIX_KEYWORDS];
 let FIRST_FIX_TITLE_KEYWORDS = [...DEFAULT_FIRST_FIX_TITLE_KEYWORDS];
+let CONDITIONAL_FIELDS = DEFAULT_CONDITIONAL_FIELDS.map(field => ({ ...field }));
+let conditionalFieldAnswersDraft = {};
 
 const DGSL_PENDING_EMAIL_KEY = 'dgsl-open-permit-email-pending';
 const DGSL_MAIL_SCOPES = ['User.Read', 'Mail.Send'];
@@ -98,7 +107,7 @@ async function loadSiteConfiguration() {
 
   const { data, error } = await supabaseClient
     .from('sites')
-    .select('site_id,site_name,address,active,photo_bucket,first_fix_keywords,first_fix_title_keywords')
+    .select('site_id,site_name,address,active,photo_bucket,first_fix_keywords,first_fix_title_keywords,conditional_fields')
     .eq('site_id', requestedSite)
     .maybeSingle();
 
@@ -127,6 +136,12 @@ async function loadSiteConfiguration() {
   FIRST_FIX_TITLE_KEYWORDS = Array.isArray(data.first_fix_title_keywords)
     ? data.first_fix_title_keywords.map(value => String(value || '').trim()).filter(Boolean)
     : [...DEFAULT_FIRST_FIX_TITLE_KEYWORDS];
+
+  let configuredFields = data.conditional_fields;
+  if (typeof configuredFields === 'string') {
+    try { configuredFields = JSON.parse(configuredFields); } catch (_) { configuredFields = null; }
+  }
+  CONDITIONAL_FIELDS = normaliseConditionalFields(configuredFields);
 
   PHOTO_BUCKET = SITE.photoBucket;
 
@@ -801,6 +816,28 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
     const rowHeight = Math.max(9, description.length * 4.5 + 4);
     const overdue = record.status === 'Work Permit Open' && isHandoverOlderThanOneWeek(record.handoverDate);
     const showOutstandingCallout = overdue || record.status === 'Work Permit on Hold';
+    const conditionalEntries = getConditionalFieldPdfEntries(
+      record.description,
+      record.takeBackChecklist?.conditionalFieldAnswers,
+      'handover'
+    ).map(entry => ({ ...entry, label: `${entry.label} (Handover)` })).concat(getConditionalFieldPdfEntries(
+      record.description,
+      record.takeBackChecklist?.conditionalFieldAnswers,
+      'takeback'
+    ).map(entry => ({ ...entry, label: `${entry.label} (Take Back)` })));
+    let conditionalLines = [];
+    let conditionalBoxHeight = 0;
+    if (conditionalEntries.length) {
+      measurePdf.setFont('helvetica', 'normal');
+      measurePdf.setFontSize(8);
+      conditionalLines = conditionalEntries.map(entry => {
+        const labelLines = measurePdf.splitTextToSize(`${entry.label}:`, noteWidth - 4);
+        const valueLines = measurePdf.splitTextToSize(entry.value, noteWidth - 4);
+        return { label: labelLines, value: valueLines };
+      });
+      const lineHeight = conditionalLines.reduce((height, entry) => height + entry.label.length * 3.6 + entry.value.length * 3.6 + 1.5, 0);
+      conditionalBoxHeight = Math.max(16, lineHeight + 11);
+    }
     let noteLines = [];
     let noteBoxHeight = 0;
 
@@ -813,12 +850,13 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
       noteBoxHeight = Math.max(13, 10 + noteLines.length * 3.8);
     }
 
-    return { record, description, rowHeight, overdue, showOutstandingCallout, noteLines, noteBoxHeight };
+    return { record, description, rowHeight, overdue, showOutstandingCallout, noteLines, noteBoxHeight, conditionalLines, conditionalBoxHeight };
   });
   let layoutY = 71;
   layoutRows.forEach(row => {
     layoutY += row.rowHeight;
     if (row.showOutstandingCallout) layoutY += 1.5 + row.noteBoxHeight + 2;
+    if (row.conditionalBoxHeight) layoutY += 1.5 + row.conditionalBoxHeight + 2;
   });
   const pageHeight = Math.max(297, layoutY + 8 + 14);
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pageWidth, pageHeight] });
@@ -926,6 +964,33 @@ async function generateWorkPermitOverviewPdf(contractor, permits) {
       pdf.text(row.noteLines, margin + 6, y + 9);
       pdf.setTextColor(0, 0, 0);
       y += row.noteBoxHeight + 2;
+    }
+
+    if (row.conditionalBoxHeight) {
+      y += 1.5;
+      pdf.setFillColor(245, 249, 253);
+      pdf.setDrawColor(77, 117, 154);
+      pdf.setLineWidth(0.35);
+      pdf.roundedRect(margin, y, contentWidth, row.conditionalBoxHeight, 1.5, 1.5, 'FD');
+      pdf.setFillColor(31, 78, 120);
+      pdf.roundedRect(margin, y, 2.2, row.conditionalBoxHeight, 1, 1, 'F');
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(7);
+      pdf.setTextColor(31, 78, 120);
+      pdf.text('ADDITIONAL CHECKS', margin + 6, y + 4.5);
+      let checkY = y + 9;
+      row.conditionalLines.forEach(entry => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(8);
+        pdf.setTextColor(48, 48, 48);
+        pdf.text(entry.label, margin + 6, checkY);
+        checkY += entry.label.length * 3.6;
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(entry.value, margin + 6, checkY);
+        checkY += entry.value.length * 3.6 + 1.5;
+      });
+      pdf.setTextColor(0, 0, 0);
+      y += row.conditionalBoxHeight + 2;
     }
   });
 
@@ -3269,6 +3334,115 @@ function getFirstFixTitleForDescription(value) {
   return useCustomTitle ? matchedKeyword : 'First-Fix';
 }
 
+function normaliseConditionalFields(value) {
+  const parsed = Array.isArray(value) ? value : DEFAULT_CONDITIONAL_FIELDS;
+  const validPlacements = new Set([
+    'handover_after_contractor', 'handover_after_drawing', 'handover_after_zone',
+    'handover_after_safety_documents', 'handover_after_housekeeping', 'handover_after_materials',
+    'handover_after_health_safety', 'handover_after_description', 'handover_after_handover_date',
+    'handover_after_checklist', 'takeback_after_complete_drawings', 'takeback_after_date',
+    'takeback_after_housekeeping', 'takeback_after_snag', 'takeback_after_first_fix'
+  ]);
+  return parsed.map((field, index) => {
+    const legacyPlacements = Array.isArray(field?.sections)
+      ? field.sections.map(section => section === 'handover' ? 'handover_after_description' : section === 'takeback' ? 'takeback_after_snag' : '')
+      : [];
+    const placements = [...new Set((Array.isArray(field?.placements) ? field.placements : legacyPlacements).filter(placement => validPlacements.has(placement)))];
+    const keywords = Array.isArray(field?.keywords) ? field.keywords.map(item => String(item || '').trim()).filter(Boolean) : [];
+    return {
+      id: String(field?.id || `conditional_field_${index + 1}`),
+      label: String(field?.label || '').trim(),
+      type: ['yes_no', 'text', 'notes'].includes(field?.type) ? field.type : 'yes_no',
+      keywords,
+      placements
+    };
+  }).filter(field => field.label && field.placements.length);
+}
+
+function conditionalFieldMatches(field, description) {
+  const text = String(description || '').toLocaleLowerCase();
+  return text && field.keywords.some(keyword => {
+    const clean = String(keyword || '').trim();
+    if (!clean) return false;
+    return [clean, ...generateFirstFixVariants(clean)].some(variant => {
+      const term = String(variant || '').trim().toLocaleLowerCase();
+      return term && text.includes(term);
+    });
+  });
+}
+
+function readConditionalFieldAnswersFromForm() {
+  document.querySelectorAll('[data-conditional-field-id]').forEach(control => {
+    const { conditionalFieldId: id, conditionalFieldSection: section } = control.dataset;
+    if (!conditionalFieldAnswersDraft[id]) conditionalFieldAnswersDraft[id] = {};
+    conditionalFieldAnswersDraft[id][section] = control.value || '';
+  });
+}
+
+function renderConditionalFields(container, placement, description) {
+  const section = placement.startsWith('handover_') ? 'handover' : 'takeback';
+  const matches = CONDITIONAL_FIELDS.filter(field => field.placements.includes(placement) && conditionalFieldMatches(field, description));
+  container.replaceChildren();
+  container.classList.toggle('hidden', !matches.length);
+
+  matches.forEach(field => {
+    const label = document.createElement('label');
+    label.className = 'conditional-field-label';
+    label.textContent = field.label;
+    const answer = conditionalFieldAnswersDraft[field.id]?.[section] || '';
+    let control;
+    if (field.type === 'yes_no') {
+      control = document.createElement('select');
+      [['', 'To be completed'], ['Yes', 'Yes'], ['No', 'No'], ['N/A', 'N/A']].forEach(([value, text]) => {
+        const option = document.createElement('option');
+        option.value = value;
+        option.textContent = text;
+        control.appendChild(option);
+      });
+    } else if (field.type === 'notes') {
+      control = document.createElement('textarea');
+      control.rows = 3;
+      control.placeholder = 'Enter details';
+    } else {
+      control = document.createElement('input');
+      control.type = 'text';
+      control.placeholder = 'Enter details';
+    }
+    control.dataset.conditionalFieldId = field.id;
+    control.dataset.conditionalFieldSection = section;
+    control.value = answer;
+    control.addEventListener('input', readConditionalFieldAnswersFromForm);
+    control.addEventListener('change', readConditionalFieldAnswersFromForm);
+    label.appendChild(control);
+    container.appendChild(label);
+  });
+}
+
+function updateConditionalFieldsVisibility() {
+  readConditionalFieldAnswersFromForm();
+  const description = form.elements.description?.value || '';
+  document.querySelectorAll('.conditional-fields-container').forEach(container => {
+    const placement = container.id.replace('conditionalFields-', '');
+    renderConditionalFields(container, placement, description);
+  });
+}
+
+function getConditionalFieldAnswers() {
+  readConditionalFieldAnswersFromForm();
+  return conditionalFieldAnswersDraft;
+}
+
+function getConditionalFieldPdfEntries(description, answers, section) {
+  const saved = answers && typeof answers === 'object' ? answers : {};
+  return CONDITIONAL_FIELDS
+    .filter(field => field.placements.some(placement => placement.startsWith(`${section}_`)) && conditionalFieldMatches(field, description))
+    .map(field => ({
+      label: field.label,
+      value: String(saved[field.id]?.[section] || '').trim() || 'To be completed',
+      placement: field.placements.find(placement => placement.startsWith(`${section}_`))
+    }));
+}
+
 function updateFirstFixFieldsVisibility() {
 
   const fields =
@@ -3358,6 +3532,8 @@ function updateFirstFixFieldsVisibility() {
 
   requestAnimationFrame(alignFirstFixFields);
 
+  updateConditionalFieldsVisibility();
+
 }
 
 window.addEventListener('resize', () => {
@@ -3380,6 +3556,7 @@ function getTakeBackChecklist() {
 
   result.handoverNotes =
     form.elements.handoverNotes?.value || '';
+  result.conditionalFieldAnswers = getConditionalFieldAnswers();
 
   document
     .querySelectorAll(
@@ -3767,7 +3944,10 @@ setupFirstFixStatusOther();
 if (form.elements.description) {
   form.elements.description.addEventListener(
     'input',
-    updateFirstFixFieldsVisibility
+    () => {
+      updateFirstFixFieldsVisibility();
+      updateConditionalFieldsVisibility();
+    }
   );
 }
 
@@ -3811,6 +3991,7 @@ function open(x, showDialog = true) {
 
 
   form.reset();
+  conditionalFieldAnswersDraft = {};
 
   const updateHandoverWrap = $('#updateHandoverWrap');
   if (updateHandoverWrap) {
@@ -3992,7 +4173,11 @@ otherField.style.display =
   }
 
 
+  conditionalFieldAnswersDraft = x?.takeBackChecklist?.conditionalFieldAnswers && typeof x.takeBackChecklist.conditionalFieldAnswers === 'object'
+    ? JSON.parse(JSON.stringify(x.takeBackChecklist.conditionalFieldAnswers))
+    : {};
   updateFirstFixFieldsVisibility();
+  updateConditionalFieldsVisibility();
 
 
   if (x) {
@@ -5907,6 +6092,7 @@ healthSafetyScaffolding:
       : form.elements.firstFixRecordsStatus?.value || '',
   firstFixRecordsLocation:
     form.elements.firstFixRecordsLocation?.value || '',
+  conditionalFieldAnswers: getConditionalFieldAnswers(),
   notes: form.elements.notes?.value || '',
   contractorSigner:
     form.elements.contractorSigner?.value || '',
@@ -6067,6 +6253,13 @@ healthSafetyScaffolding:
 
     }
 
+    function addConditionalFieldsAt(placement) {
+      const section = placement.startsWith('handover_') ? 'handover' : 'takeback';
+      getConditionalFieldPdfEntries(data.description, data.conditionalFieldAnswers, section)
+        .filter(entry => entry.placement === placement)
+        .forEach(entry => addField(entry.label, entry.value));
+    }
+
 
     // --------------------------------------------------------
     // HANDOVER DETAILS
@@ -6076,18 +6269,21 @@ healthSafetyScaffolding:
       'Zone / Area',
       data.zone
     );
+    addConditionalFieldsAt('handover_after_zone');
 
 
     addField(
       'Sub Contractor / Company Name',
       data.contractor
     );
+    addConditionalFieldsAt('handover_after_contractor');
 
 
     addField(
       'Drawing / Reference',
       data.drawing
     );
+    addConditionalFieldsAt('handover_after_drawing');
 
 
     // Show "Outstanding" in red in the PDF.
@@ -6106,24 +6302,28 @@ healthSafetyScaffolding:
         data.level
       );
     }
+    addConditionalFieldsAt('handover_after_safety_documents');
 
 
     addField(
       'Housekeeping at time of Handover',
       data.trade
     );
+    addConditionalFieldsAt('handover_after_housekeeping');
 
 
     addField(
       'Materials Checks',
       data.foreman
     );
+    addConditionalFieldsAt('handover_after_materials');
 
 
     addField(
       'Health & Safety - Scaffolding / Handrails',
       data.healthSafetyScaffolding
     );
+    addConditionalFieldsAt('handover_after_health_safety');
 
 
     addField(
@@ -6131,11 +6331,14 @@ healthSafetyScaffolding:
       data.description
     );
 
+    addConditionalFieldsAt('handover_after_description');
+
 
     addField(
       'Handover Date',
       formatDate(data.handoverDate)
     );
+    addConditionalFieldsAt('handover_after_handover_date');
 
 
     // --------------------------------------------------------
@@ -6359,6 +6562,8 @@ healthSafetyScaffolding:
     );
 
 
+    addConditionalFieldsAt('handover_after_checklist');
+
     if (data.handoverNotes.trim()) {
       if (y > 270) {
         pdf.addPage();
@@ -6369,7 +6574,6 @@ healthSafetyScaffolding:
       }
       addField('Handover Notes / Outstanding Items', data.handoverNotes);
     }
-
 
     // --------------------------------------------------------
     // PAGE 2: DGSL TAKE BACK DETAILS
@@ -6418,21 +6622,25 @@ healthSafetyScaffolding:
       'Take Back Date',
       formatDate(data.takeBackDate)
     );
+    addConditionalFieldsAt('takeback_after_date');
 
     addField(
       'All works complete to drawings',
       data.takeBackCompleteDrawings
     );
+    addConditionalFieldsAt('takeback_after_complete_drawings');
 
     addField(
       'Housekeeping at time of Take Back',
       data.takeBackHousekeeping
     );
+    addConditionalFieldsAt('takeback_after_housekeeping');
 
     addField(
       'DG to Snag completed works',
       data.takeBackSnagCompleted
     );
+    addConditionalFieldsAt('takeback_after_snag');
 
     if (isFirstFixWorkDescription(data.description)) {
       addField(
@@ -6445,6 +6653,7 @@ healthSafetyScaffolding:
         data.firstFixRecordsLocation
       );
     }
+    addConditionalFieldsAt('takeback_after_first_fix');
 
     // --------------------------------------------------------
     // NOTES

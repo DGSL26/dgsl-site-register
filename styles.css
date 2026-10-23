@@ -2186,6 +2186,29 @@ body.overview-email-scroll-locked {
   line-height: 1.25;
 }
 
+.conditional-fields-container {
+  display: grid;
+  gap: 12px;
+}
+
+.conditional-fields-container.hidden {
+  display: none !important;
+}
+
+.conditional-field-label {
+  display: block;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.conditional-field-label input,
+.conditional-field-label select,
+.conditional-field-label textarea {
+  display: block;
+  margin-top: 6px;
+  font-weight: 400;
+}
+
 @media (max-width: 700px) {
   .first-fix-fields > label {
     padding-top: 0 !important;
