@@ -2089,18 +2089,16 @@ let photosToRemove = [];
   let takeBackChecklist = {};
 
   try {
-
-    takeBackChecklist =
-      x.take_back_checklist
-        ? JSON.parse(
-            x.take_back_checklist
-          )
-        : {};
-
+    const savedChecklist = x.take_back_checklist;
+    if (typeof savedChecklist === 'string') {
+      takeBackChecklist = savedChecklist ? JSON.parse(savedChecklist) : {};
+    } else if (savedChecklist && typeof savedChecklist === 'object' && !Array.isArray(savedChecklist)) {
+      // Supabase returns json/jsonb columns as native objects. Older text
+      // columns arrive as JSON strings, so accept both representations.
+      takeBackChecklist = savedChecklist;
+    }
   } catch {
-
     takeBackChecklist = {};
-
   }
 
 
@@ -4081,6 +4079,15 @@ function open(x, showDialog = true) {
 
   form.reset();
   conditionalFieldAnswersDraft = {};
+
+  // Remove controls rendered for the previous handover before loading the
+  // saved answers for this one. Otherwise updateConditionalFieldsVisibility()
+  // can read the previous dropdown values and overwrite the answers being
+  // restored from this record.
+  document.querySelectorAll('.conditional-fields-container').forEach(container => {
+    container.replaceChildren();
+    container.classList.add('hidden');
+  });
 
   const updateHandoverWrap = $('#updateHandoverWrap');
   if (updateHandoverWrap) {
