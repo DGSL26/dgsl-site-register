@@ -3267,41 +3267,56 @@ function possibleCompoundSplits(word) {
   return results;
 }
 
-function generateFirstFixVariants(value) {
-  const raw = String(value || '').trim();
-  if (!raw) return [];
-  const base = splitCamelAndSeparators(raw);
-  const words = base.split(' ').filter(Boolean);
-  const variants = new Set();
-  const add = v => { const x = String(v || '').trim(); if (x) variants.add(x); };
+const KEYWORD_NUMBER_WORDS={
+  '1st':['first','1','one'],'first':['1st','1','one'],'1':['1st','first','one'],'one':['1','1st','first'],
+  '2nd':['second','2','two'],'second':['2nd','2','two'],'2':['2nd','second','two'],'two':['2','2nd','second'],
+  '3rd':['third','3','three'],'third':['3rd','3','three'],'3':['3rd','third','three'],'three':['3','3rd','third'],
+  '4th':['fourth','4','four'],'fourth':['4th','4','four'],'4':['4th','fourth','four'],'four':['4','4th','fourth'],
+  '5th':['fifth','5','five'],'fifth':['5th','5','five'],'5':['5th','fifth','five'],'five':['5','5th','fifth'],
+  '6th':['sixth','6','six'],'sixth':['6th','6','six'],'6':['6th','sixth','six'],'six':['6','6th','sixth'],
+  '7th':['seventh','7','seven'],'seventh':['7th','7','seven'],'7':['7th','seventh','seven'],'seven':['7','7th','seventh'],
+  '8th':['eighth','8','eight'],'eighth':['8th','8','eight'],'8':['8th','eighth','eight'],'eight':['8','8th','eighth'],
+  '9th':['ninth','9','nine'],'ninth':['9th','9','nine'],'9':['9th','ninth','nine'],'nine':['9','9th','ninth'],
+  '10th':['tenth','10','ten'],'tenth':['10th','10','ten'],'10':['10th','tenth','ten'],'ten':['10','10th','tenth'],
+  '11th':['eleventh','11','eleven'],'eleventh':['11th','11','eleven'],'11':['11th','eleventh','eleven'],'eleven':['11','11th','eleventh'],
+  '12th':['twelfth','12','twelve'],'twelfth':['12th','12','twelve'],'12':['12th','twelfth','twelve'],'twelve':['12','12th','twelfth'],
+  '13th':['thirteenth','13','thirteen'],'thirteenth':['13th','13','thirteen'],'13':['13th','thirteenth','thirteen'],'thirteen':['13','13th','thirteenth'],
+  '14th':['fourteenth','14','fourteen'],'fourteenth':['14th','14','fourteen'],'14':['14th','fourteenth','fourteen'],'fourteen':['14','14th','fourteenth'],
+  '15th':['fifteenth','15','fifteen'],'fifteenth':['15th','15','fifteen'],'15':['15th','fifteenth','fifteen'],'fifteen':['15','15th','fifteenth'],
+  '16th':['sixteenth','16','sixteen'],'sixteenth':['16th','16','sixteen'],'16':['16th','sixteenth','sixteen'],'sixteen':['16','16th','sixteenth'],
+  '17th':['seventeenth','17','seventeen'],'seventeenth':['17th','17','seventeen'],'17':['17th','seventeenth','seventeen'],'seventeen':['17','17th','seventeenth'],
+  '18th':['eighteenth','18','eighteen'],'eighteenth':['18th','18','eighteen'],'18':['18th','eighteenth','eighteen'],'eighteen':['18','18th','eighteenth'],
+  '19th':['nineteenth','19','nineteen'],'nineteenth':['19th','19','nineteen'],'19':['19th','nineteenth','nineteen'],'nineteen':['19','19th','nineteenth'],
+  '20th':['twentieth','20','twenty'],'twentieth':['20th','20','twenty'],'20':['20th','twentieth','twenty'],'twenty':['20','20th','twentieth']
+};
 
+function generateFirstFixVariants(value){
+  const raw=String(value||'').trim();
+  if(!raw)return [];
+  const words=splitCamelAndSeparators(raw).toLowerCase().split(' ').filter(Boolean);
+  const variants=new Set();
+  const add=value=>{const text=String(value||'').trim();if(text)variants.add(text);};
+  const addSequence=parts=>{
+    if(!parts.length)return;
+    const lower=parts.map(word=>word.toLowerCase());
+    const title=lower.map(word=>word.charAt(0).toUpperCase()+word.slice(1));
+    const sentence=lower.map((word,index)=>index===0?word.charAt(0).toUpperCase()+word.slice(1):word);
+    const upper=lower.map(word=>word.toUpperCase());
+    const cases=[lower,title,sentence,upper];
+    for(const separator of [' ','-','_',''])for(const casing of cases)add(casing.join(separator));
+  };
   add(raw);
-  add(base);
-  add(words.join(' '));
-  add(words.join(''));
-  add(words.join('-'));
-  add(words.join('_'));
-  if (words.length > 1) {
-    add(words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(''));
-    add(words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join('-'));
-    add(words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' '));
+  const options=words.map(word=>[...new Set([word,...(KEYWORD_NUMBER_WORDS[word]||[]),...possibleCompoundSplits(word)])]);
+  let visited=0;
+  function combine(index,current){
+    if(visited>=512)return;
+    if(index>=options.length){visited++;addSequence(current.join(' ').split(' ').filter(Boolean));return;}
+    options[index].forEach(option=>combine(index+1,current.concat(option.split(' '))));
   }
-
-  const splitOptions = words.map(word => [word, ...possibleCompoundSplits(word)]);
-  function combine(index, current) {
-    if (index >= splitOptions.length) {
-      const parts = current.join(' ').split(' ').filter(Boolean);
-      add(parts.join(' '));
-      add(parts.join('-'));
-      add(parts.join(''));
-      return;
-    }
-    splitOptions[index].forEach(option => combine(index + 1, current.concat(option.split(' '))));
-  }
-  if (words.length) combine(0, []);
-
-  return [...variants].filter(v => v.toLowerCase() !== raw.toLowerCase());
+  if(words.length)combine(0,[]);
+  return [...variants].filter(variant=>variant.toLowerCase()!==raw.toLowerCase());
 }
+
 
 function findFirstFixKeywordMatch(value) {
   const text = String(value || '');
@@ -6098,7 +6113,7 @@ async function launchConditionalFieldPreviewFromUrl() {
 }
 
 async function showGeneratedPdfInViewer(blob) {
-  const pdfjsLib = await loadPdfJs();
+  const pdfjsLib = await loadPdfJsForConditionalPreview();
   const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await blob.arrayBuffer()) }).promise;
   const viewer = $('#pdfViewer');
   viewer.innerHTML = '';
@@ -6125,6 +6140,20 @@ async function showGeneratedPdfInViewer(blob) {
   lockPdfDialogBackground();
   document.documentElement.classList.add('pdf-dialog-open');
   if (!pdfDialog.open) pdfDialog.showModal();
+}
+
+async function loadPdfJsForConditionalPreview() {
+  if (window.pdfjsLib) return window.pdfjsLib;
+  await new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('The PDF preview library could not be loaded.'));
+    document.head.appendChild(script);
+  });
+  if (!window.pdfjsLib) throw new Error('The PDF preview library is unavailable.');
+  window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  return window.pdfjsLib;
 }
 
 async function generatePdf(viewOnly = false) {
