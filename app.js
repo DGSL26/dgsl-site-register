@@ -4376,16 +4376,14 @@ const isAndroidDevice = /Android/i.test(navigator.userAgent || '');
 
 function closePhotoSourceMenu() {
   if (!photoSourceMenu) return;
-  photoSourceMenu.classList.add('hidden');
-  photoSourceMenu.setAttribute('aria-hidden', 'true');
+  if (photoSourceMenu.open) photoSourceMenu.close();
   choosePhotosButton?.focus();
 }
 
 if (choosePhotosButton) {
   choosePhotosButton.onclick = () => {
     if (isAndroidDevice && photoSourceMenu) {
-      photoSourceMenu.classList.remove('hidden');
-      photoSourceMenu.setAttribute('aria-hidden', 'false');
+      if (!photoSourceMenu.open) photoSourceMenu.showModal();
       photoSourceMenu.querySelector('[data-photo-source="library"]')?.focus();
     } else {
       photoGalleryInput?.click();

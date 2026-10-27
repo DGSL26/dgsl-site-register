@@ -859,10 +859,10 @@ dialog::backdrop {
   justify-content: center;
   min-height: 40px;
   padding: 9px 14px;
-  border: 1px solid #cbd5df;
+  border: 1px solid #c8cfd6;
   border-radius: 6px;
-  background: #fff;
-  color: #243447;
+  background: #e9edf1;
+  color: #34404b;
   font: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -870,7 +870,7 @@ dialog::backdrop {
 }
 
 .photo-picker-button:hover {
-  background: #f1f5f8;
+  background: #dfe4e9;
 }
 
 .photo-source-input {
@@ -885,28 +885,22 @@ dialog::backdrop {
   border: 0;
 }
 
-.photo-source-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: rgb(17 24 39 / 38%);
-}
-
-.photo-source-overlay.hidden {
-  display: none !important;
-}
-
-.photo-source-card {
-  width: min(360px, 100%);
-  padding: 20px;
+.photo-source-dialog {
+  width: min(360px, calc(100vw - 32px));
+  max-width: 360px;
+  padding: 0;
   border: 1px solid #d9e0e6;
   border-radius: 16px;
   background: #fff;
   box-shadow: 0 18px 50px rgb(0 0 0 / 24%);
+}
+
+.photo-source-dialog::backdrop {
+  background: rgb(17 24 39 / 38%);
+}
+
+.photo-source-card {
+  padding: 20px;
 }
 
 .photo-source-card h3 {
