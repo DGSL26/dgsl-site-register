@@ -1139,23 +1139,36 @@
 
     <!-- PHOTOS -->
 
-    <label class="wide">
+    <div class="wide site-photos-field">
 
-  Site photos
+  <div class="site-photos-title">Site photos</div>
 
-  <input
-    id="photos"
-    name="photos"
-    type="file"
-    accept="image/*"
-    multiple
-  >
+  <div class="photo-picker-actions">
+    <label class="photo-picker-button" for="photos">Choose from gallery</label>
+    <input
+      class="photo-source-input"
+      id="photos"
+      name="photos"
+      type="file"
+      accept="image/*"
+      multiple
+    >
+
+    <label class="photo-picker-button photo-camera-button" for="cameraPhoto">Take a photo</label>
+    <input
+      class="photo-source-input"
+      id="cameraPhoto"
+      type="file"
+      accept="image/*"
+      capture="environment"
+    >
+  </div>
 
   <small>
-    Select multiple photos from your gallery, or choose the camera option to take a photo.
+    Choose multiple photos from your gallery, or take a new photo with your camera.
   </small>
 
-</label>
+</div>
 
 
     <div

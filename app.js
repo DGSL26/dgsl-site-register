@@ -4367,9 +4367,12 @@ $('#cancel2').onclick =
 
 // Mobile camera/gallery pickers replace the contents of the file
 // input each time they are opened. Accumulate each selection here.
-if (form.elements.photos) {
+[
+  form.elements.photos,
+  document.getElementById('cameraPhoto')
+].filter(Boolean).forEach(photoInput => {
 
-  form.elements.photos.onchange =
+  photoInput.onchange =
     e => {
 
       const selected =
@@ -4396,7 +4399,7 @@ if (form.elements.photos) {
 
     };
 
-}
+});
 
 function renderPendingPhotoPreviews() {
 

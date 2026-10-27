@@ -843,6 +843,63 @@ dialog::backdrop {
 
 }
 
+.site-photos-field {
+  display: grid;
+  gap: 8px;
+}
+
+.site-photos-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.photo-picker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.photo-picker-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid #cbd5df;
+  border-radius: 6px;
+  background: #fff;
+  color: #243447;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.photo-picker-button:hover {
+  background: #f1f5f8;
+}
+
+.photo-camera-button {
+  border-color: #1f4e78;
+  background: #1f4e78;
+  color: #fff;
+}
+
+.photo-camera-button:hover {
+  background: #173b5d;
+}
+
+.photo-source-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 
 .section-heading {
 
