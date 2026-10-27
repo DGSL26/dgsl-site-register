@@ -4367,9 +4367,54 @@ $('#cancel2').onclick =
 
 // Mobile camera/gallery pickers replace the contents of the file
 // input each time they are opened. Accumulate each selection here.
+const photoGalleryInput = document.getElementById('photos');
+const photoCameraInput = document.getElementById('cameraPhoto');
+const photoFilesInput = document.getElementById('photosFromFiles');
+const photoSourceMenu = document.getElementById('photoSourceMenu');
+const choosePhotosButton = document.getElementById('choosePhotosButton');
+const isAndroidDevice = /Android/i.test(navigator.userAgent || '');
+
+function closePhotoSourceMenu() {
+  if (!photoSourceMenu) return;
+  photoSourceMenu.classList.add('hidden');
+  photoSourceMenu.setAttribute('aria-hidden', 'true');
+  choosePhotosButton?.focus();
+}
+
+if (choosePhotosButton) {
+  choosePhotosButton.onclick = () => {
+    if (isAndroidDevice && photoSourceMenu) {
+      photoSourceMenu.classList.remove('hidden');
+      photoSourceMenu.setAttribute('aria-hidden', 'false');
+      photoSourceMenu.querySelector('[data-photo-source="library"]')?.focus();
+    } else {
+      photoGalleryInput?.click();
+    }
+  };
+}
+
+if (photoSourceMenu) {
+  photoSourceMenu.addEventListener('click', event => {
+    if (event.target === photoSourceMenu) {
+      closePhotoSourceMenu();
+      return;
+    }
+
+    const source = event.target.closest('[data-photo-source]')?.dataset.photoSource;
+    if (!source) return;
+
+    closePhotoSourceMenu();
+
+    if (source === 'library') photoGalleryInput?.click();
+    if (source === 'camera') photoCameraInput?.click();
+    if (source === 'files') photoFilesInput?.click();
+  });
+}
+
 [
-  form.elements.photos,
-  document.getElementById('cameraPhoto')
+  photoGalleryInput,
+  photoCameraInput,
+  photoFilesInput
 ].filter(Boolean).forEach(photoInput => {
 
   photoInput.onchange =
@@ -4382,6 +4427,10 @@ $('#cancel2').onclick =
           file =>
             file.type.startsWith('image/')
         );
+
+      if ((e.target.files?.length || 0) > selected.length) {
+        alert('Please choose image files only.');
+      }
 
       if (selected.length) {
 
