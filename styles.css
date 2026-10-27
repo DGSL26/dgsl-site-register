@@ -873,6 +873,18 @@ dialog::backdrop {
   background: #dfe4e9;
 }
 
+/* Keep the photo button grey instead of using iOS's native button finish. */
+#choosePhotosButton,
+#choosePhotosButton:hover,
+#choosePhotosButton:active {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  background-color: #e9edf1 !important;
+  background-image: none !important;
+  border: 1px solid #c8cfd6 !important;
+  color: #34404b !important;
+}
+
 .photo-source-input {
   position: absolute;
   width: 1px;
