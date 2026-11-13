@@ -1,1324 +1,180 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#1f4e78">
-<title>DGSL Site Register</title>
-<link rel="stylesheet" href="styles.css">
-</head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="format-detection" content="telephone=no,address=no,email=no,date=no"><title>SitePlan — Knocksedan PH3</title>
+<link rel="stylesheet" href="styles.css?v=20261112-phone-header-v5"><style>
+aside.sidebar .nav button,aside.sidebar .nav button:not(.active){display:flex!important;flex-direction:row!important;align-items:center!important;gap:8px!important;justify-content:flex-start!important}
+button.mobile-sub-back{display:none!important}
+aside.sidebar .nav .nav-icon{display:inline-grid!important;flex:0 0 16px!important;width:16px!important;min-width:16px!important;height:18px!important;margin:0!important;padding:0!important;place-items:center!important;text-align:center!important;line-height:1!important}
+aside.sidebar .nav button>span:last-child{display:inline-block!important;flex:0 1 auto!important;min-width:0!important;margin:0!important;padding:0!important}
+aside.sidebar .nav .nav-settings{margin-top:auto!important;font-size:14px!important}
+html body.guest-view aside.sidebar nav.nav button:not([data-view="overview"]):not([data-view="subcontractors"]){display:none!important}
+html body.guest-view aside.sidebar nav.nav button[data-view="overview"],html body.guest-view aside.sidebar nav.nav button[data-view="subcontractors"]{display:flex!important}
+@media (max-width:900px), (max-device-width:1024px), (hover:none) and (pointer:coarse){html body.guest-view aside.sidebar nav.nav button:not([data-view="overview"]):not([data-view="subcontractors"]){display:none!important}html body.guest-view aside.sidebar nav.nav button[data-view="overview"],html body.guest-view aside.sidebar nav.nav button[data-view="subcontractors"]{display:flex!important;flex:1 1 0!important}html body .mobile-email-entry{display:none!important}}
+#sequence .sequence-separator{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important}
+#sequence .sequence-actions{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;gap:0!important;margin:0!important;padding:0!important;white-space:nowrap!important}
+#sequence .sequence-actions>button{box-sizing:border-box!important;display:inline-grid!important;flex:0 0 28px!important;place-items:center!important;width:28px!important;min-width:28px!important;height:28px!important;min-height:28px!important;margin:0 5px 0 0!important;padding:0!important;border:1px solid #d5dee7!important;border-radius:6px!important;background:#fff!important;color:#425a70!important;line-height:1!important;font-size:15px!important}
+#sequence .sequence-actions>button:last-child{margin-right:0!important}
+/* Phone and tablet layout: compact header, only two navigation tabs, one focused panel. */
+@media (max-width:900px), (max-device-width:1024px), (hover:none) and (pointer:coarse){
+  html,body{width:100%;min-height:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body .app{display:flex!important;flex-direction:column!important;min-height:100dvh;height:auto;overflow:visible}
+  body .top{order:1;margin:0;width:100%;height:62px;min-height:62px;padding:0 12px;gap:8px}
+  body .project{gap:8px;min-width:0}
+  body .company-logo{width:68px;height:30px}
+  body .project strong{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  body .topright{gap:6px}
+  body #userEmail,body .mobile-email-entry{display:none!important}
+  body .topright>.btn{padding:7px 9px;font-size:12px;white-space:nowrap}
+  body .sidebar{order:2;position:sticky;top:0;z-index:20;inset:auto;width:100%;height:auto;padding:8px 12px;background:var(--navy);display:block}
+  body .brand{display:none}
+  body .nav{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;overflow:visible;margin:0;min-height:0}
+  html body.guest-view aside.sidebar nav.nav button{display:none!important;min-width:0}
+  html body.guest-view aside.sidebar nav.nav button[data-view="overview"],html body.guest-view aside.sidebar nav.nav button[data-view="subcontractors"]{display:flex!important;align-items:center!important;justify-content:center!important;min-height:44px;padding:9px 8px;white-space:nowrap;font-size:14px}
+  body .nav button .nav-icon{display:inline-grid!important;flex:0 0 16px;width:16px;min-width:16px;place-items:center;margin:0 7px 0 0}
+  body main.content{order:3;margin:0;width:100%;height:auto;min-height:0;padding:12px 10px 24px;overflow:visible;display:block}
+  body #mainGrid:not(.hidden){display:block;height:auto;overflow:visible}
+  body #mainGrid.hidden,body #extraView.hidden{display:none!important}
+  body #mainGrid>.panel{height:auto;min-height:0;overflow:visible;margin:0}
+  body #mainGrid>.right{display:none!important}
+  body #mainGrid>.sched{display:none!important;padding:14px}
+  body #mainGrid>.listpanel{display:block!important;padding:14px 10px}
+  body.mobile-sub-detail #mainGrid>.listpanel{display:none!important}
+  body.mobile-sub-detail #mainGrid>.sched{display:block!important;padding:12px 10px}
+  body .section-head{gap:8px;padding:0 3px 8px}
+  body .section-head h2{font-size:20px;margin:0}
+  body .section-head>.btn{display:none!important}
+  body .filter{width:100%;margin:0 0 8px;min-height:44px}
+  body .companies{max-height:none;overflow:visible}
+  body .company{min-height:66px;padding:12px 9px;gap:10px}
+  body .company .cinfo strong{font-size:14px}
+  body .company .cinfo small{font-size:12px}
+  body .company .avatar{width:38px;height:38px}
+  body .company .reorder-handle,body .company .company-menu,body .company .drag-handle{display:none!important}
+  body .mobile-sub-back{display:none!important}
+  body .schedhead{display:block;margin:0 0 10px}
+  body .schedhead h1{font-size:20px;margin:0}
+  body .schedhead .sub,body .schedhead .pdf-buttons,body #dateRange,body .controls{display:none!important}
+  body #schedule{min-width:0;overflow:visible}
+  body .task-head{display:none!important}
+  body .task-row{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 12px;min-width:0;margin:8px 0;padding:12px 10px;border:1px solid var(--line);border-radius:9px;background:#fff}
+  body .task-row .task-name{grid-column:1/-1}
+  body .task-row .task-name strong{font-size:14px}
+  body .task-row>.task-date-stack,body .task-row>.duration-cell{display:flex;flex-direction:column;align-items:flex-start;gap:2px;font-size:12px}
+  body .task-row>.task-date-stack::before{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+  body .task-row>.task-date-stack:nth-child(2)::before{content:'START'}
+  body .task-row>.task-date-stack:nth-child(3)::before{content:'FINISH'}
+  body .task-row>.duration-cell::before{content:'DURATION';font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.04em}
+  body .task-row>span:nth-child(5),body .task-row>.days-delayed,body .task-row .task-actions{display:none!important}
+  body .schedule-table-scroll{max-height:none;overflow:visible}
+  body .zone{margin:14px 0 6px;padding:8px 9px;background:#eef3f6;border-radius:6px;font-size:13px}
+  body .sched,body #schedule,body .schedule-table-scroll{box-sizing:border-box;width:100%!important;max-width:100%!important;min-width:0!important;overflow-x:hidden!important}
+  body .task-row{box-sizing:border-box;display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;width:100%!important;max-width:100%!important;min-width:0!important;overflow:hidden}
+  body .zone,body .task-name{box-sizing:border-box;width:100%;max-width:100%;min-width:0}
+  body .zone{align-items:flex-start;gap:8px;line-height:1.35;overflow-wrap:anywhere}
+  body .zone>small{flex:0 0 auto;white-space:nowrap;margin-left:auto;padding-left:4px}
+  body .task-row>*{min-width:0}
+  body .task-row .task-name strong,body .task-row .task-name small{max-width:100%;overflow-wrap:anywhere;word-break:break-word}
+  body .task-date-stack .actual-date{white-space:normal;overflow-wrap:anywhere}
+  body #extraView:not(.hidden){display:block;width:100%;height:auto;min-height:0;padding:0;border:0;background:transparent;box-shadow:none;overflow:visible}
+  body .overview-title,body .overview-section-head,body .overview-gantt-scroll,body .overview-row,body .extra-view>h2{display:none!important}
+  body .summary-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:0 0 14px}
+  body .summary-cards>div{padding:13px;min-height:78px;background:white;border-radius:9px}
+  body .summary-cards>div:last-child{grid-column:1/-1}
+  body .summary-cards b{font-size:19px;line-height:1.2;overflow-wrap:anywhere}
+  body .summary-cards span{margin-top:5px;font-size:11px}
+  body .area-outlook{margin:0}
+  body .area-outlook h2{margin:0 0 9px;font-size:18px}
+  body .area-outlook-table{display:grid;gap:9px;overflow:visible;border:0;background:transparent}
+  body .area-outlook-head{display:none}
+  body .area-outlook-row{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;min-width:0;padding:13px 14px;border:1px solid var(--line);border-radius:9px;background:#fff;box-shadow:0 2px 7px #18304708}
+  body .area-outlook-row>b{font-size:14px;line-height:1.35;margin-bottom:2px;overflow-wrap:anywhere}
+  body .area-outlook-row>span{font-size:12px;line-height:1.4;color:var(--muted);overflow-wrap:anywhere}
+  body .area-outlook-row>strong{justify-self:start;margin-top:2px;padding:4px 8px;border-radius:999px;background:#f1f5f9;font-size:11px;line-height:1.3;overflow-wrap:anywhere}
+  body .area-outlook-row>strong.variance-late{background:#fff0ed;color:#b42318}
+  body .area-outlook-row>strong.variance-early{background:#eaf7ef;color:#087443}
+  body .issue,body .loading{display:none!important}
+  body button,body .company{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  body input,body select,body textarea{font-size:16px!important}
+}
+@media (max-width:600px), (max-device-width:600px){
+  body .top{position:relative;height:88px;min-height:88px;padding:0 10px;gap:6px}
+  body .project{display:grid;grid-template-columns:minmax(0,44vw) 1px minmax(0,1fr);width:100%;flex:1 1 auto;gap:0;min-width:0;align-items:center}
+  body .company-logo{width:calc(100% - 8px);height:52px;object-fit:contain;object-position:left center;flex:0 1 auto;justify-self:start}
+  body .project-divider{height:48px;justify-self:center}
+  html body .top .project-heading{position:relative!important;display:flex!important;flex-direction:column!important;align-items:flex-start!important;justify-content:center!important;width:auto!important;min-width:0!important;max-width:100%!important;height:auto!important;margin:0!important;padding:0 clamp(50px,14vw,56px) 0 8px!important;overflow:visible!important;visibility:visible!important;opacity:1!important;color:#10263d!important;z-index:3}
+  html body .top .project .project-kicker{display:block!important;max-width:100%;color:#65758b!important;font-size:clamp(8px,2.4vw,10px)!important;letter-spacing:.1em;line-height:1.2;white-space:nowrap!important;visibility:visible!important;opacity:1!important}
+  html body .top .project #projectName{display:block!important;flex:none!important;width:auto!important;max-width:100%!important;min-width:0!important;margin:0!important;padding:0!important;color:#10263d!important;font-size:clamp(15px,4.5vw,18px)!important;font-weight:750!important;line-height:1.12!important;white-space:normal!important;overflow:visible!important;text-overflow:clip!important;overflow-wrap:normal!important;visibility:visible!important;opacity:1!important}
+  body .topright{position:absolute;right:10px;top:50%;z-index:2;flex:0 0 auto;transform:translateY(-50%)}
+  body .topright>.btn{min-height:40px;padding:7px 9px;font-size:12px}
+  body.mobile-sub-detail .mobile-sub-back{display:inline-flex!important;align-items:center;gap:7px;min-height:40px;margin:0 0 10px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font-family:inherit;font-size:14px;font-weight:600;line-height:1.2;cursor:pointer}
+  body.mobile-sub-detail .mobile-sub-back:active{background:#eef5f7}
+}
+@media (max-width:600px), (max-device-width:600px){
+  body .task-row{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px 7px!important;padding:12px 10px 12px 12px!important;border-left:3px solid #b8cbd5!important;background:#fff;box-shadow:0 2px 8px #1830470b}
+  body .task-row .task-name{margin-bottom:3px;padding-bottom:9px;border-bottom:1px solid #e8edf1}
+  body .task-row .task-name strong{display:block;font-size:15px;line-height:1.35;font-weight:700;color:var(--ink)}
+  body .task-row .task-name small{font-size:12px;line-height:1.4;margin-top:5px;color:#64758a}
+  body .task-row>.task-date-stack,body .task-row>.duration-cell{box-sizing:border-box;min-width:0;min-height:58px;justify-content:flex-start;gap:4px;padding:8px 7px;border-radius:7px;background:#f5f8fa;color:var(--ink)}
+  body .task-row>.task-date-stack::before,body .task-row>.duration-cell::before{font-size:9px;line-height:1.2;letter-spacing:.05em;color:#697b8d}
+  body .task-row>.task-date-stack .actual-date{font-size:12px;line-height:1.35;font-weight:600;color:#263c50}
+  body .task-row>.task-date-stack small,body .task-row .duration-original{font-size:10px;line-height:1.3;color:#7c8996}
+  body .task-row .duration-current{display:flex;flex-wrap:wrap;align-items:baseline;gap:3px}
+  body .task-row .duration-current b{font-size:13px}
+  body .area-outlook-row[role="button"]{cursor:pointer;touch-action:manipulation;transition:border-color .15s,background-color .15s}
+  body .area-outlook-row[role="button"]:active{border-color:var(--teal);background:#f2fbfa}
+  body.mobile-sequence-detail #mainGrid>.listpanel,body.mobile-sequence-detail #mainGrid>.sched{display:none!important}
+  body.mobile-sequence-detail #mainGrid>.right{display:block!important;box-sizing:border-box;width:100%;height:auto;min-height:0;margin:0;padding:14px 12px;overflow:visible}
+  body.mobile-sequence-detail #mainGrid>.right h2{font-size:20px;margin:4px 0 5px}
+  body.mobile-sequence-detail .mobile-sequence-back{display:inline-flex!important;align-items:center;min-height:42px;margin:0 0 12px;padding:8px 12px}
+  body.mobile-sequence-detail .sequence-filter,body.mobile-sequence-detail .impact,body.mobile-sequence-detail .footerbtn,body.mobile-sequence-detail .sequence-actions{display:none!important}
+  body.mobile-sequence-detail #sequence{max-height:none!important;height:auto!important;overflow:visible!important;padding:0}
+  body.mobile-sequence-detail #sequence .sequence-separator{margin-top:12px}
+  body.mobile-sequence-detail #sequence .step{width:100%;box-sizing:border-box}
+  body.mobile-sequence-detail #sequence .step.mobile-area-target{outline:3px solid #0b8990;outline-offset:2px;background:#e9f8f6!important}
+}
+@media (max-width:600px), (max-device-width:600px){
+  body #extraView{box-sizing:border-box;min-width:0;max-width:100%;overflow-x:hidden}
+  body .mobile-overview-sequence-view{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:14px 12px 20px;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  body .mobile-overview-sequence-view h1{margin:2px 0 4px;font-size:20px;line-height:1.25;overflow-wrap:anywhere}
+  body .mobile-overview-sequence-view>.linknote{margin:0 0 12px}
+  body .mobile-overview-sequence-view .mobile-sequence-back{display:inline-flex;align-items:center;min-height:42px;margin:0 0 12px;padding:8px 12px}
+  body .mobile-overview-sequence-cards{box-sizing:border-box;width:100%;max-width:100%;min-width:0;overflow:hidden}
+  body .mobile-overview-sequence-cards .step,body #sequence .step{box-sizing:border-box!important;width:calc(100% - 28px)!important;max-width:calc(100% - 28px)!important;min-width:0!important;margin-left:28px!important;margin-right:0!important;border-right:1px solid var(--line)!important;overflow-wrap:anywhere}
+  body .mobile-overview-sequence-cards .step[style*="border-color"],body #sequence .step[style*="border-color"]{border-right-color:var(--line)!important}
+  body .task-row>.task-date-stack,body .task-row>.duration-cell{box-sizing:border-box!important;height:76px!important;min-height:76px!important;max-height:76px!important;overflow:hidden}
+  body .task-row .duration-current{flex-wrap:nowrap!important;white-space:nowrap;gap:3px}
+  body .task-row .duration-original{white-space:nowrap}
+}
+
+/* Reliable Settings and holiday-calendar layout */
+.settings-shell{max-width:1240px;margin:0 auto;color:#12223a}.settings-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}.settings-head h1{margin:0 0 4px;font-size:23px}.settings-head .linknote{margin:0;color:#66768a}.settings-tabs{display:flex;gap:8px;border-bottom:1px solid #e3e9ef;margin:0 0 22px;padding:0 0 10px}.settings-tabs button{appearance:none;border:1px solid #dce5ec;border-radius:8px;padding:9px 16px;background:#fff;color:#40536a;font:600 13px/1.2 Inter,Segoe UI,Arial,sans-serif;cursor:pointer}.settings-tabs button:hover{background:#f5f9fb}.settings-tabs button.active{color:#087e84;background:#e7f6f5;border-color:#a7ddda}.settings-content{min-width:0}.holiday-settings{display:grid;gap:18px}.holiday-intro h2{margin:0 0 4px;font-size:19px}.holiday-intro p,.holiday-range-form>p{margin:0;color:#66768a}.holiday-calendar-card,.holiday-range-form,.holiday-list{border:1px solid #dfe7ed;border-radius:12px;background:#fff;padding:18px;box-shadow:0 1px 3px rgba(16,38,61,.04)}.holiday-calendar-head{display:flex;align-items:center;gap:10px;margin-bottom:16px}.holiday-calendar-head h3{flex:1;text-align:center;margin:0;font-size:18px}.holiday-calendar-head .holiday-today{margin-left:8px}.holiday-weekdays,.holiday-calendar-grid{display:grid!important;grid-template-columns:repeat(7,minmax(0,1fr));width:100%}.holiday-weekdays{padding:0 0 8px;border-bottom:1px solid #dfe7ed;color:#66768a;font-size:12px;font-weight:700;text-align:center}.holiday-calendar-grid{border-left:1px solid #e3e9ef;border-top:1px solid #e3e9ef}.holiday-day{appearance:none;position:relative;display:flex!important;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:5px;width:100%;min-width:0;min-height:88px;padding:8px;border:0;border-right:1px solid #e3e9ef;border-bottom:1px solid #e3e9ef;border-radius:0;background:#fff;color:#12223a;text-align:left;cursor:pointer}.holiday-day:hover:not(:disabled){background:#f3f8fb}.holiday-day.weekend{background:#f7f9fb}.holiday-day.public-holiday{background:#fff4dd}.holiday-day.custom-holiday{box-shadow:inset 0 0 0 2px #078a91;background:#e7f6f5}.holiday-day.outside-month{visibility:hidden}.holiday-day:disabled{cursor:default}.holiday-day-number{font-size:13px;font-weight:700}.holiday-marker{max-width:100%;color:#91600c;font-size:10px;line-height:1.2;overflow-wrap:anywhere}.holiday-day.custom-holiday .custom-marker{color:#08777d}.holiday-legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;color:#66768a;font-size:12px}.holiday-legend span{display:flex;align-items:center;gap:6px}.holiday-legend i{width:12px;height:12px;border:1px solid #d5dee7;border-radius:3px}.holiday-legend .legend-public{background:#fff4dd}.holiday-legend .legend-custom{background:#e7f6f5;border:2px solid #078a91}.holiday-legend .legend-weekend{background:#f7f9fb}.holiday-range-form h3,.holiday-list-head h3{margin:0 0 4px;font-size:16px}.holiday-range-fields{display:grid;grid-template-columns:minmax(140px,1fr) minmax(140px,1fr) minmax(220px,1.5fr) auto;align-items:end;gap:12px;margin-top:14px}.holiday-range-fields label{display:grid;gap:6px;color:#40536a;font-size:12px;font-weight:650}.holiday-range-fields input{width:100%;min-width:0;min-height:40px;padding:9px 10px;border:1px solid #d5dee7;border-radius:7px;background:#fff;color:#12223a;font:14px/1.3 Inter,Segoe UI,Arial,sans-serif}.holiday-range-fields .btn{white-space:nowrap;min-height:40px}.holiday-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.holiday-list-head span{color:#66768a;font-size:12px}.holiday-list-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-top:1px solid #e3e9ef}.holiday-list-row:first-of-type{margin-top:10px}.holiday-list-row span{display:grid;gap:2px}.holiday-list-row small{color:#66768a}.holiday-setup-note,.holiday-readonly-note{padding:12px 14px;border:1px solid #f3d29b;border-radius:8px;background:#fff7e8;color:#765313}.holiday-setup-note{margin:0}.holiday-setup-note p{margin:4px 0 0}.holiday-readonly-note{border-color:#dfe7ed;background:#f8fafc;color:#66768a}
+@media(max-width:760px){.settings-tabs{overflow-x:auto}.holiday-calendar-card,.holiday-range-form,.holiday-list{padding:12px}.holiday-calendar-head{gap:6px}.holiday-calendar-head .btn{padding:8px 10px}.holiday-day{min-height:62px;padding:5px}.holiday-marker{font-size:8px}.holiday-range-fields{grid-template-columns:1fr 1fr}.holiday-range-fields label:nth-child(3){grid-column:1/-1}.holiday-range-fields .btn{grid-column:1/-1}.holiday-legend{gap:8px 12px}}
+@media(max-width:900px),(max-device-width:1024px),(hover:none) and (pointer:coarse){html body #signInButton{display:none!important}}
+</style></head>
+<body><div class="app">
+<aside class="sidebar"><div class="brand">◈ SitePlan</div><nav class="nav">
+<button data-view="overview" onclick="showView('overview')"><span class="nav-icon">▦</span><span>Overview</span></button>
+<button data-view="map" onclick="showView('map')"><span class="nav-icon">▧</span><span>Site map</span></button>
+<button class="active" data-view="subcontractors" onclick="showView('subcontractors')"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13a8 8 0 0 1 16 0v2H4z"/><path d="M12 5v8M3 15h18M7 19h10l2 2H5z"/></svg></span><span>Subcontractors</span></button>
+<button data-view="links" onclick="showView('links')"><span class="nav-icon">↗</span><span>Trade links</span></button>
+<button data-view="friday" onclick="showView('friday')"><span class="nav-icon">▤</span><span>Email schedules</span></button>
+<button class="nav-settings" data-view="settings" onclick="showView('settings')"><span class="nav-icon">⚙</span><span>Settings</span></button>
+</nav></aside>
+<header class="top"><div class="project"><img class="company-logo" src="dgsl-logo.png" alt="DG Group logo"><span class="project-divider" aria-hidden="true"></span><div class="project-heading"><span class="project-kicker">SITE PROGRAMME</span><strong id="projectName">Knocksedan PH3</strong></div></div><div class="topright"><span id="userEmail"></span><button id="signInButton" class="btn sign-in-button hidden" type="button" onclick="showLogin()" aria-label="Sign in" title="Sign in"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h5a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-5M10 17l5-5-5-5M15 12H3"/></svg></button><button id="signOutButton" class="btn" onclick="signOut()">Sign out</button></div></header>
+<section id="login" class="login" aria-label="Sign in"><form onsubmit="signIn(event)"><button class="login-close" type="button" onclick="hideLogin()" aria-label="Close sign in">×</button><div class="login-kicker">SITE PROGRAMME</div><h1>Sign in</h1><p>Sign in to manage the Knocksedan PH3 programme.</p><div class="login-account"><span class="login-avatar">EW</span><span><strong>Elvira Werner</strong><small>elvira@dgsl.ie</small></span><span class="login-check" aria-hidden="true">✓</span></div><input id="email" type="email" value="elvira@dgsl.ie" autocomplete="username" aria-hidden="true" tabindex="-1"><label>Password<input id="password" type="password" autocomplete="current-password" required></label><button class="btn primary login-submit" type="submit">Sign in</button></form></section>
+<div id="appToast" class="app-toast hidden" role="status" aria-live="polite"></div><div id="loading" class="loading hidden">Loading shared schedules…</div>
+<main class="content"><div class="grid" id="mainGrid">
+<section class="panel listpanel"><div class="section-head"><h2>Subcontractors</h2><button class="btn" onclick="addSub()">+ Add</button></div><input class="filter" id="filter" placeholder="Search subcontractors…" oninput="filterCompanies()"><div class="companies" id="companies"></div></section>
+<section class="panel sched"><button class="btn mobile-sub-back" type="button" onclick="showMobileSubList()">‹ <span>All subcontractors</span></button><div class="schedhead"><div><div class="mobile-schedule-title"><h1 id="companyTitle">Select a subcontractor</h1><button class="btn primary mobile-share-pdf" type="button" onclick="shareCompanyPdf()">Share PDF</button></div><div class="sub">Full schedule · <span id="taskCount">0</span> tasks</div></div><div class="pdf-buttons"><button class="btn" onclick="printCompany()">View PDF</button><button class="btn" onclick="downloadCompanyPdf()">Download PDF</button></div></div><div class="controls"><span id="dateRange" class="date">Schedule dates</span><div class="view-toggle"><button id="listViewButton" class="btn active" onclick="setScheduleView('list')">☷ List</button><button id="timelineViewButton" class="btn" onclick="setScheduleView('timeline')">▥ Timeline</button></div><button class="btn primary" onclick="addTask()">+ Add task</button></div><div id="schedule"></div></section>
+<section class="panel right"><h2>Linked trade sequence</h2><div class="linknote">Date changes update following trades</div><div id="sequence"></div><div class="impact" id="impact">Select a task to see linked work.</div><button class="btn footerbtn" onclick="showView('links')">↗ &nbsp; View all trade links</button></section>
+</div><section id="extraView" class="panel extra-view hidden"></section></main></div>
+<div class="overlay sequence-finish-confirm-overlay" id="sequenceFinishConfirmOverlay" onclick="if(event.target===this)decideSequenceFinishChange(false)"><section class="modal sequence-finish-confirm" role="dialog" aria-modal="true" aria-labelledby="sequenceFinishConfirmTitle"><h2 id="sequenceFinishConfirmTitle">Confirm sequence finish change</h2><p id="sequenceFinishConfirmMessage"></p><div class="modalactions"><button class="btn" type="button" onclick="decideSequenceFinishChange(false)">No, keep current order</button><button class="btn primary" id="sequenceFinishConfirmYes" type="button" onclick="decideSequenceFinishChange(true)">Yes, continue</button></div></section></div>
+<div class="overlay" id="formOverlay" onclick="if(event.target===this)closeForm()"><section class="modal form-modal"><div class="modal-head"><div><h2 id="formTitle">Add task</h2><p id="formSubtitle" class="sub">Enter the schedule details.</p></div><button class="icon-btn close-btn" type="button" onclick="closeForm()" aria-label="Close">×</button></div><form id="scheduleForm" onsubmit="saveForm(event)"><div id="formFields" class="form-fields"></div><div class="modalactions"><button class="btn" type="button" onclick="closeForm()">Cancel</button><button class="btn primary" type="submit">Save</button></div></form></section></div>
+<div class="overlay" id="emailOverlay" onclick="if(event.target===this)closeEmailDialog()"><section class="modal email-modal"><div class="modal-head"><div><h2>Email schedule PDFs</h2><p class="sub">Review recipients, then send each subcontractor their own schedule.</p></div><button class="icon-btn close-btn" type="button" onclick="closeEmailDialog()" aria-label="Close">×</button></div><div id="emailReviewStage"><h3 id="emailReviewTitle">Email all schedule PDFs</h3><p id="emailReviewIntro" class="email-account-help"></p><div class="email-selection-tools"><strong id="emailSelectionCount">0 schedules selected · 0 emails to send</strong><div><button class="btn" type="button" onclick="setEmailSelection(true)">Select all</button> <button class="btn" type="button" onclick="setEmailSelection(false)">Clear</button></div></div><div id="emailReviewRows" class="email-review-rows"></div><section class="email-cc-section"><div class="email-cc-head"><div><h3>CC recipients</h3><p>Choose contacts to copy on every email sent in this batch.</p></div><div><button class="btn" type="button" onclick="setCcSelection(true)">Select all CC</button> <button class="btn" type="button" onclick="setCcSelection(false)">Clear CC</button></div></div><div id="emailCcChoices" class="email-cc-choices"></div></section><p id="emailReviewCount" class="email-account-help"></p><div class="modalactions"><button class="btn" type="button" onclick="closeEmailDialog()">Cancel</button><button class="btn primary" type="button" onclick="continueEmailFlow()">Continue</button></div></div><div id="emailAccountStage" class="hidden"><h3>Choose the Outlook account</h3><p class="email-account-help">Click the Outlook account you want to send from. Each subcontractor contact gets an individual email.</p><div id="outlookAccountOptions"></div><p id="emailStatus" class="email-status" role="status" aria-live="polite"></p><div class="modalactions"><button class="btn" type="button" onclick="backToEmailReview()">Back</button><button class="btn primary" id="sendScheduleEmails" type="button" onclick="sendEmailSchedules()">Send PDFs</button></div></div></section></div>
+<div class="overlay" id="recipientOverlay" onclick="if(event.target===this)closeRecipientManager()"><section class="modal recipient-modal"><div class="modal-head"><div><h2>Edit email recipients</h2><p class="sub">Choose which subcontractor schedule each contact receives. A contact can have a separate row for each schedule.</p></div><button class="icon-btn close-btn" type="button" onclick="closeRecipientManager()" aria-label="Close">×</button></div><div class="recipient-toolbar"><p id="recipientHelp" class="email-account-help">Recipients are sent an individual email with the assigned schedule PDF.</p><button class="btn" type="button" onclick="importRecipientList()">Import supplied recipient list</button></div><div class="recipient-table-wrap"><div class="recipient-table-head"><span>Recipient</span><span>Email address</span><span>Send this PDF</span><span></span></div><div id="recipientRows"></div></div><button class="btn recipient-add" type="button" onclick="addRecipientDraft()">+ Add recipient</button><section class="cc-manager-section"><div><h3>CC recipients</h3><p>These contacts are available to CC on any email batch.</p></div><div class="recipient-table-head cc-manager-head"><span>Recipient</span><span>Email address</span><span></span></div><div id="ccRecipientRows"></div><button class="btn recipient-add" type="button" onclick="addCcRecipientDraft()">+ Add CC recipient</button></section><p id="recipientStatus" class="email-status" role="status" aria-live="polite"></p><div class="modalactions"><button class="btn" type="button" onclick="closeRecipientManager()">Cancel</button><button class="btn primary" type="button" onclick="saveRecipientManager()">Save recipients</button></div></section></div>
+<div class="overlay" id="housePickerOverlay" onclick="if(event.target===this)closeHousePicker()"><section class="modal house-picker-modal" role="dialog" aria-modal="true" aria-labelledby="housePickerTitle"><div class="modal-head"><div><h2 id="housePickerTitle">Choose house block(s)</h2><p class="sub">Select one or more blocks in the same zone. Click a selected block again to remove it.</p></div><button class="icon-btn close-btn" type="button" onclick="closeHousePicker()" aria-label="Close">×</button></div><p id="housePickerStatus" class="email-account-help" role="status" aria-live="polite">Loading site layout…</p><div id="housePickerMap" class="house-picker-map"></div><div class="modalactions"><button class="btn" type="button" onclick="closeHousePicker()">Done</button></div></section></div>
+<div class="toast" id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script><script src="https://unpkg.com/jspdf@4.2.1/dist/jspdf.umd.min.js"></script><script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script><script src="supabase-config.js"></script><script src="mail-config.js"></script><script src="app.js?v=20261112-phone-header-v4"></script><script src="site-map-layer.js?v=20261111-mobile-focus-v2"></script><script src="site-map-editor.js?v=20261111-mobile-focus-v2"></script>
+</body></html>
 
-<body>
-<header>
-
-  <div style="display:flex;align-items:center;gap:15px;min-width:0;">
-
-    <img
-      src="dgsl-logo.png"
-      alt="DGSL Logo"
-      style="display:block;width:220px;max-width:35vw;height:auto;object-fit:contain;"
-    >
-
-    <div>
-      <p class="eyebrow">DGSL BUILDING</p>
-      <h1>Site Handover Register</h1>
-    </div>
-
-  </div>
-
-  <div class="header-actions" id="headerActions">
-    <button id="newZone" class="primary">+ New handover</button>
-
-    <div class="header-icon-group">
-      <button id="notificationsButton" class="header-icon-button" type="button" aria-label="Notifications" title="Notifications" style="display:none;">
-        <span class="header-icon-wrap">
-          <svg class="header-svg-icon" viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path>
-            <path d="M10 21h4"></path>
-          </svg>
-          <span id="notificationBadge" class="notification-badge" hidden>0</span>
-        </span>
-      </button>
-      <button id="settingsButton" class="header-icon-button" type="button" aria-label="Settings" title="Settings" style="display:none;">
-        <svg class="header-svg-icon header-settings-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="#111" stroke="none" d="M19.43 12.98c.04-.32.07-.65.07-.98s-.02-.66-.07-.98l2.11-1.65-2-3.46-2.49 1a7.8 7.8 0 0 0-1.69-.98L15 3h-4l-.38 2.93c-.6.25-1.17.58-1.69.98l-2.49-1-2 3.46 2.11 1.65c-.04.32-.08.65-.08.98s.03.66.08.98l-2.11 1.65 2 3.46 2.49-1c.52.4 1.09.73 1.69.98L11 21h4l.38-2.93c.6-.25 1.17-.58 1.69-.98l2.49 1 2-3.46-2.13-1.65Z"/>
-          <circle cx="13" cy="12" r="3.2" fill="#fff"/>
-        </svg>
-      </button>
-    </div>
-  </div>
-
-</header>
-
-
-<main>
-
-<section class="cards" aria-label="Site summary">
-
-  <article class="blue summary-card-clickable" data-filter-card="All" tabindex="0" role="button" aria-label="Show all work permits">
-    <span class="summary-card-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"></rect><path d="M9 3.5h6v3H9z"></path><path d="M8.5 11h7M8.5 15h4"></path><path d="M17 15.5l1.4 1.4 2.6-3"></path></svg>
-    </span>
-    <span>Total Work Permits</span>
-    <strong id="total">0</strong>
-    <small id="totalWeek" class="week-change">No change</small>
-  </article>
-
-  <article class="amber summary-card-clickable" data-filter-card="Work Permit Open" tabindex="0" role="button" aria-label="Show open work permits">
-    <span class="summary-card-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7v5l3.5 2"></path></svg>
-    </span>
-    <span>Work Permits Open</span>
-    <strong id="progress">0</strong>
-    <small id="progressWeek" class="week-change">No change</small>
-  </article>
-
-  <article class="green summary-card-clickable" data-filter-card="Work Permit Closed" tabindex="0" role="button" aria-label="Show closed work permits">
-    <span class="summary-card-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle><path d="m8.5 12.2 2.2 2.2 4.8-5"></path></svg>
-    </span>
-    <span>Work Permits Closed</span>
-    <strong id="closed">0</strong>
-    <small id="closedWeek" class="week-change">No change</small>
-  </article>
-
-  <article class="red summary-card-clickable" data-filter-card="Work Permit on Hold" tabindex="0" role="button" aria-label="Show work permits on hold">
-    <span class="summary-card-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"></circle><path d="M9.5 9v6M14.5 9v6"></path></svg>
-    </span>
-    <span>Work Permits On hold</span>
-    <strong id="hold">0</strong>
-    <small id="holdWeek" class="week-change">No change</small>
-  </article>
-
-</section>
-
-
-<section class="panel">
-
-  <div class="toolbar">
-
-    <div>
-      <h2>Work Permits</h2>
-      <p id="activeFilterLabel" class="active-filter-label">Showing: All Work Permits</p>
-    </div>
-
-    <div class="actions">
-
-      <div class="search-filter-wrap">
-        <div class="search-clear-wrap">
-          <input id="search" type="search" placeholder="Search zones, contractor..." aria-label="Search register">
-          <button type="button" id="searchClear" class="search-clear-button" aria-label="Clear search" title="Clear search">×</button>
-        </div>
-        <div class="permit-filter-wrap">
-          <button type="button" id="permitFilterButton" class="permit-filter-button" aria-label="Filter work permits" aria-haspopup="true" aria-expanded="false" title="Filter work permits">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.5 8v5l-3 1v-6z"></path></svg>
-          </button>
-          <div id="permitFilterMenu" class="permit-filter-menu" hidden>
-            <div class="permit-filter-menu-title">Filter Work Permits</div>
-            <button type="button" class="permit-filter-option" data-permit-filter="Open/On Hold" role="menuitemcheckbox" aria-checked="false"><span class="permit-filter-check"></span><span><strong>Open/On Hold</strong><small>Show all open and on hold permits</small></span></button>
-            <button type="button" class="permit-filter-option" data-permit-filter="Open Longer Than 1 Week" role="menuitemcheckbox" aria-checked="false"><span class="permit-filter-check"></span><span><strong>Open Longer Than 1 Week</strong><small>Show open permits older than 7 days</small></span></button>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-  </div>
-
-
-
-  <div class="table-wrap">
-
-    <table>
-
-      <thead>
-        <tr>
-          <th>Zone / Area</th>
-          <th>Sub-Contractor</th>
-          <th>Work Description</th>
-          <th>Status</th>
-          <th>Handover Date</th>
-          <th>Take Back Date</th>
-          <th id="editHeader" style="display:none;">Edit</th>
-          <th>View</th>
-        </tr>
-      </thead>
-
-      <tbody id="rows"></tbody>
-
-    </table>
-
-  </div>
-
-
-  <p id="empty" class="empty">
-    No handovers yet. Add your first zone to start the register.
-  </p>
-
-</section>
-
-</main>
-
-
-<dialog id="changeLogDialog" aria-labelledby="changeLogTitle">
-  <div class="changelog-inner">
-    <button type="button" class="changelog-close" id="closeChangeLog" aria-label="Close change log">×</button>
-    <div class="changelog-header">
-      <div class="changelog-kicker">DGSL SITE REGISTER</div>
-      <h2 id="changeLogTitle">Change Log</h2>
-      <p>A simple overview of the main improvements made to the site register.</p>
-    </div>
-    <div class="changelog-list">
-      <section class="changelog-entry current">
-        <div class="changelog-version">1.3.6 <span class="changelog-current">Current</span></div>
-        <ul>
-          <li>Marked open work permits more than one week old in red in the register and Open Permit Summary PDFs. Closed and on-hold permits are not marked.</li>
-          <li>Added outstanding-items notes to overdue permit summaries, shown in a red callout beneath the matching permit row.</li>
-          <li>Changed the Open Permit Summary PDF to portrait and added a clear note explaining that red permits have been open for more than one week.</li>
-          <li>Moved and improved the handover outstanding-items field with a larger expanding text box, red title and border, and an Update handover button for saved handovers.</li>
-          <li>Improved the Save and Update handover button layout on phones and centered the Update handover button on laptops.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.3.5</div>
-        <ul>
-          <li>Added bulk email controls for open permit summaries, with selectable recipients and CC contacts. Each recipient receives the summary for their mapped sub-contractor.</li>
-          <li>Added a clear on-screen sent confirmation after Outlook accepts the emails, and prevented starting another send while one is already processing.</li>
-          <li>Added the DGSL logo and confidentiality and disclaimer text to the summary email footer.</li>
-          <li>Improved phone and tablet scrolling for the permit summary and recipient-management windows, keeping the page behind each window locked while it is open.</li>
-          <li>Adjusted the permit summary window to match the New Handover window size and renamed the dashboard recipient settings to “Manage Email Recipients”.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.3.4</div>
-        <ul>
-          <li>Added the Open Permit Summary system, allowing a sub-contractor to be selected and a summary of their open and on-hold work permits to be downloaded as PDF or Excel.</li>
-          <li>Added configurable First-Fix keywords, automatic keyword variants and the option to use a configured keyword in the First-Fix field titles.</li>
-          <li>Added site-specific password login with separate site sessions so registers remain independently logged in.</li>
-          <li>Refined the First-Fix records fields so the field boxes remain aligned on computer and tablet layouts when a keyword title wraps onto a second line, while keeping the phone layout stacked.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.3.3</div>
-        <ul>
-          <li>Updated the weekly Work Permit KPI calculations so Closed is based on Take Back Date, On Hold uses Take Back Date when available and otherwise Handover Date, while Open remains based on Handover Date.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.3.2</div>
-        <ul>
-          <li>Removed the Generate PDF button from the New Handover window. PDF generation remains available through the View PDF window's Download button.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.3.1</div>
-        <ul>
-          <li>Added the First-Fix completion records section to the Take Back area, shown only when the work description is recognised as First-Fix work.</li>
-          <li>Added a dedicated First-Fix records status with the options To be completed, Yes, No, Outstanding and Other.</li>
-          <li>Added a custom answer field for the First-Fix status when Other is selected, with the custom value saved and restored when a handover is edited.</li>
-          <li>Changed the First-Fix status handling so existing saved values are preserved, including older/custom values that do not match the standard status options.</li>
-          <li>Added an X control inside the Work Permit search field so the current search can be cleared quickly without manually deleting the text.</li>
-          <li>Added a Download icon to the View PDF window so the displayed PDF can be downloaded directly while the X control remains dedicated to closing the window.</li>
-          <li>Refined the LIVE website notification workflow so version changes are detected generally rather than being tied to a single release version.</li>
-          <li>Updated the LIVE notification workflow so a new website version replaces the previous LIVE website-update notification instead of leaving older notifications in place.</li>
-          <li>Improved the LIVE notification workflow with explicit secret validation, HTTP/1.1 handling and retry behaviour, and support for manual workflow runs using the current website version.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.3.0</div>
-        <ul>
-          <li>Added Settings &gt; Data Management as a dedicated management view containing Bug Reports, Export Data and Import Data.</li>
-          <li>Added unread Bug Report indicators to Data Management and refined the unread badge so it only appears when unread reports exist.</li>
-          <li>Added the Work Permit filter control with Open/On Hold, Open Longer Than 1 Week and Clear Filter options.</li>
-          <li>Made the Work Permit summary cards act as the status filters, with a clear selected state.</li>
-          <li>Added Delete to the handover row More actions while keeping the row interaction workflow intact.</li>
-          <li>Added Share and More actions to the logged-out handover view, including Download PDF and Share.</li>
-          <li>Added individual rounded status bands to every handover row, matching the KPI card band thickness and colours: amber for Open, green for Closed and red for On Hold.</li>
-          <li>Refined the phone header presentation so the logo and site title use the available space more effectively without changing the tablet or computer layout.</li>
-          <li>Improved realtime connection handling so the register can recover cleanly from reused desktop/browser realtime channels.</li>
-          <li>Finalised the LIVE website update notification flow for version 1.3.0.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.2.8</div>
-        <ul>
-          <li>Added live Supabase updates so saved handover changes appear across connected devices without a manual refresh.</li>
-          <li>Added live updates for Bug Reports and website notifications, plus a short fallback refresh while the site is open.</li>
-          <li>Improved Bug Reports with unread NEW labels, a live unread counter and read-on-open behaviour.</li>
-          <li>Added Bug Report deletion with confirmation and immediate list refresh.</li>
-          <li>Improved logged-out row actions with View PDF and More, including Download PDF and Share.</li>
-          <li>Improved logged-in row actions with Edit, View PDF, More, Copy and Share.</li>
-          <li>Improved photo zoom/panning, handover copying, status handling and responsive form behaviour.</li>
-          <li>Added dashboard summary icons and continued desktop, tablet and phone layout refinements.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.2.7</div>
-        <ul>
-          <li>Introduced the Bug Reports feature and Bug Reports list/detail views.</li>
-          <li>Added the Bug Report form with reporter name, task, report details, website version and page information.</li>
-          <li>Added unread tracking so new reports can be identified and opening a report marks it as read.</li>
-          <li>Added Bug Reports to Settings with an unread counter.</li>
-          <li>Added the Change Log presentation and current-version overview.</li>
-          <li>Continued improvements to handover rows, PDF viewing, copying, sharing and mobile/tablet usability.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.2.6</div>
-        <ul>
-          <li>Added the Settings and Notifications area to the signed-in site header.</li>
-          <li>Added site-update notifications and the notification badge behaviour.</li>
-          <li>Added the Change Log window and version bar.</li>
-          <li>Added and refined header icons and their responsive positioning.</li>
-          <li>Continued mobile and tablet layout refinements.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.2.5</div>
-        <ul>
-          <li>Refined the signed-in experience and editing controls for the site.</li>
-          <li>Improved login, logout and edit visibility behaviour across the register.</li>
-          <li>Continued improvements to the handover form and responsive layout.</li>
-          <li>Refined PDF generation and viewing, including records containing multiple photos.</li>
-          <li>Improved photo removal and saved-photo handling while editing.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.2.4</div>
-        <ul>
-          <li>Improved the in-page PDF viewer and View action for handovers.</li>
-          <li>Improved whole-row interaction and the row action popup.</li>
-          <li>Improved PDF layout and the handling of handover photos.</li>
-          <li>Improved multiple-photo support in generated PDFs.</li>
-          <li>Continued responsive improvements for phones, tablets and computers.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.2.3</div>
-        <ul>
-          <li>Added and refined the dedicated handover View/PDF experience.</li>
-          <li>Improved row clicking so a handover can be selected reliably on touch devices.</li>
-          <li>Improved photo viewing and the handover photo presentation.</li>
-          <li>Continued refinements to copying, sorting and the register actions.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.2.2</div>
-        <ul>
-          <li>Continued development of the shared Site Register and its Supabase-backed handover data.</li>
-          <li>Refined mobile layout and restored the intended register behaviour on smaller screens.</li>
-          <li>Improved handover photo viewing, sorting and copying workflows.</li>
-          <li>Continued improvements to signatures, PDFs and the Take Back information.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.2.1</div>
-        <ul>
-          <li>Refined the handover register following the 1.2.0 feature work.</li>
-          <li>Continued the improvements to handover copying and the red copied-handover indicator.</li>
-          <li>Continued newest-first Handover Date sorting.</li>
-          <li>Continued photo viewing, photo zoom, PDF, signatures and Take Back improvements.</li>
-          <li>Continued status colours, dashboard totals and weekly-change information.</li>
-          <li>Improved mobile and tablet usability, including signature pads and date fields.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">1.2.0</div>
-        <ul>
-          <li>Improved handover copying, including clear red marking for copied handovers until they are edited and saved.</li>
-          <li>Changed handover ordering to Handover Date, newest first.</li>
-          <li>Added photo viewing with an in-page viewer and photo zoom without opening a new tab.</li>
-          <li>Improved the PDF viewer, signatures, site photos and Take Back details.</li>
-          <li>Improved status handling with Open, Closed and On Hold colours.</li>
-          <li>Added dashboard totals and weekly changes.</li>
-          <li>Improved mobile and tablet usability, including safer signature pads and clearer date fields.</li>
-        </ul>
-      </section>
-
-      <section class="changelog-entry">
-        <div class="changelog-version">Earlier development</div>
-        <ul>
-          <li>Built the DGSL Site Register around Supabase for storing handovers and site photos.</li>
-          <li>Added secure login and restricted editing, creating and deleting to authorised users.</li>
-          <li>Added search, status filters, PDF generation, PDF download and data export/import.</li>
-          <li>Added Handover and Take Back information, housekeeping, notes and signatures.</li>
-          <li>Added site-photo upload, removal and PDF photo inclusion.</li>
-          <li>Added copy, edit and view actions for individual handovers.</li>
-          <li>Continued improving the layout and behaviour across computer, tablet and phone.</li>
-        </ul>
-      </section>
-    </div>
-    <div class="changelog-footer">Version&nbsp;<span data-site-version></span></div>
-  </div>
-</dialog>
-
-<dialog id="pdfDialog">
-
-  <div style="height:92vh;display:flex;flex-direction:column;">
-
-    <div class="form-head" style="padding:20px 25px;flex:0 0 auto;">
-
-      <div>
-        <p class="eyebrow">DGSL HANDOVER PDF</p>
-        <h2>View PDF</h2>
-      </div>
-
-      <div class="pdf-header-actions">
-
-        <button
-          type="button"
-          id="downloadPdf"
-          class="pdf-download-button"
-          aria-label="Download PDF"
-          title="Download PDF"
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M12 3v11m0 0 4-4m-4 4-4-4M5 18v2h14v-2" />
-          </svg>
-        </button>
-
-        <button
-          type="button"
-          id="closePdf"
-          class="icon"
-          aria-label="Close"
-        >
-          ×
-        </button>
-
-      </div>
-
-    </div>
-
-    <div
-      id="pdfViewer"
-      style="flex:1 1 auto;min-height:0;overflow:auto;background:#eee;padding:12px;box-sizing:border-box;"
-    ></div>
-
-  </div>
-
-</dialog>
-
-
-<dialog id="formDialog">
-
-<form id="handoverForm" method="dialog">
-
-
-  <div class="form-head">
-
-    <div>
-
-      <p class="eyebrow">HANDOVER RECORD</p>
-
-      <h2 id="formTitle">
-        New handover
-      </h2>
-
-    </div>
-
-    <button
-      type="button"
-      id="cancel"
-      class="icon"
-      aria-label="Close"
-    >
-      ×
-    </button>
-
-  </div>
-
-
-  <div class="form-grid">
-
-
-    <!-- SUB-CONTRACTOR SECTION -->
-
-    <div class="wide">
-
-      <h3>Signatures</h3>
-
-      <p>
-        Sign below using your finger or mouse.
-      </p>
-
-    </div>
-
-
-    <label>
-
-      Sub Contractor Name
-
-      <input name="contractorSigner">
-
-    </label>
-
-
-    <div class="wide">
-
-      <p>
-        <strong>Sub Contractor Signature</strong>
-      </p>
-
-      <canvas
-        id="contractorSignature"
-        width="600"
-        height="180"
-        style="width:100%;max-width:600px;border:1px solid #ccc;border-radius:6px;touch-action:pan-y;background:#fff;"
-      ></canvas>
-
-      <button
-        type="button"
-        id="clearContractorSignature"
-      >
-        Clear signature
-      </button>
-
-    </div>
-
-
-    <!-- DGSL HANDOVER DETAILS -->
-
-    <div class="wide">
-
-      <h3>DGSL Handover Details</h3>
-
-    </div>
-
-
-    <label>
-
-      Sub Contractor / Company Name
-
-      <input name="contractor">
-
-    </label>
-<div id="conditionalFields-handover_after_contractor" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-
-    <label>
-
-      Drawing / reference
-
-      <input
-        name="drawing"
-        placeholder="e.g. Type G"
-      >
-
-    </label>
-<div id="conditionalFields-handover_after_drawing" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-
-    <label>
-
-      Zone / Area
-
-      <input
-        name="zone"
-        required
-        placeholder="e.g. Zone A"
-      >
-
-    </label>
-<div id="conditionalFields-handover_after_zone" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-
-    <label>
-
-  Safety Documents
-
-  <select
-    name="level"
-  >
-    <option value="Complete">Complete</option>
-    <option value="Outstanding">Outstanding</option>
-    <option value="N/A">N/A</option>
-    <option value="Other">Other</option>
-  </select>
-
-  <input
-    type="text"
-    id="levelOther"
-    placeholder="Enter your own answer"
-    style="display:none;margin-top:6px;"
-  >
-
-</label>
-<div id="conditionalFields-handover_after_safety_documents" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-
-    <label>
-
-  Housekeeping at time of Handover
-
-  <select
-    name="trade"
-  >
-    <option value="Good">Good</option>
-    <option value="Bad">Bad</option>
-    <option value="N/A">N/A</option>
-    <option value="Other">Other</option>
-  </select>
-
-  <input
-    type="text"
-    id="tradeOther"
-    placeholder="Enter your own answer"
-    style="display:none;margin-top:6px;"
-  >
-
-</label>
-<div id="conditionalFields-handover_after_housekeeping" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-
-    <label>
-
-  Materials Checks
-
-  <select
-    name="foreman"
-  >
-    <option value="OK">OK</option>
-    <option value="Bad">Bad</option>
-    <option value="N/A">N/A</option>
-    <option value="Other">Other</option>
-  </select>
-
-  <input
-    type="text"
-    id="foremanOther"
-    placeholder="Enter your own answer"
-    style="display:none;margin-top:6px;"
-  >
-
-</label>
-<div id="conditionalFields-handover_after_materials" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-
-    <label>
-
-  Health & Safety - Scaffolding / Handrails
-
-  <select
-    name="healthSafetyScaffolding"
-  >
-    <option value="OK">OK</option>
-    <option value="Bad">Bad</option>
-    <option value="N/A">N/A</option>
-    <option value="Other">Other</option>
-  </select>
-
-  <input
-    type="text"
-    id="healthSafetyScaffoldingOther"
-    placeholder="Enter your own answer"
-    style="display:none;margin-top:6px;"
-  >
-
-</label>
-<div id="conditionalFields-handover_after_health_safety" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-
-    <label class="wide">
-
-      Work description
-
-      <textarea
-        name="description"
-        rows="3"
-        placeholder="Describe the works handed over"
-      ></textarea>
-
-    </label>
-
-    <div id="conditionalFields-handover_after_description" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-
-    <label>
-
-      Handover date
-
-      <input
-        name="handoverDate"
-        type="date"
-      >
-
-    </label>
-<div id="conditionalFields-handover_after_handover_date" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-
-    <!-- CHECKLIST -->
-
-    <div class="wide">
-
-      <h3>Checklist</h3>
-
-    </div>
-
-
-    <div class="wide">
-
-      <div
-        style="
-          display:grid;
-          grid-template-columns:minmax(0,1fr) 45px 45px;
-          gap:8px 10px;
-          align-items:center;
-        "
-      >
-
-        <div></div>
-
-        <strong style="text-align:center;">
-          Yes
-        </strong>
-
-        <strong style="text-align:center;">
-          No
-        </strong>
-
-
-        <!-- CHECKLIST 1 -->
-
-        <div>
-          Current approved drawings, specification, RFI responses, setting-out data and revisions available at workface.
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="1"
-            data-answer="yes"
-            checked
-          >
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="1"
-            data-answer="no"
-          >
-        </div>
-
-
-        <!-- CHECKLIST 2 -->
-
-        <div>
-          Task-specific RAMS briefed; workers inducted; Safe Pass / CSCS / trade competence checked as applicable.
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="2"
-            data-answer="yes"
-            checked
-          >
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="2"
-            data-answer="no"
-          >
-        </div>
-
-
-        <!-- CHECKLIST 3 -->
-
-        <div>
-          Work area, access, lighting, scaffold / edge protection, temporary works, previous trade and substrate accepted
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="3"
-            data-answer="yes"
-            checked
-          >
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="3"
-            data-answer="no"
-          >
-        </div>
-
-
-        <!-- CHECKLIST 4 -->
-
-        <div>
-          Materials / products approved and traceable; plant, tools and test equipment inspected / certified / calibrated.
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="4"
-            data-answer="yes"
-            checked
-          >
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="4"
-            data-answer="no"
-          >
-        </div>
-
-
-        <!-- CHECKLIST 5 -->
-
-        <div>
-          Interfaces with adjacent trades, services, deliveries, exclusion zones and shared access agreed.
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="5"
-            data-answer="yes"
-            checked
-          >
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="5"
-            data-answer="no"
-          >
-        </div>
-
-
-        <!-- CHECKLIST 6 -->
-
-        <div>
-          Protection of completed work plus weather, water, dust, noise and environmental controls agreed.
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="6"
-            data-answer="yes"
-            checked
-          >
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="6"
-            data-answer="no"
-          >
-        </div>
-
-
-        <!-- CHECKLIST 7 -->
-
-        <div>
-          Hold / Witness Points, first-off, photos, tests and QA records identified; emergency, waste, housekeeping and security controls agreed.
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="7"
-            data-answer="yes"
-            checked
-          >
-        </div>
-
-        <div style="text-align:center;">
-          <input
-            type="checkbox"
-            class="takeback-check"
-            data-item="7"
-            data-answer="no"
-          >
-        </div>
-
-      </div>
-
-    </div>
-
-    <div id="conditionalFields-handover_after_checklist" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-    <div class="wide handover-notes-actions handover-notes-save-wrap">
-      <button
-        type="submit"
-        class="primary"
-        value="default"
-        id="handoverNotesSaveButton"
-      >
-        Save handover
-      </button>
-    </div>
-
-    <label class="wide handover-notes-field">
-      <span>Outstanding items preventing Work Permit close-out</span>
-      <textarea
-        name="handoverNotes"
-        rows="3"
-        placeholder="List the items preventing this Work Permit from being closed out"
-      ></textarea>
-    </label>
-
-    <div class="wide handover-notes-actions handover-update-wrap" id="updateHandoverWrap" hidden>
-      <button
-        type="submit"
-        class="primary"
-        value="default"
-        id="updateHandoverButton"
-      >
-        Update handover
-      </button>
-    </div>
-
-
-    <div class="wide" style="margin-top:12px;margin-bottom:22px;">
-      <div style="color:red;font-weight:600;">To be completed at Take Back stage</div>
-    </div>
-
-
-    <!-- DGSL TAKE BACK DETAILS -->
-
-<div class="wide">
-
-  <h3>DGSL Take Back Details</h3>
-
-</div>
-
-
-<label>
-
-  All works complete to drawings:
-
-  <select name="takeBackCompleteDrawings">
-
-    <option
-      value="To be completed"
-      style="color:red;"
-    >
-      To be completed
-    </option>
-
-    <option value="Yes">
-      Yes
-    </option>
-
-    <option value="No">
-      No
-    </option>
-
-    <option value="N/A">
-      N/A
-    </option>
-
-    <option value="Other">
-      Other
-    </option>
-
-  </select>
-
-  <input
-    type="text"
-    id="takeBackCompleteDrawingsOther"
-    placeholder="Enter your own answer"
-    style="display:none;margin-top:6px;"
-  >
-
-</label>
-<div id="conditionalFields-takeback_after_complete_drawings" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-
-<label>
-  Take Back Date
-
-  <input
-    name="takeBackDate"
-    type="date"
-  >
-</label>
-<div id="conditionalFields-takeback_after_date" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-
-<label>
-
-  Housekeeping at time of Take Back
-
-  <select name="takeBackHousekeeping">
-
-    <option
-      value="To be completed"
-      style="color:red;"
-    >
-      To be completed
-    </option>
-
-    <option value="Good">
-      Good
-    </option>
-
-    <option value="Bad">
-      Bad
-    </option>
-
-    <option value="80%">
-      80%
-    </option>
-
-    <option value="90%">
-      90%
-    </option>
-
-    <option value="N/A">
-      N/A
-    </option>
-
-    <option value="Other">
-      Other
-    </option>
-
-  </select>
-
-  <input
-    type="text"
-    id="takeBackHousekeepingOther"
-    placeholder="Enter your own answer"
-    style="display:none;margin-top:6px;"
-  >
-
-</label>
-<div id="conditionalFields-takeback_after_housekeeping" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-
-<label>
-
-  DG to Snag completed works
-
-  <select name="takeBackSnagCompleted">
-
-    <option
-      value="To be completed"
-      style="color:red;"
-    >
-      To be completed
-    </option>
-
-    <option value="Complete">
-      Complete
-    </option>
-
-    <option value="Final snag to be done">
-      Final snag to be done
-    </option>
-
-    <option value="N/A">
-      N/A
-    </option>
-
-    <option value="Other">
-      Other
-    </option>
-
-  </select>
-
-  <input
-    type="text"
-    id="takeBackSnagCompletedOther"
-    placeholder="Enter your own answer"
-    style="display:none;margin-top:6px;"
-  >
-
-</label>
-
-<div id="conditionalFields-takeback_after_snag" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-<div id="firstFixFields" class="wide first-fix-fields hidden">
-
-  <label>
-
-    Video/photographic records of First-Fix complete and submitted
-
-    <select name="firstFixRecordsStatus">
-      <option value="To be completed" selected>
-        To be completed
-      </option>
-      <option value="Yes">
-        Yes
-      </option>
-      <option value="No">
-        No
-      </option>
-      <option value="Outstanding">
-        Outstanding
-      </option>
-      <option value="Other">
-        Other
-      </option>
-    </select>
-
-    <input
-      type="text"
-      id="firstFixRecordsStatusOther"
-      name="firstFixRecordsStatusOther"
-      placeholder="Enter your own answer"
-      style="display:none;margin-top:6px;"
-    >
-
-  </label>
-
-  <label>
-
-    First-Fix Records: Location/Recipient
-
-    <input
-      type="text"
-      name="firstFixRecordsLocation"
-      placeholder="Enter storage location or name of person sent to"
-    >
-
-  </label>
-
-</div>
-
-<div id="conditionalFields-takeback_after_first_fix" class="wide conditional-fields-container hidden" aria-live="polite"></div>
-
-    <!-- NOTES -->
-
-    <label class="wide">
-
-      Notes / outstanding items
-
-      <textarea
-        name="notes"
-        rows="3"
-        placeholder="Enter any outstanding items, snags or notes"
-      ></textarea>
-
-    </label>
-
-
-    <!-- PHOTOS -->
-
-    <div class="wide site-photos-field">
-
-  <div class="site-photos-title">Site photos</div>
-
-  <button type="button" id="choosePhotosButton" class="photo-picker-button">Choose photos</button>
-
-  <input
-    class="photo-source-input"
-    id="photos"
-    name="photos"
-    type="file"
-    accept="image/*"
-    multiple
-  >
-  <input
-    class="photo-source-input"
-    id="cameraPhoto"
-    type="file"
-    accept="image/*"
-    capture="environment"
-  >
-  <input
-    class="photo-source-input"
-    id="photosFromFiles"
-    type="file"
-    multiple
-  >
-
-  <small>
-    Add photos from your library, camera or files.
-  </small>
-
-</div>
-
-    <div
-      id="photoPreview"
-      class="wide"
-      style="display:flex;flex-wrap:wrap;gap:10px;"
-    ></div>
-
-
-    <!-- STATUS -->
-
-    <label>
-
-      Status
-
-      <select name="status">
-
-        <option value="Work Permit Open">
-          Work Permit Open
-        </option>
-
-        <option value="Work Permit on Hold">
-          Work Permit on Hold
-        </option>
-
-        <option value="Work Permit Closed">
-          Work Permit Closed
-        </option>
-
-        <option value="Other">
-          Other
-        </option>
-
-      </select>
-
-      <input
-        type="text"
-        id="statusOther"
-        placeholder="Enter your own status"
-        style="display:none;margin-top:6px;"
-      >
-
-    </label>
-
-
-    <!-- DGSL SIGNATURE -->
-
-    <div class="wide">
-
-      <p>
-        <strong></strong>
-      </p>
-
-    </div>
-
-
-    <label>
-
-      DGSL representative
-
-      <input name="dgslSigner">
-
-    </label>
-
-
-    <div class="wide">
-
-      <p>
-        <strong>DGSL representative signature</strong>
-      </p>
-
-      <canvas
-        id="dgslSignature"
-        width="600"
-        height="180"
-        style="width:100%;max-width:600px;border:1px solid #ccc;border-radius:6px;touch-action:pan-y;background:#fff;"
-      ></canvas>
-
-      <button
-        type="button"
-        id="clearDgslSignature"
-      >
-        Clear signature
-      </button>
-
-    </div>
-
-
-  </div>
-
-
-  <div class="form-actions">
-
-    <button
-      type="button"
-      id="delete"
-      class="danger"
-    >
-      Delete record
-    </button>
-
-    <span></span>
-
-    <button
-      type="button"
-      id="cancel2"
-    >
-      Cancel
-    </button>
-
-    <button
-      class="primary"
-      value="default"
-    >
-      Save handover
-    </button>
-
-  </div>
-
-</form>
-
-</dialog>
-
-<dialog id="photoSourceMenu" class="photo-source-dialog" aria-labelledby="photoSourceMenuTitle">
-  <div class="photo-source-card">
-    <h3 id="photoSourceMenuTitle">Add site photos</h3>
-    <button type="button" class="photo-source-option" data-photo-source="library">Photo Library</button>
-    <button type="button" class="photo-source-option" data-photo-source="camera">Take Photo</button>
-    <button type="button" class="photo-source-option" data-photo-source="files">Choose Files</button>
-    <button type="button" class="photo-source-cancel" data-photo-source="cancel">Cancel</button>
-  </div>
-</dialog>
-
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-<script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script>
-
-<script src="mail-config.js"></script>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-<script src="app.js"></script>
-
-
-<div class="version-bar" aria-label="Website version">
-  DGSL Site Register · Version&nbsp;<span data-site-version></span>
-</div>
-
-</body>
-</html>
