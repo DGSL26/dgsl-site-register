@@ -195,6 +195,17 @@ html.permit-recipients-scroll-locked,body.permit-recipients-scroll-locked{overfl
   <div class="permit-recipient-actions"><button class="btn primary" id="ccRecipientAdd">Add CC person</button></div>
   <div class="permit-recipient-status" id="ccRecipientStatus" role="status" aria-live="polite"></div>
   <div id="ccRecipientRows" class="permit-recipient-rows">Loading CC people…</div>
+  <hr class="permit-recipient-divider">
+  <h3 class="permit-recipient-subtitle">BCC people</h3>
+  <p class="permit-recipient-hint">Selected BCC contacts are hidden from the To and CC recipients. They start checked when emails are prepared, and you can untick anyone before sending.</p>
+  <div class="permit-recipient-form">
+    <div><label for="bccRecipientSite">Site</label><select id="bccRecipientSite"></select></div>
+    <div><label for="bccRecipientName">Name</label><input id="bccRecipientName" type="text" autocomplete="name" placeholder="Name"></div>
+    <div class="wide"><label for="bccRecipientEmail">Email</label><input id="bccRecipientEmail" type="email" autocomplete="email" placeholder="name@example.ie"></div>
+  </div>
+  <div class="permit-recipient-actions"><button class="btn primary" id="bccRecipientAdd">Add BCC person</button></div>
+  <div class="permit-recipient-status" id="bccRecipientStatus" role="status" aria-live="polite"></div>
+  <div id="bccRecipientRows" class="permit-recipient-rows">Loading BCC people…</div>
   <div class="actions"><button class="btn secondary" id="permitRecipientsDone">Close</button></div>
 </div></div>
 
@@ -420,6 +431,7 @@ async function loadSites(){clearError();$('loading').hidden=false;$('grid').hidd
 let cachedSites=[];
 let permitRecipientRows=[];
 let permitCcRows=[];
+let permitBccRows=[];
 let permitRecipientsScrollY=null;
 let permitRecipientsSavedBodyStyles=null;
 function lockDashboardForPermitRecipients(){
@@ -558,6 +570,12 @@ function populateCcRecipientSites(){
   select.innerHTML=cachedSites.map(site=>`<option value="${escapeHtml(site.site_id)}">${escapeHtml(site.site_name)} (${escapeHtml(site.site_id)})</option>`).join('');
   if(!cachedSites.length)select.innerHTML='<option value="">No sites available</option>';
 }
+function populateBccRecipientSites(){
+  const select=$('bccRecipientSite');
+  if(!select)return;
+  select.innerHTML=cachedSites.map(site=>`<option value="${escapeHtml(site.site_id)}">${escapeHtml(site.site_name)} (${escapeHtml(site.site_id)})</option>`).join('');
+  if(!cachedSites.length)select.innerHTML='<option value="">No sites available</option>';
+}
 async function populateRecipientContractors(){
   const select=$('recipientContractor');
   const siteId=$('recipientSite').value;
@@ -603,13 +621,32 @@ async function loadPermitCcRecipients(){
   permitCcRows=(data||[]).filter(row=>row.is_active!==false);
   renderPermitCcRows();
 }
+function setBccRecipientStatus(message){$('bccRecipientStatus').textContent=message||'';}
+function renderPermitBccRows(){
+  const target=$('bccRecipientRows');
+  if(!permitBccRows.length){target.innerHTML='<div class="permit-recipient-empty">No BCC people have been added yet.</div>';return;}
+  target.innerHTML=permitBccRows.map(row=>{
+    const site=cachedSites.find(item=>item.site_id===row.site_id);
+    return `<div class="permit-recipient-row"><span>${escapeHtml(row.display_name)}</span><span>${escapeHtml(row.email)}</span><span>${escapeHtml(site?.site_name||row.site_id)}</span><button class="btn secondary" data-bcc-recipient-remove="${escapeHtml(row.id)}">Remove</button></div>`;
+  }).join('');
+  target.querySelectorAll('[data-bcc-recipient-remove]').forEach(button=>button.onclick=()=>removePermitBccRecipient(button.dataset.bccRecipientRemove));
+}
+async function loadPermitBccRecipients(){
+  $('bccRecipientRows').textContent='Loading BCC people…';
+  setBccRecipientStatus('');
+  const {data,error}=await supabaseClient.from('permit_summary_bcc_recipients').select('id,site_id,display_name,email,is_active').order('site_id').order('display_name').order('email');
+  if(error){permitBccRows=[];$('bccRecipientRows').textContent='The BCC list is not ready. Apply the BCC list SQL setup first.';setBccRecipientStatus(error.message);return;}
+  permitBccRows=(data||[]).filter(row=>row.is_active!==false);
+  renderPermitBccRows();
+}
 async function openPermitRecipients(){
   if(!isAdmin())return;
   populateRecipientSites();
   populateCcRecipientSites();
+  populateBccRecipientSites();
   lockDashboardForPermitRecipients();
   $('permitRecipientsModal').classList.add('show');
-  await Promise.all([populateRecipientContractors(),loadPermitRecipients(),loadPermitCcRecipients()]);
+  await Promise.all([populateRecipientContractors(),loadPermitRecipients(),loadPermitCcRecipients(),loadPermitBccRecipients()]);
 }
 async function addPermitRecipient(){
   if(!isAdmin())return;
@@ -652,6 +689,27 @@ async function removePermitCcRecipient(id){
   if(error){setCcRecipientStatus('Could not remove CC person: '+error.message);return;}
   setCcRecipientStatus('CC person removed.');
   await loadPermitCcRecipients();
+}
+async function addPermitBccRecipient(){
+  if(!isAdmin())return;
+  const siteId=$('bccRecipientSite').value;
+  const displayName=$('bccRecipientName').value.trim();
+  const email=$('bccRecipientEmail').value.trim().toLowerCase();
+  if(!siteId||!displayName){setBccRecipientStatus('Choose a site and enter the person’s name.');return;}
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){setBccRecipientStatus('Enter a valid email address.');return;}
+  setBccRecipientStatus('Adding BCC person…');
+  const {error}=await supabaseClient.from('permit_summary_bcc_recipients').insert({site_id:siteId,display_name:displayName,email,is_active:true});
+  if(error){setBccRecipientStatus(error.code==='23505'?'That email address is already on the BCC list for this site.':error.message);return;}
+  $('bccRecipientName').value='';$('bccRecipientEmail').value='';
+  setBccRecipientStatus('BCC person added.');
+  await loadPermitBccRecipients();
+}
+async function removePermitBccRecipient(id){
+  if(!isAdmin()||!confirm('Remove this person from the open permit summary BCC list?'))return;
+  const {error}=await supabaseClient.from('permit_summary_bcc_recipients').delete().eq('id',id);
+  if(error){setBccRecipientStatus('Could not remove BCC person: '+error.message);return;}
+  setBccRecipientStatus('BCC person removed.');
+  await loadPermitBccRecipients();
 }
 
 function backupRecordFromDatabase(x){
@@ -1214,6 +1272,8 @@ $('recipientAdd').onclick=addPermitRecipient;
 $('recipientEmail').addEventListener('keydown',event=>{if(event.key==='Enter')addPermitRecipient()});
 $('ccRecipientAdd').onclick=addPermitCcRecipient;
 $('ccRecipientEmail').addEventListener('keydown',event=>{if(event.key==='Enter')addPermitCcRecipient()});
+$('bccRecipientAdd').onclick=addPermitBccRecipient;
+$('bccRecipientEmail').addEventListener('keydown',event=>{if(event.key==='Enter')addPermitBccRecipient()});
 $('permitRecipientsModal').addEventListener('click',event=>{if(event.target===$('permitRecipientsModal'))closePermitRecipients()});
 $('managementClose').onclick=closeDashboardDataManagement;
 $('managementSiteSelect').onchange=e=>{managementSiteId=e.target.value;refreshDashboardBugBadge();};

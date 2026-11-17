@@ -2242,6 +2242,7 @@ body.change-log-open {
 .overview-check-row small,.overview-list-empty { color:#68737d; font-size:12px; margin:0; }
 .overview-check-disabled { opacity:.55; cursor:not-allowed; }
 .overview-cc-heading { margin-top:18px; }
+.overview-bcc-heading { margin-top:18px; }
 .overview-actions { grid-template-columns:1fr 1fr; }
 .overview-actions #overviewDownloadExcel,.overview-actions #overviewEmailStatus { grid-column:1/-1; }
 @media(max-width:600px) {

@@ -472,6 +472,15 @@ function openWorkPermitOverviewDialog() {
             </div>
           </div>
           <div id="overviewEmailCc" class="overview-check-list">Loading CC contacts…</div>
+
+          <div class="overview-list-heading overview-bcc-heading">
+            <div><h3>BCC people</h3><p>Selected BCC contacts are hidden from the other recipients.</p></div>
+            <div class="overview-list-controls">
+              <button type="button" id="overviewBccAll" class="overview-link-button">Select all</button>
+              <button type="button" id="overviewBccNone" class="overview-link-button">Clear</button>
+            </div>
+          </div>
+          <div id="overviewEmailBcc" class="overview-check-list">Loading BCC contacts…</div>
         </section>
 
         <div class="overview-actions">
@@ -493,6 +502,8 @@ function openWorkPermitOverviewDialog() {
     dialog.querySelector('#overviewToNone').onclick = () => setOverviewCheckboxes('.overview-to-choice', false);
     dialog.querySelector('#overviewCcAll').onclick = () => setOverviewCheckboxes('.overview-cc-choice', true);
     dialog.querySelector('#overviewCcNone').onclick = () => setOverviewCheckboxes('.overview-cc-choice', false);
+    dialog.querySelector('#overviewBccAll').onclick = () => setOverviewCheckboxes('.overview-bcc-choice', true);
+    dialog.querySelector('#overviewBccNone').onclick = () => setOverviewCheckboxes('.overview-bcc-choice', false);
     dialog.addEventListener('close', unlockOverviewEmailBackground);
   }
 
@@ -605,8 +616,10 @@ function renderPermitEmailOptions(options) {
   if (!dialog) return;
   const recipientsBox = dialog.querySelector('#overviewEmailRecipients');
   const ccBox = dialog.querySelector('#overviewEmailCc');
+  const bccBox = dialog.querySelector('#overviewEmailBcc');
   const recipients = Array.isArray(options?.recipients) ? options.recipients : [];
   const ccRecipients = Array.isArray(options?.ccRecipients) ? options.ccRecipients : [];
+  const bccRecipients = Array.isArray(options?.bccRecipients) ? options.bccRecipients : [];
 
   recipientsBox.innerHTML = recipients.length ? recipients.map(row => {
     const hasOpenPermits = getOpenWorkPermitsForContractor(row.contractor).length > 0;
@@ -621,7 +634,12 @@ function renderPermitEmailOptions(options) {
     <span><strong>${esc(row.displayName || row.email)}</strong><small>${esc(row.email)}</small></span>
   </label>`).join('') : '<p class="overview-list-empty">No CC contacts are set up for this site.</p>';
 
-  dialog.querySelectorAll('.overview-to-choice,.overview-cc-choice').forEach(input => {
+  bccBox.innerHTML = bccRecipients.length ? bccRecipients.map(row => `<label class="overview-check-row">
+    <input class="overview-bcc-choice" type="checkbox" value="${esc(row.id)}" checked>
+    <span><strong>${esc(row.displayName || row.email)}</strong><small>${esc(row.email)}</small></span>
+  </label>`).join('') : '<p class="overview-list-empty">No BCC contacts are set up for this site.</p>';
+
+  dialog.querySelectorAll('.overview-to-choice,.overview-cc-choice,.overview-bcc-choice').forEach(input => {
     input.addEventListener('change', () => updateOverviewEmailSendButton());
   });
   updateOverviewEmailSendButton();
@@ -633,10 +651,12 @@ async function loadPermitEmailOptions() {
   const status = dialog.querySelector('#overviewEmailStatus');
   const recipientsBox = dialog.querySelector('#overviewEmailRecipients');
   const ccBox = dialog.querySelector('#overviewEmailCc');
+  const bccBox = dialog.querySelector('#overviewEmailBcc');
   overviewEmailOptionsLoading = true;
   updateOverviewEmailSendButton();
   recipientsBox.textContent = 'Loading recipients…';
   ccBox.textContent = 'Loading CC contacts…';
+  bccBox.textContent = 'Loading BCC contacts…';
   status.textContent = '';
   try {
     const { data, error } = await supabaseClient.functions.invoke('clever-api', {
@@ -648,6 +668,7 @@ async function loadPermitEmailOptions() {
   } catch (error) {
     recipientsBox.textContent = 'Could not load the recipient list.';
     ccBox.textContent = 'Could not load the CC list.';
+    bccBox.textContent = 'Could not load the BCC list.';
     status.textContent = error.message || 'Could not load the email lists.';
   } finally {
     overviewEmailOptionsLoading = false;
@@ -666,6 +687,7 @@ async function emailWorkPermitOverview() {
   }
   const chosenIds = [...dialog.querySelectorAll('.overview-to-choice:checked:not(:disabled)')].map(input => input.value);
   const chosenCcIds = [...dialog.querySelectorAll('.overview-cc-choice:checked')].map(input => input.value);
+  const chosenBccIds = [...dialog.querySelectorAll('.overview-bcc-choice:checked')].map(input => input.value);
   const chosenRecipients = (window.dgslPermitEmailOptions?.recipients || [])
     .filter(row => chosenIds.includes(row.id) && getOpenWorkPermitsForContractor(row.contractor).length);
   if (!chosenRecipients.length) {
@@ -688,7 +710,7 @@ async function emailWorkPermitOverview() {
     recipientIds,
     requestId: crypto.randomUUID()
   }));
-  const pending = { siteId: SITE.id, groups, ccIds: chosenCcIds };
+  const pending = { siteId: SITE.id, groups, ccIds: chosenCcIds, bccIds: chosenBccIds };
 
   button.disabled = true;
   status.textContent = 'Saving your choices and opening Microsoft sign-in…';
@@ -795,7 +817,7 @@ async function finishPermitEmailAfterRedirect() {
     const emailLogoBase64 = emailLogoData.slice(emailLogoData.indexOf(',') + 1);
 
     const { data, error } = await supabaseClient.functions.invoke('clever-api', {
-      body: { action: 'send', siteId: pending.siteId, groups: groupsWithPdfs, ccIds: pending.ccIds || [], logoBase64: emailLogoBase64 },
+      body: { action: 'send', siteId: pending.siteId, groups: groupsWithPdfs, ccIds: pending.ccIds || [], bccIds: pending.bccIds || [], logoBase64: emailLogoBase64 },
       headers: { 'x-ms-graph-token': tokenResponse.accessToken }
     });
     if (error) throw new Error(error.message || 'The email could not be sent.');
